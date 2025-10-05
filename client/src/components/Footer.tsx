@@ -20,31 +20,23 @@ export default function Footer() {
             <h3 className="font-semibold text-foreground mb-4">Enlaces Rápidos</h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/cotizar">
-                  <a className="text-sm text-muted-foreground hover:text-primary transition-colors" data-testid="link-footer-quote">
-                    Cotizar Envío
-                  </a>
+                <Link href="/cotizar" className="text-sm text-muted-foreground hover:text-primary transition-colors" data-testid="link-footer-quote">
+                  Cotizar Envío
                 </Link>
               </li>
               <li>
-                <Link href="/crear-guia">
-                  <a className="text-sm text-muted-foreground hover:text-primary transition-colors" data-testid="link-footer-create">
-                    Crear Guía
-                  </a>
+                <Link href="/crear-guia" className="text-sm text-muted-foreground hover:text-primary transition-colors" data-testid="link-footer-create">
+                  Crear Guía
                 </Link>
               </li>
               <li>
-                <Link href="/rastrear">
-                  <a className="text-sm text-muted-foreground hover:text-primary transition-colors" data-testid="link-footer-track">
-                    Rastrear Paquete
-                  </a>
+                <Link href="/rastrear" className="text-sm text-muted-foreground hover:text-primary transition-colors" data-testid="link-footer-track">
+                  Rastrear Paquete
                 </Link>
               </li>
               <li>
-                <Link href="/envios">
-                  <a className="text-sm text-muted-foreground hover:text-primary transition-colors" data-testid="link-footer-shipments">
-                    Mis Envíos
-                  </a>
+                <Link href="/envios" className="text-sm text-muted-foreground hover:text-primary transition-colors" data-testid="link-footer-shipments">
+                  Mis Envíos
                 </Link>
               </li>
             </ul>
