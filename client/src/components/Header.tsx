@@ -19,9 +19,15 @@ export default function Header() {
     <header className="sticky top-0 z-50 bg-card border-b border-card-border">
       <div className="max-w-7xl mx-auto px-6">
         <div className="flex items-center justify-between h-16">
-          <Link href="/" className="flex items-center gap-2 hover-elevate active-elevate-2 px-3 py-2 rounded-lg -ml-3" data-testid="link-home">
+          <Link
+            href="/"
+            className="flex items-center gap-2 hover-elevate active-elevate-2 px-3 py-2 rounded-lg -ml-3"
+            data-testid="link-home"
+          >
             <Package className="w-7 h-7 text-primary" />
-            <span className="text-xl font-bold text-foreground">EnvíosExpress</span>
+            <span className="text-xl font-bold text-foreground">
+              EnvíosExpress
+            </span>
           </Link>
 
           <nav className="hidden md:flex items-center gap-1">
@@ -38,15 +44,6 @@ export default function Header() {
             ))}
           </nav>
 
-          <div className="hidden md:flex items-center gap-2">
-            <Button variant="outline" data-testid="button-login">
-              Iniciar Sesión
-            </Button>
-            <Button data-testid="button-register">
-              Registrarse
-            </Button>
-          </div>
-
           <Button
             variant="ghost"
             size="icon"
@@ -54,7 +51,11 @@ export default function Header() {
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             data-testid="button-menu-toggle"
           >
-            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            {mobileMenuOpen ? (
+              <X className="w-5 h-5" />
+            ) : (
+              <Menu className="w-5 h-5" />
+            )}
           </Button>
         </div>
       </div>
@@ -74,14 +75,6 @@ export default function Header() {
                 </Button>
               </Link>
             ))}
-            <div className="flex flex-col gap-2 mt-4 pt-4 border-t border-border">
-              <Button variant="outline" className="w-full" data-testid="button-mobile-login">
-                Iniciar Sesión
-              </Button>
-              <Button className="w-full" data-testid="button-mobile-register">
-                Registrarse
-              </Button>
-            </div>
           </nav>
         </div>
       )}
