@@ -1,11 +1,11 @@
-import { Package, Mail, Phone, MapPin } from "lucide-react";
+import { Package } from "lucide-react";
 import { Link } from "wouter";
 
 export default function Footer() {
   return (
     <footer className="bg-card border-t border-card-border">
       <div className="max-w-7xl mx-auto px-6 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
           <div>
             <div className="flex items-center gap-2 mb-4">
               <Package className="w-6 h-6 text-primary" />
@@ -31,24 +31,6 @@ export default function Footer() {
                 >
                   Cotizar Envío
                 </Link>
-              </li>
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="font-semibold text-foreground mb-4">Contacto</h3>
-            <ul className="space-y-3">
-              <li className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Mail className="w-4 h-4 text-primary flex-shrink-0" />
-                contacto@david.com
-              </li>
-              <li className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Phone className="w-4 h-4 text-primary flex-shrink-0" />
-                01 800 123 4567
-              </li>
-              <li className="flex items-center gap-2 text-sm text-muted-foreground">
-                <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
-                Ciudad de México, México
               </li>
             </ul>
           </div>

@@ -11,11 +11,7 @@ export default function Header() {
   const { user, isAuthenticated } = useAuth();
 
   const navItems = [
-    { label: "Inicio", path: "/" },
     { label: "Cotizar", path: "/cotizar" },
-    { label: "Crear Guía", path: "/crear-guia" },
-    { label: "Rastrear", path: "/rastrear" },
-    { label: "Mis Envíos", path: "/envios" },
   ];
 
   const handleLogout = () => {
