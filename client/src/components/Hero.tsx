@@ -1,9 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Shield, Truck, Clock } from "lucide-react";
 import { Link } from "wouter";
+import { useAuth } from "@/hooks/useAuth";
 import heroImage from "@assets/generated_images/Modern_logistics_warehouse_interior_5aaae5e4.png";
 
 export default function Hero() {
+  const { isAuthenticated } = useAuth();
+
   return (
     <section className="relative h-[70vh] min-h-[500px] flex items-center overflow-hidden">
       <div
@@ -22,16 +25,40 @@ export default function Hero() {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 mb-12">
-            <Link href="/cotizar">
-              <Button
-                size="lg"
-                className="text-lg h-12 px-8 bg-white text-primary hover:bg-white/90 border-2 border-white"
-                data-testid="button-quote-hero"
-              >
-                Cotizar Envío Gratis
-                <ArrowRight className="ml-2 w-5 h-5" />
-              </Button>
-            </Link>
+            {isAuthenticated ? (
+              <Link href="/cotizar">
+                <Button
+                  size="lg"
+                  className="text-lg h-12 px-8 bg-white text-primary hover:bg-white/90 border-2 border-white"
+                  data-testid="button-quote-hero"
+                >
+                  Cotizar Envío Gratis
+                  <ArrowRight className="ml-2 w-5 h-5" />
+                </Button>
+              </Link>
+            ) : (
+              <>
+                <Link href="/auth">
+                  <Button
+                    size="lg"
+                    className="text-lg h-12 px-8 bg-white text-primary hover:bg-white/90 border-2 border-white"
+                    data-testid="button-login"
+                  >
+                    Iniciar Sesión
+                  </Button>
+                </Link>
+                <Link href="/auth">
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="text-lg h-12 px-8 bg-white/10 backdrop-blur-md border-white/30 text-white hover:bg-white/20"
+                    data-testid="button-signup"
+                  >
+                    Registrarse
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
 
           <div className="flex flex-wrap gap-6 text-white">
