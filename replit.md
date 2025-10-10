@@ -128,12 +128,14 @@ Preferred communication style: Simple, everyday language.
 - Shared auth state across components (App, Header)
 
 **User Flow:**
-- Landing page for unauthenticated users with login/signup buttons
+- Unified home page (`/`) adapts to authentication state:
+  - **Unauthenticated users**: Shows login/signup buttons in hero and CTA sections
+  - **Authenticated users**: Shows action buttons (Cotizar Envío, Crear Guía) in hero and CTA sections
 - `/auth` page with forms for local login/registration and OAuth button (Google)
 - Local registration creates user with hashed password and auto-logs in
-- Login (local or Google) redirects to dashboard after success
+- Login (local or Google) redirects to home page after success
 - Automatic user profile creation/update via upsertUser on authentication
-- Protected routes show authenticated content
+- Protected routes (/cotizar, /crear-guia, /rastrear, /envios, /perfil, /admin/usuarios) only accessible when authenticated
 - `/perfil` page for enhanced user profile management:
   - **Profile Header**: Avatar with camera button for editing, user name/email, badges showing active auth methods (Password, Google)
   - **Contact Tab**: Update name, email (read-only), and phone
