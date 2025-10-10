@@ -9,7 +9,9 @@ export default function Footer() {
           <div>
             <div className="flex items-center gap-2 mb-4">
               <Package className="w-6 h-6 text-primary" />
-              <span className="text-lg font-bold text-foreground">EnvíosExpress</span>
+              <span className="text-lg font-bold text-foreground">
+                Manuel Dev
+              </span>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed">
               La plataforma más completa para gestionar tus envíos en México.
@@ -17,53 +19,18 @@ export default function Footer() {
           </div>
 
           <div>
-            <h3 className="font-semibold text-foreground mb-4">Enlaces Rápidos</h3>
+            <h3 className="font-semibold text-foreground mb-4">
+              Enlaces Rápidos
+            </h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/cotizar" className="text-sm text-muted-foreground hover:text-primary transition-colors" data-testid="link-footer-quote">
+                <Link
+                  href="/cotizar"
+                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                  data-testid="link-footer-quote"
+                >
                   Cotizar Envío
                 </Link>
-              </li>
-              <li>
-                <Link href="/crear-guia" className="text-sm text-muted-foreground hover:text-primary transition-colors" data-testid="link-footer-create">
-                  Crear Guía
-                </Link>
-              </li>
-              <li>
-                <Link href="/rastrear" className="text-sm text-muted-foreground hover:text-primary transition-colors" data-testid="link-footer-track">
-                  Rastrear Paquete
-                </Link>
-              </li>
-              <li>
-                <Link href="/envios" className="text-sm text-muted-foreground hover:text-primary transition-colors" data-testid="link-footer-shipments">
-                  Mis Envíos
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="font-semibold text-foreground mb-4">Soporte</h3>
-            <ul className="space-y-2">
-              <li>
-                <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Centro de Ayuda
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Preguntas Frecuentes
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Términos y Condiciones
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Política de Privacidad
-                </a>
               </li>
             </ul>
           </div>
@@ -73,7 +40,7 @@ export default function Footer() {
             <ul className="space-y-3">
               <li className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Mail className="w-4 h-4 text-primary flex-shrink-0" />
-                contacto@enviosexpress.com
+                contacto@david.com
               </li>
               <li className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Phone className="w-4 h-4 text-primary flex-shrink-0" />
@@ -89,7 +56,8 @@ export default function Footer() {
 
         <div className="pt-8 border-t border-border text-center">
           <p className="text-sm text-muted-foreground">
-            © 2024 EnvíosExpress. Todos los derechos reservados. Integración con Skydropx API.
+            © 2024 Manuel Dev. Todos los derechos reservados. Integración con
+            Skydropx API.
           </p>
         </div>
       </div>

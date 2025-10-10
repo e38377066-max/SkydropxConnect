@@ -4,9 +4,16 @@ import {
   type Quote,
   type InsertQuote,
   type TrackingEvent,
-  type InsertTrackingEvent
+  type InsertTrackingEvent,
+  type User,
+  type UpsertUser,
+  shipments,
+  quotes,
+  trackingEvents,
+  users,
 } from "@shared/schema";
-import { randomUUID } from "crypto";
+import { db } from "./db";
+import { eq, desc } from "drizzle-orm";
 
 export interface IStorage {
   createShipment(shipment: InsertShipment): Promise<Shipment>;
@@ -20,111 +27,106 @@ export interface IStorage {
   
   createTrackingEvent(event: InsertTrackingEvent): Promise<TrackingEvent>;
   getTrackingEvents(trackingNumber: string): Promise<TrackingEvent[]>;
+  
+  getUser(id: string): Promise<User | undefined>;
+  upsertUser(user: UpsertUser): Promise<User>;
 }
 
-export class MemStorage implements IStorage {
-  private shipments: Map<string, Shipment>;
-  private quotes: Map<string, Quote>;
-  private trackingEvents: Map<string, TrackingEvent>;
-
-  constructor() {
-    this.shipments = new Map();
-    this.quotes = new Map();
-    this.trackingEvents = new Map();
-  }
-
+export class DatabaseStorage implements IStorage {
   async createShipment(insertShipment: InsertShipment): Promise<Shipment> {
-    const id = randomUUID();
-    const now = new Date();
-    const shipment: Shipment = { 
-      ...insertShipment,
-      currency: insertShipment.currency ?? "MXN",
-      status: insertShipment.status ?? "pending",
-      length: insertShipment.length ?? null,
-      width: insertShipment.width ?? null,
-      height: insertShipment.height ?? null,
-      description: insertShipment.description ?? null,
-      senderCity: insertShipment.senderCity ?? null,
-      senderState: insertShipment.senderState ?? null,
-      receiverCity: insertShipment.receiverCity ?? null,
-      receiverState: insertShipment.receiverState ?? null,
-      labelUrl: insertShipment.labelUrl ?? null,
-      skydropxShipmentId: insertShipment.skydropxShipmentId ?? null,
-      skydropxData: insertShipment.skydropxData ?? null,
-      id,
-      createdAt: now,
-      updatedAt: now,
-    };
-    this.shipments.set(id, shipment);
+    const [shipment] = await db
+      .insert(shipments)
+      .values(insertShipment)
+      .returning();
     return shipment;
   }
 
   async getShipment(id: string): Promise<Shipment | undefined> {
-    return this.shipments.get(id);
+    const [shipment] = await db
+      .select()
+      .from(shipments)
+      .where(eq(shipments.id, id));
+    return shipment || undefined;
   }
 
   async getShipmentByTracking(trackingNumber: string): Promise<Shipment | undefined> {
-    return Array.from(this.shipments.values()).find(
-      (shipment) => shipment.trackingNumber === trackingNumber
-    );
+    const [shipment] = await db
+      .select()
+      .from(shipments)
+      .where(eq(shipments.trackingNumber, trackingNumber));
+    return shipment || undefined;
   }
 
   async getAllShipments(): Promise<Shipment[]> {
-    return Array.from(this.shipments.values()).sort(
-      (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
-    );
+    return await db
+      .select()
+      .from(shipments)
+      .orderBy(desc(shipments.createdAt));
   }
 
   async updateShipment(id: string, data: Partial<InsertShipment>): Promise<Shipment | undefined> {
-    const shipment = this.shipments.get(id);
-    if (!shipment) return undefined;
-    
-    const updated = { ...shipment, ...data, updatedAt: new Date() };
-    this.shipments.set(id, updated);
-    return updated;
+    const [updated] = await db
+      .update(shipments)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(shipments.id, id))
+      .returning();
+    return updated || undefined;
   }
 
   async createQuote(insertQuote: InsertQuote): Promise<Quote> {
-    const id = randomUUID();
-    const quote: Quote = { 
-      ...insertQuote,
-      length: insertQuote.length ?? null,
-      width: insertQuote.width ?? null,
-      height: insertQuote.height ?? null,
-      id,
-      createdAt: new Date(),
-    };
-    this.quotes.set(id, quote);
+    const [quote] = await db
+      .insert(quotes)
+      .values(insertQuote)
+      .returning();
     return quote;
   }
 
   async getQuote(id: string): Promise<Quote | undefined> {
-    return this.quotes.get(id);
+    const [quote] = await db
+      .select()
+      .from(quotes)
+      .where(eq(quotes.id, id));
+    return quote || undefined;
   }
 
   async createTrackingEvent(insertEvent: InsertTrackingEvent): Promise<TrackingEvent> {
-    const id = randomUUID();
-    const event: TrackingEvent = { 
-      ...insertEvent,
-      shipmentId: insertEvent.shipmentId ?? null,
-      description: insertEvent.description ?? null,
-      location: insertEvent.location ?? null,
-      eventDate: insertEvent.eventDate ?? null,
-      id,
-      createdAt: new Date(),
-    };
-    this.trackingEvents.set(id, event);
+    const [event] = await db
+      .insert(trackingEvents)
+      .values(insertEvent)
+      .returning();
     return event;
   }
 
   async getTrackingEvents(trackingNumber: string): Promise<TrackingEvent[]> {
-    return Array.from(this.trackingEvents.values())
-      .filter((event) => event.trackingNumber === trackingNumber)
-      .sort((a, b) => {
-        if (!a.eventDate || !b.eventDate) return 0;
-        return b.eventDate.getTime() - a.eventDate.getTime();
-      });
+    return await db
+      .select()
+      .from(trackingEvents)
+      .where(eq(trackingEvents.trackingNumber, trackingNumber))
+      .orderBy(desc(trackingEvents.eventDate));
+  }
+
+  async getUser(id: string): Promise<User | undefined> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, id));
+    return user || undefined;
+  }
+
+  async upsertUser(userData: UpsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(userData)
+      .onConflictDoUpdate({
+        target: users.id,
+        set: {
+          ...userData,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return user;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();

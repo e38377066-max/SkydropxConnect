@@ -1,11 +1,14 @@
-import { Package, Menu, X } from "lucide-react";
+import { Package, Menu, X, LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Link, useLocation } from "wouter";
 import { useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Header() {
   const [location] = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { user, isAuthenticated } = useAuth();
 
   const navItems = [
     { label: "Inicio", path: "/" },
@@ -14,6 +17,10 @@ export default function Header() {
     { label: "Rastrear", path: "/rastrear" },
     { label: "Mis Envíos", path: "/envios" },
   ];
+
+  const handleLogout = () => {
+    window.location.href = "/api/logout";
+  };
 
   return (
     <header className="sticky top-0 z-50 bg-card border-b border-card-border">
@@ -26,7 +33,7 @@ export default function Header() {
           >
             <Package className="w-7 h-7 text-primary" />
             <span className="text-xl font-bold text-foreground">
-              EnvíosExpress
+              Manuel Dev
             </span>
           </Link>
 
@@ -43,6 +50,31 @@ export default function Header() {
               </Link>
             ))}
           </nav>
+
+          {isAuthenticated && user ? (
+            <div className="hidden md:flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <Avatar className="w-8 h-8">
+                  <AvatarImage src={user.profileImageUrl || undefined} />
+                  <AvatarFallback>
+                    <User className="w-4 h-4" />
+                  </AvatarFallback>
+                </Avatar>
+                <span className="text-sm font-medium text-foreground">
+                  {user.firstName || user.email?.split('@')[0] || 'Usuario'}
+                </span>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleLogout}
+                data-testid="button-logout"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Salir
+              </Button>
+            </div>
+          ) : null}
 
           <Button
             variant="ghost"
@@ -75,6 +107,30 @@ export default function Header() {
                 </Button>
               </Link>
             ))}
+            {isAuthenticated && user ? (
+              <div className="flex flex-col gap-2 mt-4 pt-4 border-t border-border">
+                <div className="flex items-center gap-2 px-3 py-2">
+                  <Avatar className="w-8 h-8">
+                    <AvatarImage src={user.profileImageUrl || undefined} />
+                    <AvatarFallback>
+                      <User className="w-4 h-4" />
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-sm font-medium text-foreground">
+                    {user.firstName || user.email?.split('@')[0] || 'Usuario'}
+                  </span>
+                </div>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={handleLogout}
+                  data-testid="button-mobile-logout"
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Cerrar Sesión
+                </Button>
+              </div>
+            ) : null}
           </nav>
         </div>
       )}
