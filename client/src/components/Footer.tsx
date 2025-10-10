@@ -25,6 +25,15 @@ export default function Footer() {
             <ul className="space-y-2">
               <li>
                 <Link
+                  href="/"
+                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                  data-testid="link-footer-home"
+                >
+                  Inicio
+                </Link>
+              </li>
+              <li>
+                <Link
                   href="/cotizar"
                   className="text-sm text-muted-foreground hover:text-primary transition-colors"
                   data-testid="link-footer-quote"

@@ -11,6 +11,7 @@ export default function Header() {
   const { user, isAuthenticated } = useAuth();
 
   const navItems = [
+    { label: "Inicio", path: "/" },
     { label: "Cotizar", path: "/cotizar" },
   ];
 
@@ -49,6 +50,17 @@ export default function Header() {
 
           {isAuthenticated && user ? (
             <div className="hidden md:flex items-center gap-3">
+              {user.role === 'admin' && (
+                <Link href="/admin/usuarios">
+                  <Button 
+                    variant={location === '/admin/usuarios' ? "secondary" : "ghost"}
+                    size="sm"
+                    data-testid="link-admin-panel"
+                  >
+                    Panel Admin
+                  </Button>
+                </Link>
+              )}
               <Link href="/perfil">
                 <Button 
                   variant="ghost" 
@@ -122,6 +134,29 @@ export default function Header() {
                     {user.firstName || user.email?.split('@')[0] || 'Usuario'}
                   </span>
                 </div>
+                <Link href="/perfil">
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start"
+                    onClick={() => setMobileMenuOpen(false)}
+                    data-testid="button-mobile-profile"
+                  >
+                    <User className="w-4 h-4 mr-2" />
+                    Mi Perfil
+                  </Button>
+                </Link>
+                {user.role === 'admin' && (
+                  <Link href="/admin/usuarios">
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start"
+                      onClick={() => setMobileMenuOpen(false)}
+                      data-testid="link-mobile-admin-panel"
+                    >
+                      Panel Admin
+                    </Button>
+                  </Link>
+                )}
                 <Button
                   variant="outline"
                   className="w-full"
