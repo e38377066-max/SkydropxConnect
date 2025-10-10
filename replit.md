@@ -44,9 +44,16 @@ Preferred communication style: Simple, everyday language.
 - `/api/register` - POST endpoint for local user registration (public)
 - `/api/login` - POST endpoint for local user login (public)
 - `/api/login-google` - GET endpoint to initiate Google OAuth login flow
+- `/api/auth/google/callback` - GET endpoint for Google OAuth callback
 - `/api/logout` - GET endpoint to logout and clear session
-- `/api/callback` - GET endpoint for OAuth callback
 - `/api/auth/user` - GET endpoint for authenticated user data (protected, sanitized)
+
+**Required Environment Variables:**
+- `GOOGLE_CLIENT_ID` - Google OAuth 2.0 Client ID from Google Cloud Console
+- `GOOGLE_CLIENT_SECRET` - Google OAuth 2.0 Client Secret from Google Cloud Console
+- `SESSION_SECRET` - Secret key for session encryption
+- `DATABASE_URL` - PostgreSQL connection string
+- `REPLIT_DOMAINS` - Replit deployment domains for callback URLs
 
 **Request/Response Flow:**
 - Request validation using Zod schemas from shared directory
@@ -78,14 +85,15 @@ Preferred communication style: Simple, everyday language.
 ## Authentication & Authorization
 
 **Authentication System:**
-- **Hybrid Authentication**: Supports both local email/password and OAuth (Google via Replit Auth)
+- **Hybrid Authentication**: Supports both local email/password and Google OAuth
 - **Local Authentication**: 
   - Email/password registration with bcrypt hashing (10 rounds)
   - Passport-local strategy for credential validation
   - Auto-login after successful registration
-- **OAuth Authentication**:
-  - Replit Auth with OpenID Connect (OIDC) integration
-  - Supports Google login (GitHub, X, Apple available via Replit Auth)
+- **Google OAuth Authentication**:
+  - Official Google OAuth 2.0 API via passport-google-oauth20
+  - User profile data (email, name, photo) automatically synced
+  - Seamless account creation/update on first login
 - Passport.js for unified authentication flow
 - Session-based authentication using connect-pg-simple
 
