@@ -47,6 +47,9 @@ Preferred communication style: Simple, everyday language.
 - `/api/auth/google/callback` - GET endpoint for Google OAuth callback
 - `/api/logout` - GET endpoint to logout and clear session
 - `/api/auth/user` - GET endpoint for authenticated user data (protected, sanitized)
+- `/api/user/contact` - PATCH endpoint to update user contact information (protected)
+- `/api/user/billing` - PATCH endpoint to update user billing information (protected)
+- `/api/user/password` - PATCH endpoint to update user password (protected, local auth only)
 
 **Required Environment Variables:**
 - `GOOGLE_CLIENT_ID` - Google OAuth 2.0 Client ID from Google Cloud Console
@@ -75,8 +78,11 @@ Preferred communication style: Simple, everyday language.
 - Migrated from MemStorage to DatabaseStorage for persistence
 
 **Schema Design:**
-- `users` table - Stores authenticated user profiles (id, email, firstName, lastName, profileImageUrl)
-- `sessions` table - Session storage for Replit Auth with TTL index
+- `users` table - Stores authenticated user profiles with contact and billing data:
+  - Contact: id, email, firstName, lastName, phone, profileImageUrl
+  - Billing: rfc, razonSocial, direccionFiscal, codigoPostalFiscal, ciudadFiscal, estadoFiscal
+  - Auth: password (hashed with bcrypt for local accounts, null for OAuth)
+- `sessions` table - Session storage with PostgreSQL backend
 - `shipments` table - Core shipment data with sender/receiver details
 - `quotes` table - Shipping rate quote records
 - `trackingEvents` table - Timeline of package tracking updates
@@ -123,14 +129,21 @@ Preferred communication style: Simple, everyday language.
 - Login (both local and Google) redirects to dashboard after success
 - Automatic user profile creation/update via upsertUser on authentication
 - Protected routes show authenticated content
+- `/perfil` page for user profile management with three tabs:
+  - Contact tab: Update name, email (read-only), and phone
+  - Billing tab: Manage RFC, razón social, fiscal address details
+  - Security tab: Change password (local accounts only, hidden for OAuth)
 - Logout clears session and redirects to landing (/api/logout)
-- User profile display in header with avatar and name
+- User profile display in header with avatar and name (clickable to navigate to profile)
 
 **Security Measures:**
 - All user responses sanitized via `sanitizeUser()` helper to remove password hashes
 - Passwords never exposed in API responses (even hashed)
 - Bcrypt with 10 salt rounds for password hashing
 - Session cookies with httpOnly and secure flags
+- Backend Zod validation on all profile update endpoints
+- Password change requires current password verification
+- Minimum 6-character password length enforced on server-side
 
 ## External Dependencies
 

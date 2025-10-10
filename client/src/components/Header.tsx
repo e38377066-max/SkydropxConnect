@@ -49,17 +49,23 @@ export default function Header() {
 
           {isAuthenticated && user ? (
             <div className="hidden md:flex items-center gap-3">
-              <div className="flex items-center gap-2">
-                <Avatar className="w-8 h-8">
-                  <AvatarImage src={user.profileImageUrl || undefined} />
-                  <AvatarFallback>
-                    <User className="w-4 h-4" />
-                  </AvatarFallback>
-                </Avatar>
-                <span className="text-sm font-medium text-foreground">
-                  {user.firstName || user.email?.split('@')[0] || 'Usuario'}
-                </span>
-              </div>
+              <Link href="/perfil">
+                <Button 
+                  variant="ghost" 
+                  className="flex items-center gap-2 hover-elevate active-elevate-2"
+                  data-testid="button-profile"
+                >
+                  <Avatar className="w-8 h-8">
+                    <AvatarImage src={user.profileImageUrl || undefined} />
+                    <AvatarFallback>
+                      <User className="w-4 h-4" />
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-sm font-medium text-foreground">
+                    {user.firstName || user.email?.split('@')[0] || 'Usuario'}
+                  </span>
+                </Button>
+              </Link>
               <Button 
                 variant="outline" 
                 size="sm"

@@ -22,6 +22,18 @@ export const users = pgTable("users", {
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
+  
+  // Contact information
+  phone: varchar("phone"),
+  
+  // Billing information
+  rfc: varchar("rfc"),
+  razonSocial: varchar("razon_social"),
+  direccionFiscal: text("direccion_fiscal"),
+  codigoPostalFiscal: varchar("codigo_postal_fiscal"),
+  ciudadFiscal: varchar("ciudad_fiscal"),
+  estadoFiscal: varchar("estado_fiscal"),
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

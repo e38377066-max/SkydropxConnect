@@ -156,6 +156,112 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to fetch user" });
     }
   });
+
+  // Update contact information
+  app.patch('/api/user/contact', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.isLocal || req.user.isGoogle ? req.user.id : req.user.claims.sub;
+      
+      // Validate input
+      const contactSchema = z.object({
+        firstName: z.string().min(1, "Nombre requerido").max(255),
+        lastName: z.string().max(255).optional(),
+        phone: z.string().max(50).optional(),
+      });
+
+      const validatedData = contactSchema.parse(req.body);
+
+      await storage.updateUser(userId, validatedData);
+      const user = await storage.getUser(userId);
+      
+      res.json({ 
+        success: true, 
+        user: sanitizeUser(user)
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors[0].message });
+      }
+      console.error("Error updating contact:", error);
+      res.status(500).json({ message: "Failed to update contact information" });
+    }
+  });
+
+  // Update billing information
+  app.patch('/api/user/billing', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.isLocal || req.user.isGoogle ? req.user.id : req.user.claims.sub;
+      
+      // Validate input
+      const billingSchema = z.object({
+        rfc: z.string().max(13).optional(),
+        razonSocial: z.string().max(255).optional(),
+        direccionFiscal: z.string().max(500).optional(),
+        codigoPostalFiscal: z.string().max(10).optional(),
+        ciudadFiscal: z.string().max(100).optional(),
+        estadoFiscal: z.string().max(100).optional(),
+      });
+
+      const validatedData = billingSchema.parse(req.body);
+
+      await storage.updateUser(userId, validatedData);
+      const user = await storage.getUser(userId);
+      
+      res.json({ 
+        success: true, 
+        user: sanitizeUser(user)
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors[0].message });
+      }
+      console.error("Error updating billing:", error);
+      res.status(500).json({ message: "Failed to update billing information" });
+    }
+  });
+
+  // Update password
+  app.patch('/api/user/password', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.isLocal ? req.user.id : (req.user.isGoogle ? req.user.id : req.user.claims.sub);
+      
+      // Validate input
+      const passwordSchema = z.object({
+        currentPassword: z.string().min(1, "Contraseña actual requerida"),
+        newPassword: z.string().min(6, "La nueva contraseña debe tener al menos 6 caracteres"),
+      });
+
+      const { currentPassword, newPassword } = passwordSchema.parse(req.body);
+
+      // Get user
+      const user = await storage.getUser(userId);
+      
+      if (!user || !user.password) {
+        return res.status(400).json({ message: "Esta cuenta no tiene contraseña establecida" });
+      }
+
+      // Verify current password
+      const isValidPassword = await bcrypt.compare(currentPassword, user.password);
+      
+      if (!isValidPassword) {
+        return res.status(400).json({ message: "Contraseña actual incorrecta" });
+      }
+
+      // Hash new password
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+      // Update password
+      await storage.updateUser(userId, { password: hashedPassword });
+      
+      res.json({ success: true, message: "Contraseña actualizada correctamente" });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors[0].message });
+      }
+      console.error("Error updating password:", error);
+      res.status(500).json({ message: "Failed to update password" });
+    }
+  });
   app.post("/api/quotes", async (req, res) => {
     try {
       const validatedData = quoteRequestSchema.parse({

@@ -12,6 +12,7 @@ import QuotePage from "@/pages/QuotePage";
 import CreateShipmentPage from "@/pages/CreateShipmentPage";
 import TrackingPage from "@/pages/TrackingPage";
 import ShipmentsPage from "@/pages/ShipmentsPage";
+import ProfilePage from "@/pages/ProfilePage";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -30,6 +31,7 @@ function Router() {
           <Route path="/crear-guia" component={CreateShipmentPage} />
           <Route path="/rastrear" component={TrackingPage} />
           <Route path="/envios" component={ShipmentsPage} />
+          <Route path="/perfil" component={ProfilePage} />
         </>
       )}
       <Route component={NotFound} />
