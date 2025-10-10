@@ -107,13 +107,12 @@ export async function setupAuth(app: Express) {
     }
   ));
 
-  // Google OAuth strategy
-  const domain = process.env.REPLIT_DOMAINS!.split(",")[0];
+  // Google OAuth strategy - use dynamic callback based on request
   passport.use(new GoogleStrategy(
     {
       clientID: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      callbackURL: `https://${domain}/api/auth/google/callback`,
+      callbackURL: '/api/auth/google/callback', // Relative URL - will use the actual domain
       scope: ['profile', 'email']
     },
     async (accessToken, refreshToken, profile, done) => {
