@@ -7,7 +7,6 @@ import { useAuth } from "@/hooks/useAuth";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import NotFound from "@/pages/not-found";
-import Landing from "@/pages/Landing";
 import Auth from "@/pages/Auth";
 import HomePage from "@/pages/HomePage";
 import QuotePage from "@/pages/QuotePage";
@@ -25,14 +24,10 @@ function Router() {
       <Header />
       <main className="flex-1">
         <Switch>
-          {isLoading || !isAuthenticated ? (
+          <Route path="/" component={HomePage} />
+          <Route path="/auth" component={Auth} />
+          {!isLoading && isAuthenticated && (
             <>
-              <Route path="/" component={Landing} />
-              <Route path="/auth" component={Auth} />
-            </>
-          ) : (
-            <>
-              <Route path="/" component={HomePage} />
               <Route path="/cotizar" component={QuotePage} />
               <Route path="/crear-guia" component={CreateShipmentPage} />
               <Route path="/rastrear" component={TrackingPage} />
