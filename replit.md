@@ -45,18 +45,22 @@ Preferred communication style: Simple, everyday language.
 - `/api/login` - POST endpoint for local user login (public)
 - `/api/login-google` - GET endpoint to initiate Google OAuth login flow
 - `/api/auth/google/callback` - GET endpoint for Google OAuth callback
+- `/api/login-twitter` - GET endpoint to initiate X (Twitter) OAuth login flow
+- `/api/auth/twitter/callback` - GET endpoint for X (Twitter) OAuth callback
 - `/api/logout` - GET endpoint to logout and clear session
 - `/api/auth/user` - GET endpoint for authenticated user data (protected, sanitized)
 - `/api/user/contact` - PATCH endpoint to update user contact information (protected)
 - `/api/user/billing` - PATCH endpoint to update user billing information (protected)
 - `/api/user/password` - PATCH endpoint to update user password (protected, local auth only)
 - `/api/user/add-password` - POST endpoint to add password to OAuth-only accounts (protected)
-- `/api/user/unlink-provider` - POST endpoint to unlink OAuth provider with validation (protected)
+- `/api/user/unlink-provider` - POST endpoint to unlink OAuth provider with validation (protected, supports google/facebook/twitter)
 - `/api/user/avatar` - PATCH endpoint to update profile image URL (protected)
 
 **Required Environment Variables:**
 - `GOOGLE_CLIENT_ID` - Google OAuth 2.0 Client ID from Google Cloud Console
 - `GOOGLE_CLIENT_SECRET` - Google OAuth 2.0 Client Secret from Google Cloud Console
+- `TWITTER_CLIENT_ID` - X/Twitter OAuth 2.0 Client ID (optional, enables Twitter login when configured)
+- `TWITTER_CLIENT_SECRET` - X/Twitter OAuth 2.0 Client Secret (optional)
 - `SESSION_SECRET` - Secret key for session encryption
 - `DATABASE_URL` - PostgreSQL connection string
 - `REPLIT_DOMAINS` - Replit deployment domains for callback URLs
@@ -84,7 +88,8 @@ Preferred communication style: Simple, everyday language.
 - `users` table - Stores authenticated user profiles with contact and billing data:
   - Contact: id, email, firstName, lastName, phone, profileImageUrl
   - Billing: rfc, razonSocial, direccionFiscal, codigoPostalFiscal, ciudadFiscal, estadoFiscal
-  - Auth: password (hashed with bcrypt, can be null), googleId, facebookId (OAuth provider IDs)
+  - Auth: password (hashed with bcrypt, can be null), googleId, facebookId, twitterId (OAuth provider IDs)
+  - Role: 'admin' or 'user' for access control
   - Users can have multiple auth methods simultaneously (password + OAuth providers)
 - `sessions` table - Session storage with PostgreSQL backend
 - `shipments` table - Core shipment data with sender/receiver details
@@ -100,7 +105,7 @@ Preferred communication style: Simple, everyday language.
 ## Authentication & Authorization
 
 **Authentication System:**
-- **Hybrid Authentication**: Supports both local email/password and Google OAuth
+- **Hybrid Authentication**: Supports local email/password, Google OAuth, and X (Twitter) OAuth 2.0
 - **Local Authentication**: 
   - Email/password registration with bcrypt hashing (10 rounds)
   - Passport-local strategy for credential validation
@@ -109,6 +114,11 @@ Preferred communication style: Simple, everyday language.
   - Official Google OAuth 2.0 API via passport-google-oauth20
   - User profile data (email, name, photo) automatically synced
   - Seamless account creation/update on first login
+- **X (Twitter) OAuth 2.0 Authentication**:
+  - OAuth 2.0 via @superfaceai/passport-twitter-oauth2
+  - User profile data (username, display name, photo) automatically synced
+  - Scopes: tweet.read, users.read, offline.access
+  - Optional - only enabled when TWITTER_CLIENT_ID and TWITTER_CLIENT_SECRET are configured
 - Passport.js for unified authentication flow
 - Session-based authentication using connect-pg-simple
 
@@ -128,18 +138,18 @@ Preferred communication style: Simple, everyday language.
 
 **User Flow:**
 - Landing page for unauthenticated users with login/signup buttons
-- `/auth` page with forms for local login/registration and Google OAuth button
+- `/auth` page with forms for local login/registration and OAuth buttons (Google, X/Twitter)
 - Local registration creates user with hashed password and auto-logs in
-- Login (both local and Google) redirects to dashboard after success
+- Login (local, Google, or Twitter) redirects to dashboard after success
 - Automatic user profile creation/update via upsertUser on authentication
 - Protected routes show authenticated content
 - `/perfil` page for enhanced user profile management:
-  - **Profile Header**: Avatar with camera button for editing, user name/email, badges showing active auth methods
+  - **Profile Header**: Avatar with camera button for editing, user name/email, badges showing active auth methods (Password, Google, Twitter)
   - **Contact Tab**: Update name, email (read-only), and phone
   - **Billing Tab**: Manage RFC, razón social, fiscal address details
   - **Security Tab**: 
     - Password section: "Agregar Contraseña" for OAuth accounts (no current password required), "Cambiar Contraseña" for accounts with password
-    - Redes Vinculadas section: Shows Google/Facebook connection status with unlink buttons
+    - Redes Vinculadas section: Shows Google/Facebook/X (Twitter) connection status with link/unlink buttons
     - Cannot unlink last remaining auth method (validation enforced)
 - Logout clears session and redirects to landing (/api/logout)
 - User profile display in header with avatar and name (clickable to navigate to profile)

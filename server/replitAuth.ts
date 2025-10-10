@@ -164,64 +164,66 @@ export async function setupAuth(app: Express) {
     }
   ));
 
-  // Twitter/X OAuth 2.0 strategy
-  passport.use(new TwitterStrategy(
-    {
-      clientType: 'confidential',
-      clientID: process.env.TWITTER_CLIENT_ID!,
-      clientSecret: process.env.TWITTER_CLIENT_SECRET!,
-      callbackURL: '/api/auth/twitter/callback',
-      scope: ['tweet.read', 'users.read', 'offline.access']
-    },
-    async (accessToken: string, refreshToken: string, profile: any, done: any) => {
-      try {
-        // Extract user info from Twitter profile
-        const twitterId = profile.id;
-        const username = profile.username;
-        const displayName = profile.displayName || profile.name;
-        const profileImageUrl = profile.photos?.[0]?.value || profile.profile_image_url;
-        
-        // Twitter doesn't always provide email, use username as fallback identifier
-        const email = profile.emails?.[0]?.value || `${username}@twitter.placeholder.com`;
-        
-        // Check if user exists by twitterId first
-        let user = await storage.getUserByTwitterId(twitterId);
-        
-        if (!user && profile.emails?.[0]?.value) {
-          // If no user by twitterId, check by real email
-          user = await storage.getUserByEmail(profile.emails[0].value);
-        }
+  // Twitter/X OAuth 2.0 strategy (optional - only if credentials are configured)
+  if (process.env.TWITTER_CLIENT_ID && process.env.TWITTER_CLIENT_SECRET) {
+    passport.use(new TwitterStrategy(
+      {
+        clientType: 'confidential',
+        clientID: process.env.TWITTER_CLIENT_ID,
+        clientSecret: process.env.TWITTER_CLIENT_SECRET,
+        callbackURL: '/api/auth/twitter/callback',
+        scope: ['tweet.read', 'users.read', 'offline.access']
+      },
+      async (accessToken: string, refreshToken: string, profile: any, done: any) => {
+        try {
+          // Extract user info from Twitter profile
+          const twitterId = profile.id;
+          const username = profile.username;
+          const displayName = profile.displayName || profile.name;
+          const profileImageUrl = profile.photos?.[0]?.value || profile.profile_image_url;
+          
+          // Twitter doesn't always provide email, use username as fallback identifier
+          const email = profile.emails?.[0]?.value || `${username}@twitter.placeholder.com`;
+          
+          // Check if user exists by twitterId first
+          let user = await storage.getUserByTwitterId(twitterId);
+          
+          if (!user && profile.emails?.[0]?.value) {
+            // If no user by twitterId, check by real email
+            user = await storage.getUserByEmail(profile.emails[0].value);
+          }
 
-        if (!user) {
-          // Create new user with Twitter ID
-          user = await storage.createUser({
-            email,
-            twitterId,
-            firstName: displayName,
-            lastName: '',
-            profileImageUrl,
-            password: null,
-          });
-        } else {
-          // Update user info from Twitter and link Twitter ID
-          await storage.updateUser(user.id, {
-            twitterId,
-            firstName: displayName,
-            profileImageUrl,
-          });
-        }
+          if (!user) {
+            // Create new user with Twitter ID
+            user = await storage.createUser({
+              email,
+              twitterId,
+              firstName: displayName,
+              lastName: '',
+              profileImageUrl,
+              password: null,
+            });
+          } else {
+            // Update user info from Twitter and link Twitter ID
+            await storage.updateUser(user.id, {
+              twitterId,
+              firstName: displayName,
+              profileImageUrl,
+            });
+          }
 
-        // Return user for session
-        return done(null, {
-          id: user.id,
-          email: user.email,
-          isTwitter: true
-        });
-      } catch (error) {
-        return done(error as Error);
+          // Return user for session
+          return done(null, {
+            id: user.id,
+            email: user.email,
+            isTwitter: true
+          });
+        } catch (error) {
+          return done(error as Error);
+        }
       }
-    }
-  ));
+    ));
+  }
 
   const config = await getOidcConfig();
 

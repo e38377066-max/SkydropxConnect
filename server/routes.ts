@@ -340,7 +340,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Validate input
       const unlinkSchema = z.object({
-        provider: z.enum(['google', 'facebook'], { errorMap: () => ({ message: "Proveedor inválido" }) }),
+        provider: z.enum(['google', 'facebook', 'twitter'], { errorMap: () => ({ message: "Proveedor inválido" }) }),
       });
 
       const { provider } = unlinkSchema.parse(req.body);
@@ -356,8 +356,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const hasPassword = !!user.password;
       const hasGoogle = !!user.googleId;
       const hasFacebook = !!user.facebookId;
+      const hasTwitter = !!user.twitterId;
 
-      const totalAuthMethods = [hasPassword, hasGoogle, hasFacebook].filter(Boolean).length;
+      const totalAuthMethods = [hasPassword, hasGoogle, hasFacebook, hasTwitter].filter(Boolean).length;
 
       if (totalAuthMethods <= 1) {
         return res.status(400).json({ 
@@ -372,6 +373,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else if (provider === 'facebook' && hasFacebook) {
         await storage.updateUser(userId, { facebookId: null });
         res.json({ success: true, message: "Facebook desvinculado correctamente" });
+      } else if (provider === 'twitter' && hasTwitter) {
+        await storage.updateUser(userId, { twitterId: null });
+        res.json({ success: true, message: "X (Twitter) desvinculado correctamente" });
       } else {
         res.status(400).json({ message: "Este proveedor no está vinculado a tu cuenta" });
       }
