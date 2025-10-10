@@ -1,0 +1,180 @@
+Autenticación solo de aplicación y token portador OAuth 2.0
+​
+Autenticación solo de aplicación y token portador OAuth 2.0
+X ofrece a las aplicaciones la capacidad de emitir solicitudes autenticadas en nombre de la propia aplicación, en lugar de en nombre de un usuario específico. La implementación de X se basa en el flujo de concesión de credenciales de cliente de la especificación OAuth 2 .
+La autenticación de solo aplicación no incluye ningún contexto de usuario y es una forma de autenticación en la que una aplicación realiza solicitudes a la API en su propio nombre. Este método está dirigido a desarrolladores que solo necesitan acceso de solo lectura a información pública. 
+Puedes realizar la autenticación solo para aplicaciones usando las claves de API de consumidor de tus aplicaciones o usando un token de acceso exclusivo para aplicaciones (token portador). Esto significa que las únicas solicitudes que puedes realizar a una API X no deben requerir un usuario autenticado.
+Con la autenticación solo de aplicación, puede realizar acciones como:
+Extraer cronogramas de usuarios
+Accede a amigos y seguidores de cualquier cuenta.
+Recursos de listas de acceso
+Buscar tweets
+Tenga en cuenta que solo  se requiere el flujo de código de autorización OAuth 1.0a  u OAuth 2.0 con PKCE para emitir solicitudes en nombre de los usuarios. La  página de referencia de la API  describe el método de autenticación necesario para usar una API. Necesitará autenticación de usuario, contexto de usuario y un token de acceso para realizar lo siguiente:
+Publicar tweets u otros recursos
+Buscar usuarios
+Utilice cualquier punto final geográfico
+Acceder a Mensajes Directos o credenciales de la cuenta
+Recuperar direcciones de correo electrónico del usuario
+​
+Flujo de autorización
+Para usar este método, necesitas un  token de acceso exclusivo para aplicaciones (también conocido como token portador ). Puedes generar un token de acceso exclusivo para aplicaciones (token portador) pasando tu clave de consumidor y secreto a través del punto final POST oauth2/token . 
+El flujo de autenticación solo para aplicaciones sigue estos pasos:
+Una aplicación codifica su clave de consumidor y su secreto en un conjunto de credenciales especialmente codificadas.
+Una aplicación realiza una solicitud al punto final POST oauth2/token para intercambiar estas credenciales por un  token de acceso exclusivo para la aplicación .
+Al acceder a la API REST, la aplicación utiliza el token de acceso exclusivo de la aplicación para autenticarse.
+Como no es necesario firmar una solicitud, este enfoque es mucho más simple que el modelo estándar OAuth 1.0a.
+
+​
+Acerca de la autorización solo para aplicaciones
+Los tokens son contraseñas
+Tenga en cuenta que la clave y el secreto del consumidor, así como el token de acceso exclusivo de la aplicación (token portador), otorgan acceso para realizar solicitudes en nombre de una aplicación. Estos valores deben considerarse tan confidenciales como las contraseñas y no deben compartirse ni distribuirse a terceros no confiables.
+Se requiere SSL
+Todas las solicitudes (tanto para obtener como para usar los tokens) deben usar puntos finales HTTPS. Siga las prácticas recomendadas que se detallan en " Conectarse a la API X mediante TLS" : los pares siempre deben verificarse.
+Sin contexto de usuario
+Al emitir solicitudes con autenticación solo de aplicación, no existe el concepto de "usuario actual". Por lo tanto, los puntos finales como los estados/actualizaciones POST no funcionarán con la autenticación solo de aplicación. Consulte el uso de OAuth para obtener más información sobre cómo emitir solicitudes en nombre de un usuario.
+Limitación de velocidad
+Las aplicaciones tienen dos tipos de grupos de limitación de velocidad.
+Las solicitudes realizadas en nombre de usuarios con tokens de acceso, también conocidas como contexto de usuario, se agotan en un contexto de limitación de velocidad diferente al utilizado en la autenticación solo de aplicación. En otras palabras, las solicitudes realizadas en nombre de usuarios no se agotarán en los límites de velocidad disponibles mediante la autenticación solo de aplicación, y las solicitudes realizadas mediante esta autenticación no se agotarán en los límites de velocidad utilizados en la autenticación basada en usuario.
+Obtenga más información sobre la limitación de velocidad de API y revise los límites .
+​
+Emisión de solicitudes solo de aplicación
+Paso 1: Codifique la clave del consumidor y el secreto
+Los pasos para codificar la clave de consumidor y el secreto de una aplicación en un conjunto de credenciales para obtener un token de portador son:
+Codifique en URL la clave y el secreto del consumidor según la RFC 1738. Tenga en cuenta que, al momento de redactar este documento, esto no modificará la clave ni el secreto del consumidor, pero debe realizarse en caso de que el formato de dichos valores cambie en el futuro.
+Concatene la clave del consumidor codificada, un carácter de dos puntos ":" y el secreto del consumidor codificado en una sola cadena.
+Codifica en Base64 la cadena del paso anterior.
+A continuación se muestran valores de ejemplo que muestran el resultado de este algoritmo. Tenga en cuenta que el secreto del consumidor utilizado en esta página es para fines de prueba y no funcionará con solicitudes reales.
+Clave de consumidor	xvz1evFS4wEEPTGEFPHPog
+Secreto del consumidor	L8qq9PZyRg6ieKGEKhZolGC0vJWLw8iEJ88DRdyOg
+Clave de consumidor codificada RFC 1738
+
+(no cambia)	xvz1evFS4wEEPTGEFPHPog
+Secreto de consumidor codificado RFC 1738
+
+(no cambia)	L8qq9PZyRg6ieKGEKhZolGC0vJWLw8iEJ88DRdyOg
+Credenciales del token portador	xvz1evFS4wEEPTGEFPHPBog:L8qq9PZyRg6ieKGEKhZolGC0vJWLw8iEJ88DRdyOg
+Credenciales de token de portador codificadas en Base64	:: eHZ6MWV2RlM0d0VFUFRHRUZQSEJvZzpMOHFxOVBaeVJnNmllS0dFS2hab2xHQzB2SldMdzhpRUo4OERSZHlPZw==
+Paso 2: Obtenga un token de acceso exclusivo para la aplicación (token de portador)
+El valor calculado en el paso 1 se debe intercambiar por un token de acceso solo para la aplicación emitiendo una solicitud a POST oauth2/token :
+La solicitud debe ser una solicitud HTTP POST.
+La solicitud debe incluir un Authorizationencabezado con el valor deBasic <base64 encoded value from step 1>.
+La solicitud debe incluir un Content-Typeencabezado con el valor deapplication/x-www-form-urlencoded;charset=UTF-8.
+El cuerpo de la solicitud debe ser grant_type=client_credentials.
+Ejemplo de solicitud (el encabezado de autorización se ha envuelto):
+
+Copiar
+
+Pregúntale a la IA
+POST /oauth2/token HTTP/1.1
+Host: api.x.com
+User-Agent: My X App v1.0.23
+Authorization: Basic eHZ6MWV2RlM0d0VFUFRHRUZQSEJvZzpMOHFxOVBaeVJn
+                     NmllS0dFS2hab2xHQzB2SldMdzhpRUo4OERSZHlPZw==
+Content-Type: application/x-www-form-urlencoded;charset=UTF-8
+Content-Length: 29
+Accept-Encoding: gzip
+
+grant\_type=client\_credentials
+Si la solicitud se formateó correctamente, el servidor respondería con una carga útil codificada en JSON:
+Ejemplo de respuesta:
+
+Copiar
+
+Pregúntale a la IA
+HTTP/1.1 200 OK
+Status: 200 OK
+Content-Type: application/json; charset=utf-8
+...
+Content-Encoding: gzip
+Content-Length: 140
+
+{"token\_type":"bearer","access\_token":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA%2FAAAAAAAAAAAAAAAAAAAA%3DAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"}
+Las aplicaciones deben verificar que el valor asociado a la token_typeclave del objeto devuelto sea bearer. El valor asociado a la access_tokenclave es el token de acceso exclusivo de la aplicación (token portador).
+Tenga en cuenta que solo se puede usar un token de acceso de aplicación a la vez. Si se emite otra solicitud con las mismas credenciales, se /oauth2/tokendevolverá el mismo token hasta que se invalide.
+Paso 3: Autenticar las solicitudes de API con el token de acceso exclusivo de la aplicación (token de portador)
+El token de acceso exclusivo para aplicaciones (token portador) se puede usar para enviar solicitudes a puntos finales de API que admiten la autenticación exclusiva para aplicaciones. Para usar el token de acceso para aplicaciones, cree una solicitud HTTPS normal e incluya un Authorizationencabezado con el valor deBearer <base64 bearer token value from step 2>. Signing is not required.
+Ejemplo de solicitud (el encabezado de autorización se ha envuelto):
+
+Copiar
+
+Pregúntale a la IA
+GET /1.1/statuses/user\_timeline.json?count=100&screen\_name=twitterapi HTTP/1.1
+Host: api.x.com
+User-Agent: My X App v1.0.23
+Authorization: Bearer AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA%2FAAAAAAAAAAAA
+                      AAAAAAAA%3DAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+Accept-Encoding: gzip
+Invalidación de un token de acceso exclusivo de la aplicación (token de portador)
+Si un token de acceso exclusivo de la aplicación se ve comprometido o necesita invalidarse por algún motivo, emita una llamada a POST oauth2/invalidate_token .
+Ejemplo de solicitud (el encabezado de autorización se ha envuelto):
+
+Copiar
+
+Pregúntale a la IA
+POST /oauth2/invalidate_token HTTP/1.1
+Authorization: Basic eHZ6MWV2RlM0d0VFUFRHRUZQSEJvZzpMOHFxOVBaeVJn
+                     NmllS0dFS2hab2xHQzB2SldMdzhpRUo4OERSZHlPZw==
+User-Agent: My X App v1.0.23
+Host: api.x.com
+Accept: */*
+Content-Length: 119
+Content-Type: application/x-www-form-urlencoded
+
+access_token=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA%2FAAAAAAAAAAAAAAAAAAAA%3DAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+Ejemplo de respuesta:
+
+Copiar
+
+Pregúntale a la IA
+HTTP/1.1 200 OK
+Content-Type: application/json; charset=utf-8
+Content-Length: 127
+...
+
+{"access_token":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA%2FAAAAAAAAAAAAAAAAAAAA%3DAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"}
+​
+Casos de error comunes
+Esta sección describe algunos errores comunes en la negociación y el uso de tokens al portador. Tenga en cuenta que no se abordan todas las posibles respuestas de error; preste atención a los códigos y respuestas de error no gestionados.
+Solicitudes no válidas para obtener o revocar un token de acceso exclusivo a la aplicación
+Intenta:
+Obtenga un token de acceso solo para la aplicación (token de portador) con una solicitud no válida (por ejemplo, omitiendo grant_type=client_credentials).
+Obtenga o revoque un token de acceso exclusivo a la aplicación (token de portador) con credenciales de aplicación incorrectas o vencidas.
+Invalidar un token de acceso exclusivo a una aplicación (token de portador) incorrecto o revocado.
+Obtenga un token de acceso exclusivo para aplicaciones (token de portador) con demasiada frecuencia en un período corto de tiempo.
+Dará como resultado:
+
+Copiar
+
+Pregúntale a la IA
+HTTP/1.1 403 Forbidden
+Content-Length: 105
+Content-Type: application/json; charset=utf-8
+...
+
+{"errors":\[{"code":99,"label":"authenticity\_token\_error","message":"Unable to verify your credentials"}\]}
+​
+La solicitud de API contiene un token de acceso exclusivo a la aplicación no válido (token de portador)
+El uso de un token de acceso incorrecto o revocado para realizar solicitudes de API dará como resultado:
+
+Copiar
+
+Pregúntale a la IA
+HTTP/1.1 401 Unauthorized
+Content-Type: application/json; charset=utf-8
+Content-Length: 61
+...
+
+{"errors":\[{"message":"Invalid or expired token","code":89}\]}
+​
+Token de acceso exclusivo de la aplicación (token de portador) utilizado en un punto final que no admite la autenticación exclusiva de la aplicación
+Solicitar un punto final que requiere un contexto de usuario (como statuses/home_timeline) con un token de acceso solo de aplicación (token de portador) producirá lo siguiente:
+
+Copiar
+
+Pregúntale a la IA
+HTTP/1.1 403 Forbidden
+Content-Type: application/json; charset=utf-8
+Content-Length: 91
+...
+
+{"errors":\[{"message":"Your credentials do not allow access to this resource","code":22

@@ -1,0 +1,18 @@
+OAuth 2.0
+​
+Token de portador (también conocido como solo para aplicaciones)
+El token de portador de OAuth 2.0 autentica las solicitudes en nombre de la aplicación de desarrollador . Dado que este método es específico de la aplicación, no implica la participación de ningún usuario. Este método suele estar destinado a desarrolladores que necesitan acceso de solo lectura a información pública. 
+Este método de autenticación requiere que envíes un token de portador con tu solicitud, el cual puedes generar en la sección "Claves y tokens" de tus aplicaciones de desarrollador. Aquí tienes un ejemplo de cómo se ve una solicitud con un token de portador falso:
+
+Copiar
+
+Pregúntale a la IA
+curl "https://api.x.com/2/tweets?ids=1261326399320715264,1278347468690915330" \
+-H "Authorization: Bearer AAAAAAAAAAAAAAAAAAAAAFnz2wAAAAAAxTmQbp%2BIHDtAhTBbyNJon%2BA72K4%3DeIaigY0QBrv6Rp8KZQQLOTpo9ubw5Jt?WRE8avbi"
+Las llamadas API que utilizan autenticación solo de aplicación tienen una tasa limitada por punto final en el nivel de aplicación.
+Para usar este método, necesitará un token de portador, que puede generar pasando su clave API y secreto a través del  punto final POST oauth2/token  , o generándolo en la sección "claves y token" de la configuración de su aplicación en el portal para desarrolladores .
+Si desea revocar un token de portador, puede usar el  punto final POST oauth2/invalidate_token  o hacer clic donde dice "revocar" junto al token de portador en la sección "claves y tokens" de la configuración de su aplicación.
+​
+Flujo de código de autorización OAuth 2.0 con PKCE
+El flujo de código de autorización de OAuth 2.0 con PKCE permite autenticarse en nombre de otro usuario con mayor control sobre el alcance de la aplicación y mejora los flujos de autorización en múltiples dispositivos. En otras palabras, los desarrolladores que creen aplicaciones para usuarios de X tendrán mayor control sobre la información que su aplicación solicita a sus usuarios, de modo que solo tendrán que solicitar a sus usuarios finales los datos y la información que necesitan.
+Este moderno protocolo de autorización le permitirá ofrecer a sus usuarios finales un flujo de consentimiento más ágil para autorizar su aplicación, que solo muestra los alcances específicos que les ha solicitado. Esto no solo reduce la carga de datos, sino que también puede generar mayor confianza en los usuarios finales.
