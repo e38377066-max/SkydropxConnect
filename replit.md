@@ -55,6 +55,11 @@ Preferred communication style: Simple, everyday language.
 - `DATABASE_URL` - PostgreSQL connection string
 - `REPLIT_DOMAINS` - Replit deployment domains for callback URLs
 
+**Google Cloud Console Configuration:**
+- **Orígenes JavaScript autorizados**: Development and production URLs
+- **URIs de redireccionamiento**: `/api/auth/google/callback` for both environments
+- **Estado de publicación**: Aplicación publicada (producción)
+
 **Request/Response Flow:**
 - Request validation using Zod schemas from shared directory
 - JSON-based request/response format
