@@ -1,6 +1,7 @@
 import * as client from "openid-client";
 import { Strategy, type VerifyFunction } from "openid-client/passport";
 import { Strategy as LocalStrategy } from "passport-local";
+import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import bcrypt from "bcrypt";
 
 import passport from "passport";
@@ -106,6 +107,62 @@ export async function setupAuth(app: Express) {
     }
   ));
 
+  // Google OAuth strategy
+  const domain = process.env.REPLIT_DOMAINS!.split(",")[0];
+  passport.use(new GoogleStrategy(
+    {
+      clientID: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      callbackURL: `https://${domain}/api/auth/google/callback`,
+      scope: ['profile', 'email']
+    },
+    async (accessToken, refreshToken, profile, done) => {
+      try {
+        // Extract user info from Google profile
+        const email = profile.emails?.[0]?.value;
+        const firstName = profile.name?.givenName || profile.displayName;
+        const lastName = profile.name?.familyName || '';
+        const profileImageUrl = profile.photos?.[0]?.value;
+
+        if (!email) {
+          return done(new Error('No email found in Google profile'));
+        }
+
+        // Check if user exists
+        let user = await storage.getUserByEmail(email);
+
+        if (!user) {
+          // Create new user
+          user = await storage.createUser({
+            email,
+            firstName,
+            lastName,
+            profileImageUrl,
+            password: null, // Google users don't have passwords
+          });
+        } else {
+          // Update user info from Google
+          await storage.upsertUser({
+            id: user.id,
+            email,
+            firstName,
+            lastName,
+            profileImageUrl,
+          });
+        }
+
+        // Return user for session
+        return done(null, {
+          id: user.id,
+          email: user.email,
+          isGoogle: true
+        });
+      } catch (error) {
+        return done(error as Error);
+      }
+    }
+  ));
+
   const config = await getOidcConfig();
 
   const verify: VerifyFunction = async (
@@ -135,37 +192,22 @@ export async function setupAuth(app: Express) {
   passport.serializeUser((user: Express.User, cb) => cb(null, user));
   passport.deserializeUser((user: Express.User, cb) => cb(null, user));
 
-  // OAuth Google login route
-  app.get("/api/login-google", (req, res, next) => {
-    passport.authenticate(`replitauth:${req.hostname}`, {
-      prompt: "login consent",
-      scope: ["openid", "email", "profile", "offline_access"],
-    })(req, res, next);
-  });
+  // Google OAuth login route
+  app.get("/api/login-google", passport.authenticate('google', {
+    scope: ['profile', 'email']
+  }));
 
-  // Legacy route for backwards compatibility
-  app.get("/api/login", (req, res, next) => {
-    passport.authenticate(`replitauth:${req.hostname}`, {
-      prompt: "login consent",
-      scope: ["openid", "email", "profile", "offline_access"],
-    })(req, res, next);
-  });
-
-  app.get("/api/callback", (req, res, next) => {
-    passport.authenticate(`replitauth:${req.hostname}`, {
-      successReturnToOrRedirect: "/",
-      failureRedirect: "/api/login",
-    })(req, res, next);
-  });
+  // Google OAuth callback route
+  app.get("/api/auth/google/callback", 
+    passport.authenticate('google', { 
+      failureRedirect: '/auth',
+      successRedirect: '/'
+    })
+  );
 
   app.get("/api/logout", (req, res) => {
     req.logout(() => {
-      res.redirect(
-        client.buildEndSessionUrl(config, {
-          client_id: process.env.REPL_ID!,
-          post_logout_redirect_uri: `${req.protocol}://${req.hostname}`,
-        }).href
-      );
+      res.redirect("/");
     });
   });
 }
@@ -177,12 +219,12 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
 
   const user = req.user as any;
 
-  // If local authentication, just verify the session exists
-  if (user.isLocal) {
+  // If local or Google authentication, just verify the session exists
+  if (user.isLocal || user.isGoogle) {
     return next();
   }
 
-  // OAuth authentication - check token expiration
+  // Replit Auth OAuth - check token expiration
   if (!user.expires_at) {
     return res.status(401).json({ message: "Unauthorized" });
   }

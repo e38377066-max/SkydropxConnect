@@ -141,13 +141,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth route to get current user
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
-      // For local auth
-      if (req.user.isLocal) {
+      // For local or Google auth
+      if (req.user.isLocal || req.user.isGoogle) {
         const user = await storage.getUser(req.user.id);
         return res.json(sanitizeUser(user));
       }
       
-      // For OAuth
+      // For Replit OAuth
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
       res.json(sanitizeUser(user));
