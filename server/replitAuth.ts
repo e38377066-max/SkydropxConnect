@@ -1,5 +1,7 @@
 import * as client from "openid-client";
 import { Strategy, type VerifyFunction } from "openid-client/passport";
+import { Strategy as LocalStrategy } from "passport-local";
+import bcrypt from "bcrypt";
 
 import passport from "passport";
 import session from "express-session";
@@ -72,6 +74,38 @@ export async function setupAuth(app: Express) {
   app.use(passport.initialize());
   app.use(passport.session());
 
+  // Local strategy for email/password authentication
+  passport.use(new LocalStrategy(
+    {
+      usernameField: 'email',
+      passwordField: 'password'
+    },
+    async (email, password, done) => {
+      try {
+        const user = await storage.getUserByEmail(email);
+        
+        if (!user || !user.password) {
+          return done(null, false, { message: 'Email o contraseña incorrectos' });
+        }
+
+        const isValidPassword = await bcrypt.compare(password, user.password);
+        
+        if (!isValidPassword) {
+          return done(null, false, { message: 'Email o contraseña incorrectos' });
+        }
+
+        // For local auth, create a simpler session structure
+        return done(null, {
+          id: user.id,
+          email: user.email,
+          isLocal: true
+        });
+      } catch (error) {
+        return done(error);
+      }
+    }
+  ));
+
   const config = await getOidcConfig();
 
   const verify: VerifyFunction = async (
@@ -101,6 +135,15 @@ export async function setupAuth(app: Express) {
   passport.serializeUser((user: Express.User, cb) => cb(null, user));
   passport.deserializeUser((user: Express.User, cb) => cb(null, user));
 
+  // OAuth Google login route
+  app.get("/api/login-google", (req, res, next) => {
+    passport.authenticate(`replitauth:${req.hostname}`, {
+      prompt: "login consent",
+      scope: ["openid", "email", "profile", "offline_access"],
+    })(req, res, next);
+  });
+
+  // Legacy route for backwards compatibility
   app.get("/api/login", (req, res, next) => {
     passport.authenticate(`replitauth:${req.hostname}`, {
       prompt: "login consent",
@@ -128,9 +171,19 @@ export async function setupAuth(app: Express) {
 }
 
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
   const user = req.user as any;
 
-  if (!req.isAuthenticated() || !user.expires_at) {
+  // If local authentication, just verify the session exists
+  if (user.isLocal) {
+    return next();
+  }
+
+  // OAuth authentication - check token expiration
+  if (!user.expires_at) {
     return res.status(401).json({ message: "Unauthorized" });
   }
 

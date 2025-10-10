@@ -3,7 +3,7 @@ import { Package, Truck, MapPin, ShieldCheck } from "lucide-react";
 
 export default function Landing() {
   const handleLogin = () => {
-    window.location.href = "/api/login";
+    window.location.href = "/auth";
   };
 
   return (
