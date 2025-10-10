@@ -41,10 +41,12 @@ Preferred communication style: Simple, everyday language.
 - `/api/quotes` - POST endpoint for shipping rate quotes (public)
 - `/api/shipments` - POST/GET endpoints for shipment creation and retrieval (public)
 - `/api/tracking/:trackingNumber` - GET endpoint for package tracking (public)
-- `/api/login` - GET endpoint to initiate Replit Auth login flow
+- `/api/register` - POST endpoint for local user registration (public)
+- `/api/login` - POST endpoint for local user login (public)
+- `/api/login-google` - GET endpoint to initiate Google OAuth login flow
 - `/api/logout` - GET endpoint to logout and clear session
 - `/api/callback` - GET endpoint for OAuth callback
-- `/api/auth/user` - GET endpoint for authenticated user data (protected)
+- `/api/auth/user` - GET endpoint for authenticated user data (protected, sanitized)
 
 **Request/Response Flow:**
 - Request validation using Zod schemas from shared directory
@@ -75,10 +77,16 @@ Preferred communication style: Simple, everyday language.
 
 ## Authentication & Authorization
 
-**Authentication Provider:**
-- Replit Auth with OpenID Connect (OIDC) integration
-- Supports multiple login methods: Google, GitHub, X (Twitter), Apple, and email/password
-- Passport.js strategy for authentication flow
+**Authentication System:**
+- **Hybrid Authentication**: Supports both local email/password and OAuth (Google via Replit Auth)
+- **Local Authentication**: 
+  - Email/password registration with bcrypt hashing (10 rounds)
+  - Passport-local strategy for credential validation
+  - Auto-login after successful registration
+- **OAuth Authentication**:
+  - Replit Auth with OpenID Connect (OIDC) integration
+  - Supports Google login (GitHub, X, Apple available via Replit Auth)
+- Passport.js for unified authentication flow
 - Session-based authentication using connect-pg-simple
 
 **Session Management:**
@@ -97,11 +105,19 @@ Preferred communication style: Simple, everyday language.
 
 **User Flow:**
 - Landing page for unauthenticated users with login/signup buttons
-- Login redirects to Replit OAuth (/api/login)
+- `/auth` page with forms for local login/registration and Google OAuth button
+- Local registration creates user with hashed password and auto-logs in
+- Login (both local and Google) redirects to dashboard after success
 - Automatic user profile creation/update via upsertUser on authentication
 - Protected routes show authenticated content
 - Logout clears session and redirects to landing (/api/logout)
 - User profile display in header with avatar and name
+
+**Security Measures:**
+- All user responses sanitized via `sanitizeUser()` helper to remove password hashes
+- Passwords never exposed in API responses (even hashed)
+- Bcrypt with 10 salt rounds for password hashing
+- Session cookies with httpOnly and secure flags
 
 ## External Dependencies
 

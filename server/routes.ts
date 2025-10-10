@@ -25,6 +25,13 @@ const loginSchema = z.object({
   password: z.string().min(1, "Contraseña requerida"),
 });
 
+// Helper function to sanitize user data (remove sensitive fields)
+const sanitizeUser = (user: any) => {
+  if (!user) return null;
+  const { password, ...safeUser } = user;
+  return safeUser;
+};
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
   await setupAuth(app);
@@ -68,12 +75,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         res.json({ 
           success: true, 
-          user: {
-            id: user.id,
-            email: user.email,
-            firstName: user.firstName,
-            lastName: user.lastName
-          }
+          user: sanitizeUser(user)
         });
       });
     } catch (error: any) {
@@ -130,13 +132,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const fullUser = await storage.getUser(user.id);
         res.json({ 
           success: true, 
-          user: {
-            id: fullUser?.id,
-            email: fullUser?.email,
-            firstName: fullUser?.firstName,
-            lastName: fullUser?.lastName,
-            profileImageUrl: fullUser?.profileImageUrl
-          }
+          user: sanitizeUser(fullUser)
         });
       });
     })(req, res, next);
@@ -148,13 +144,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // For local auth
       if (req.user.isLocal) {
         const user = await storage.getUser(req.user.id);
-        return res.json(user);
+        return res.json(sanitizeUser(user));
       }
       
       // For OAuth
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
-      res.json(user);
+      res.json(sanitizeUser(user));
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
