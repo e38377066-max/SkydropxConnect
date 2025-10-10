@@ -119,6 +119,7 @@ export async function setupAuth(app: Express) {
       try {
         // Extract user info from Google profile
         const email = profile.emails?.[0]?.value;
+        const googleId = profile.id; // Google's unique ID
         const firstName = profile.name?.givenName || profile.displayName;
         const lastName = profile.name?.familyName || '';
         const profileImageUrl = profile.photos?.[0]?.value;
@@ -131,19 +132,19 @@ export async function setupAuth(app: Express) {
         let user = await storage.getUserByEmail(email);
 
         if (!user) {
-          // Create new user
+          // Create new user with Google ID
           user = await storage.createUser({
             email,
+            googleId,
             firstName,
             lastName,
             profileImageUrl,
-            password: null, // Google users don't have passwords
+            password: null, // Google users don't need passwords initially
           });
         } else {
-          // Update user info from Google
-          await storage.upsertUser({
-            id: user.id,
-            email,
+          // Update user info from Google and link Google ID
+          await storage.updateUser(user.id, {
+            googleId,
             firstName,
             lastName,
             profileImageUrl,

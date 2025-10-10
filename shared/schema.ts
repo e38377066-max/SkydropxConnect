@@ -18,10 +18,14 @@ export const sessions = pgTable(
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   email: varchar("email").unique().notNull(),
-  password: varchar("password"), // null for OAuth users (Google, etc.)
+  password: varchar("password"), // null for OAuth-only users, can be added later
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
+  
+  // OAuth provider IDs (null if not connected)
+  googleId: varchar("google_id").unique(),
+  facebookId: varchar("facebook_id").unique(),
   
   // Contact information
   phone: varchar("phone"),

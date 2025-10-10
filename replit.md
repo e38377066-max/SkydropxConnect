@@ -50,6 +50,9 @@ Preferred communication style: Simple, everyday language.
 - `/api/user/contact` - PATCH endpoint to update user contact information (protected)
 - `/api/user/billing` - PATCH endpoint to update user billing information (protected)
 - `/api/user/password` - PATCH endpoint to update user password (protected, local auth only)
+- `/api/user/add-password` - POST endpoint to add password to OAuth-only accounts (protected)
+- `/api/user/unlink-provider` - POST endpoint to unlink OAuth provider with validation (protected)
+- `/api/user/avatar` - PATCH endpoint to update profile image URL (protected)
 
 **Required Environment Variables:**
 - `GOOGLE_CLIENT_ID` - Google OAuth 2.0 Client ID from Google Cloud Console
@@ -81,7 +84,8 @@ Preferred communication style: Simple, everyday language.
 - `users` table - Stores authenticated user profiles with contact and billing data:
   - Contact: id, email, firstName, lastName, phone, profileImageUrl
   - Billing: rfc, razonSocial, direccionFiscal, codigoPostalFiscal, ciudadFiscal, estadoFiscal
-  - Auth: password (hashed with bcrypt for local accounts, null for OAuth)
+  - Auth: password (hashed with bcrypt, can be null), googleId, facebookId (OAuth provider IDs)
+  - Users can have multiple auth methods simultaneously (password + OAuth providers)
 - `sessions` table - Session storage with PostgreSQL backend
 - `shipments` table - Core shipment data with sender/receiver details
 - `quotes` table - Shipping rate quote records
@@ -129,12 +133,18 @@ Preferred communication style: Simple, everyday language.
 - Login (both local and Google) redirects to dashboard after success
 - Automatic user profile creation/update via upsertUser on authentication
 - Protected routes show authenticated content
-- `/perfil` page for user profile management with three tabs:
-  - Contact tab: Update name, email (read-only), and phone
-  - Billing tab: Manage RFC, razón social, fiscal address details
-  - Security tab: Change password (local accounts only, hidden for OAuth)
+- `/perfil` page for enhanced user profile management:
+  - **Profile Header**: Avatar with camera button for editing, user name/email, badges showing active auth methods
+  - **Contact Tab**: Update name, email (read-only), and phone
+  - **Billing Tab**: Manage RFC, razón social, fiscal address details
+  - **Security Tab**: 
+    - Password section: "Agregar Contraseña" for OAuth accounts (no current password required), "Cambiar Contraseña" for accounts with password
+    - Redes Vinculadas section: Shows Google/Facebook connection status with unlink buttons
+    - Cannot unlink last remaining auth method (validation enforced)
 - Logout clears session and redirects to landing (/api/logout)
 - User profile display in header with avatar and name (clickable to navigate to profile)
+- Users can add password to OAuth accounts to enable independent login
+- Users can unlink OAuth providers while maintaining access via password
 
 **Security Measures:**
 - All user responses sanitized via `sanitizeUser()` helper to remove password hashes
@@ -142,8 +152,10 @@ Preferred communication style: Simple, everyday language.
 - Bcrypt with 10 salt rounds for password hashing
 - Session cookies with httpOnly and secure flags
 - Backend Zod validation on all profile update endpoints
-- Password change requires current password verification
+- Password change requires current password verification (not required when adding first password to OAuth account)
 - Minimum 6-character password length enforced on server-side
+- Cannot unlink last authentication method (enforced in backend to prevent account lockout)
+- Multiple authentication methods supported simultaneously for redundancy
 
 ## External Dependencies
 

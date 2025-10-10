@@ -262,6 +262,127 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to update password" });
     }
   });
+
+  // Add password to OAuth account
+  app.post('/api/user/add-password', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.isLocal ? req.user.id : (req.user.isGoogle ? req.user.id : req.user.claims.sub);
+      
+      // Validate input
+      const addPasswordSchema = z.object({
+        newPassword: z.string().min(6, "La contraseña debe tener al menos 6 caracteres"),
+      });
+
+      const { newPassword } = addPasswordSchema.parse(req.body);
+
+      // Get user
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "Usuario no encontrado" });
+      }
+
+      if (user.password) {
+        return res.status(400).json({ message: "Esta cuenta ya tiene contraseña configurada. Usa la opción de cambiar contraseña." });
+      }
+
+      // Hash new password
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+      // Add password to account
+      await storage.updateUser(userId, { password: hashedPassword });
+      
+      res.json({ success: true, message: "Contraseña agregada correctamente" });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors[0].message });
+      }
+      console.error("Error adding password:", error);
+      res.status(500).json({ message: "Error al agregar contraseña" });
+    }
+  });
+
+  // Unlink OAuth provider
+  app.post('/api/user/unlink-provider', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.isLocal ? req.user.id : (req.user.isGoogle ? req.user.id : req.user.claims.sub);
+      
+      // Validate input
+      const unlinkSchema = z.object({
+        provider: z.enum(['google', 'facebook'], { errorMap: () => ({ message: "Proveedor inválido" }) }),
+      });
+
+      const { provider } = unlinkSchema.parse(req.body);
+
+      // Get user
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "Usuario no encontrado" });
+      }
+
+      // Check that user has at least one other auth method
+      const hasPassword = !!user.password;
+      const hasGoogle = !!user.googleId;
+      const hasFacebook = !!user.facebookId;
+
+      const totalAuthMethods = [hasPassword, hasGoogle, hasFacebook].filter(Boolean).length;
+
+      if (totalAuthMethods <= 1) {
+        return res.status(400).json({ 
+          message: "No puedes desvincular tu único método de autenticación. Agrega una contraseña primero." 
+        });
+      }
+
+      // Unlink provider
+      if (provider === 'google' && hasGoogle) {
+        await storage.updateUser(userId, { googleId: null });
+        res.json({ success: true, message: "Google desvinculado correctamente" });
+      } else if (provider === 'facebook' && hasFacebook) {
+        await storage.updateUser(userId, { facebookId: null });
+        res.json({ success: true, message: "Facebook desvinculado correctamente" });
+      } else {
+        res.status(400).json({ message: "Este proveedor no está vinculado a tu cuenta" });
+      }
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors[0].message });
+      }
+      console.error("Error unlinking provider:", error);
+      res.status(500).json({ message: "Error al desvincular proveedor" });
+    }
+  });
+
+  // Update avatar/profile image
+  app.patch('/api/user/avatar', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.isLocal ? req.user.id : (req.user.isGoogle ? req.user.id : req.user.claims.sub);
+      
+      // Validate input
+      const avatarSchema = z.object({
+        profileImageUrl: z.string().url("URL de imagen inválida").max(500),
+      });
+
+      const { profileImageUrl } = avatarSchema.parse(req.body);
+
+      // Update avatar
+      await storage.updateUser(userId, { profileImageUrl });
+      const user = await storage.getUser(userId);
+      
+      res.json({ 
+        success: true, 
+        user: sanitizeUser(user),
+        message: "Foto de perfil actualizada correctamente" 
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors[0].message });
+      }
+      console.error("Error updating avatar:", error);
+      res.status(500).json({ message: "Error al actualizar foto de perfil" });
+    }
+  });
+
   app.post("/api/quotes", async (req, res) => {
     try {
       const validatedData = quoteRequestSchema.parse({
