@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Package, Loader2 } from "lucide-react";
-import { SiGoogle, SiX } from "react-icons/si";
+import { SiGoogle } from "react-icons/si";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -98,10 +98,6 @@ export default function Auth() {
 
   const handleGoogleLogin = () => {
     window.location.href = "/api/login-google";
-  };
-
-  const handleTwitterLogin = () => {
-    window.location.href = "/api/login-twitter";
   };
 
   const handleRegister = (data: RegisterData) => {
@@ -277,27 +273,15 @@ export default function Auth() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <Button
-            variant="outline"
-            className="w-full"
-            onClick={handleGoogleLogin}
-            data-testid="button-google-login"
-          >
-            <SiGoogle className="w-4 h-4 mr-2" />
-            Google
-          </Button>
-
-          <Button
-            variant="outline"
-            className="w-full"
-            onClick={handleTwitterLogin}
-            data-testid="button-twitter-login"
-          >
-            <SiX className="w-4 h-4 mr-2" />
-            X
-          </Button>
-        </div>
+        <Button
+          variant="outline"
+          className="w-full"
+          onClick={handleGoogleLogin}
+          data-testid="button-google-login"
+        >
+          <SiGoogle className="w-4 h-4 mr-2" />
+          Google
+        </Button>
       </Card>
     </div>
   );

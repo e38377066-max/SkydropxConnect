@@ -2,7 +2,6 @@ import * as client from "openid-client";
 import { Strategy, type VerifyFunction } from "openid-client/passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
-import { Strategy as TwitterStrategy } from "@superfaceai/passport-twitter-oauth2";
 import bcrypt from "bcrypt";
 
 import passport from "passport";
@@ -164,67 +163,6 @@ export async function setupAuth(app: Express) {
     }
   ));
 
-  // Twitter/X OAuth 2.0 strategy (optional - only if credentials are configured)
-  if (process.env.TWITTER_CLIENT_ID && process.env.TWITTER_CLIENT_SECRET) {
-    passport.use(new TwitterStrategy(
-      {
-        clientType: 'confidential',
-        clientID: process.env.TWITTER_CLIENT_ID,
-        clientSecret: process.env.TWITTER_CLIENT_SECRET,
-        callbackURL: '/api/auth/twitter/callback',
-        scope: ['tweet.read', 'users.read', 'offline.access']
-      },
-      async (accessToken: string, refreshToken: string, profile: any, done: any) => {
-        try {
-          // Extract user info from Twitter profile
-          const twitterId = profile.id;
-          const username = profile.username;
-          const displayName = profile.displayName || profile.name;
-          const profileImageUrl = profile.photos?.[0]?.value || profile.profile_image_url;
-          
-          // Twitter doesn't always provide email, use username as fallback identifier
-          const email = profile.emails?.[0]?.value || `${username}@twitter.placeholder.com`;
-          
-          // Check if user exists by twitterId first
-          let user = await storage.getUserByTwitterId(twitterId);
-          
-          if (!user && profile.emails?.[0]?.value) {
-            // If no user by twitterId, check by real email
-            user = await storage.getUserByEmail(profile.emails[0].value);
-          }
-
-          if (!user) {
-            // Create new user with Twitter ID
-            user = await storage.createUser({
-              email,
-              twitterId,
-              firstName: displayName,
-              lastName: '',
-              profileImageUrl,
-              password: null,
-            });
-          } else {
-            // Update user info from Twitter and link Twitter ID
-            await storage.updateUser(user.id, {
-              twitterId,
-              firstName: displayName,
-              profileImageUrl,
-            });
-          }
-
-          // Return user for session
-          return done(null, {
-            id: user.id,
-            email: user.email,
-            isTwitter: true
-          });
-        } catch (error) {
-          return done(error as Error);
-        }
-      }
-    ));
-  }
-
   const config = await getOidcConfig();
 
   const verify: VerifyFunction = async (
@@ -267,19 +205,6 @@ export async function setupAuth(app: Express) {
     })
   );
 
-  // Twitter/X OAuth login route
-  app.get("/api/login-twitter", passport.authenticate('twitter', {
-    scope: ['tweet.read', 'users.read', 'offline.access']
-  }));
-
-  // Twitter/X OAuth callback route
-  app.get("/api/auth/twitter/callback", 
-    passport.authenticate('twitter', { 
-      failureRedirect: '/auth',
-      successRedirect: '/'
-    })
-  );
-
   app.get("/api/logout", (req, res) => {
     req.logout(() => {
       res.redirect("/");
@@ -294,8 +219,8 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
 
   const user = req.user as any;
 
-  // If local, Google, or Twitter authentication, just verify the session exists
-  if (user.isLocal || user.isGoogle || user.isTwitter) {
+  // If local or Google authentication, just verify the session exists
+  if (user.isLocal || user.isGoogle) {
     return next();
   }
 

@@ -28,7 +28,7 @@ import {
   Key,
   AlertCircle
 } from "lucide-react";
-import { SiGoogle, SiFacebook, SiX } from "react-icons/si";
+import { SiGoogle, SiFacebook } from "react-icons/si";
 import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -92,12 +92,11 @@ export default function ProfilePage() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("contact");
   const [showAvatarDialog, setShowAvatarDialog] = useState(false);
-  const [unlinkProvider, setUnlinkProvider] = useState<'google' | 'facebook' | 'twitter' | null>(null);
+  const [unlinkProvider, setUnlinkProvider] = useState<'google' | 'facebook' | null>(null);
 
   const hasPassword = !!user?.password;
   const hasGoogle = !!user?.googleId;
   const hasFacebook = !!user?.facebookId;
-  const hasTwitter = !!user?.twitterId;
 
   const contactForm = useForm<ContactData>({
     resolver: zodResolver(contactSchema),
@@ -266,7 +265,7 @@ export default function ProfilePage() {
 
   // Unlink provider mutation
   const unlinkProviderMutation = useMutation({
-    mutationFn: async (provider: 'google' | 'facebook' | 'twitter') => {
+    mutationFn: async (provider: 'google' | 'facebook') => {
       const response = await apiRequest("POST", "/api/user/unlink-provider", { provider });
       return await response.json();
     },
@@ -287,11 +286,9 @@ export default function ProfilePage() {
     },
   });
 
-  const handleLinkProvider = (provider: 'google' | 'facebook' | 'twitter') => {
+  const handleLinkProvider = (provider: 'google' | 'facebook') => {
     if (provider === 'google') {
       window.location.href = '/api/login-google';
-    } else if (provider === 'twitter') {
-      window.location.href = '/api/login-twitter';
     } else if (provider === 'facebook') {
       toast({
         title: "Próximamente",
@@ -362,12 +359,6 @@ export default function ProfilePage() {
                     <Badge variant="secondary" className="shadow-md" data-testid="badge-has-facebook">
                       <SiFacebook className="w-3 h-3 mr-1" />
                       Facebook
-                    </Badge>
-                  )}
-                  {hasTwitter && (
-                    <Badge variant="secondary" className="shadow-md" data-testid="badge-has-twitter">
-                      <SiX className="w-3 h-3 mr-1" />
-                      X/Twitter
                     </Badge>
                   )}
                 </div>
@@ -884,57 +875,7 @@ export default function ProfilePage() {
                   )}
                 </div>
 
-                {/* Twitter/X */}
-                <div className="flex items-center justify-between p-5 border-2 rounded-xl hover:border-primary/50 transition-colors bg-gradient-to-r from-card to-card/50">
-                  <div className="flex items-center gap-4">
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                      hasTwitter ? 'bg-gradient-to-br from-black/20 to-black/40 dark:from-white/20 dark:to-white/40' : 'bg-muted'
-                    }`}>
-                      <SiX className={`w-6 h-6 ${hasTwitter ? 'text-foreground' : 'text-muted-foreground'}`} />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-lg">X (Twitter)</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        {hasTwitter ? (
-                          <>
-                            <Check className="w-4 h-4 text-green-500" />
-                            <p className="text-sm text-green-500 font-medium">Conectado</p>
-                          </>
-                        ) : (
-                          <>
-                            <X className="w-4 h-4 text-muted-foreground" />
-                            <p className="text-sm text-muted-foreground">No conectado</p>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  {hasTwitter ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setUnlinkProvider('twitter')}
-                      className="gap-2"
-                      data-testid="button-unlink-twitter"
-                    >
-                      <Unlink className="w-4 h-4" />
-                      Desvincular
-                    </Button>
-                  ) : (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleLinkProvider('twitter')}
-                      className="gap-2 shadow-md"
-                      data-testid="button-link-twitter"
-                    >
-                      <LinkIcon className="w-4 h-4" />
-                      Vincular
-                    </Button>
-                  )}
-                </div>
-
-                {!hasPassword && (hasGoogle || hasFacebook || hasTwitter) && (
+                {!hasPassword && (hasGoogle || hasFacebook) && (
                   <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-xl">
                     <p className="text-sm text-amber-700 dark:text-amber-400 flex items-start gap-2">
                       <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
@@ -1012,7 +953,7 @@ export default function ProfilePage() {
           <AlertDialogHeader>
             <AlertDialogTitle className="text-2xl">¿Desvincular cuenta?</AlertDialogTitle>
             <AlertDialogDescription className="text-base">
-              Estás a punto de desvincular tu cuenta de {unlinkProvider === 'google' ? 'Google' : unlinkProvider === 'twitter' ? 'X (Twitter)' : 'Facebook'}. 
+              Estás a punto de desvincular tu cuenta de {unlinkProvider === 'google' ? 'Google' : 'Facebook'}. 
               {hasPassword 
                 ? ' Podrás seguir accediendo con tu contraseña.' 
                 : ' Asegúrate de tener otro método de autenticación configurado.'}
