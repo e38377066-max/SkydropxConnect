@@ -54,6 +54,7 @@ export type User = typeof users.$inferSelect;
 
 export const shipments = pgTable("shipments", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id), // Owner of the shipment
   trackingNumber: text("tracking_number").notNull().unique(),
   carrier: text("carrier").notNull(),
   
@@ -186,6 +187,65 @@ export const rechargeRequests = pgTable("recharge_requests", {
   processedAt: timestamp("processed_at"),
 });
 
+// Saved addresses for quick shipment creation
+export const savedAddresses = pgTable("saved_addresses", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  
+  name: varchar("name").notNull(), // Alias/name for the address
+  contactName: varchar("contact_name").notNull(),
+  phone: varchar("phone").notNull(),
+  address: text("address").notNull(),
+  zipCode: varchar("zip_code").notNull(),
+  city: varchar("city"),
+  state: varchar("state"),
+  
+  // Address type: 'origin', 'destination', 'both'
+  type: varchar("type").notNull().default("both"),
+  
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Saved package presets for quick selection
+export const savedPackages = pgTable("saved_packages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  
+  alias: varchar("alias").notNull(), // e.g., "Caja blanca pastel", "Caja Cafe Mediana"
+  
+  weight: decimal("weight", { precision: 10, scale: 2 }).notNull(),
+  length: decimal("length", { precision: 10, scale: 2 }).notNull(),
+  width: decimal("width", { precision: 10, scale: 2 }).notNull(),
+  height: decimal("height", { precision: 10, scale: 2 }).notNull(),
+  
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Billing profiles (multiple RFC per user)
+export const billingProfiles = pgTable("billing_profiles", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  
+  rfc: varchar("rfc").notNull(),
+  razonSocial: varchar("razon_social").notNull(),
+  usoCFDI: varchar("uso_cfdi"), // e.g., "G03 - Gastos en general"
+  email: varchar("email").notNull(),
+  
+  // Fiscal address
+  direccionFiscal: text("direccion_fiscal"),
+  codigoPostalFiscal: varchar("codigo_postal_fiscal"),
+  ciudadFiscal: varchar("ciudad_fiscal"),
+  estadoFiscal: varchar("estado_fiscal"),
+  
+  // Is this the default billing profile?
+  isDefault: varchar("is_default").notNull().default("false"),
+  
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 export const insertShipmentSchema = createInsertSchema(shipments).omit({
   id: true,
   createdAt: true,
@@ -221,6 +281,54 @@ export const insertTransactionSchema = createInsertSchema(transactions).omit({
 
 export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
 export type Transaction = typeof transactions.$inferSelect;
+
+export const insertRechargeRequestSchema = createInsertSchema(rechargeRequests).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  processedAt: true,
+});
+
+export type InsertRechargeRequest = z.infer<typeof insertRechargeRequestSchema>;
+export type RechargeRequest = typeof rechargeRequests.$inferSelect;
+
+// Update type for recharge requests (includes processedAt, compatible with DB types)
+export type UpdateRechargeRequest = {
+  amount?: string;
+  paymentMethod?: string;
+  paymentReference?: string;
+  status?: 'pending' | 'approved' | 'rejected';
+  adminNotes?: string;
+  adminId?: string;
+  processedAt?: Date;
+};
+
+export const insertSavedAddressSchema = createInsertSchema(savedAddresses).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertSavedAddress = z.infer<typeof insertSavedAddressSchema>;
+export type SavedAddress = typeof savedAddresses.$inferSelect;
+
+export const insertSavedPackageSchema = createInsertSchema(savedPackages).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertSavedPackage = z.infer<typeof insertSavedPackageSchema>;
+export type SavedPackage = typeof savedPackages.$inferSelect;
+
+export const insertBillingProfileSchema = createInsertSchema(billingProfiles).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertBillingProfile = z.infer<typeof insertBillingProfileSchema>;
+export type BillingProfile = typeof billingProfiles.$inferSelect;
 
 export const quoteRequestSchema = z.object({
   fromZipCode: z.string().min(5, "Código postal inválido"),

@@ -9,11 +9,27 @@ import {
   type UpsertUser,
   type Setting,
   type UpsertSetting,
+  type Transaction,
+  type InsertTransaction,
+  type RechargeRequest,
+  type InsertRechargeRequest,
+  type UpdateRechargeRequest,
+  type SavedAddress,
+  type InsertSavedAddress,
+  type SavedPackage,
+  type InsertSavedPackage,
+  type BillingProfile,
+  type InsertBillingProfile,
   shipments,
   quotes,
   trackingEvents,
   users,
   settings,
+  transactions,
+  rechargeRequests,
+  savedAddresses,
+  savedPackages,
+  billingProfiles,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc } from "drizzle-orm";
@@ -23,6 +39,7 @@ export interface IStorage {
   getShipment(id: string): Promise<Shipment | undefined>;
   getShipmentByTracking(trackingNumber: string): Promise<Shipment | undefined>;
   getAllShipments(): Promise<Shipment[]>;
+  getUserShipments(userId: string): Promise<Shipment[]>;
   updateShipment(id: string, data: Partial<InsertShipment>): Promise<Shipment | undefined>;
   
   createQuote(quote: InsertQuote): Promise<Quote>;
@@ -37,10 +54,44 @@ export interface IStorage {
   createUser(user: UpsertUser): Promise<User>;
   upsertUser(user: UpsertUser): Promise<User>;
   updateUser(id: string, data: Partial<UpsertUser>): Promise<User | undefined>;
+  updateUserBalance(userId: string, newBalance: string): Promise<User | undefined>;
   
   getSetting(key: string): Promise<Setting | undefined>;
   upsertSetting(setting: UpsertSetting): Promise<Setting>;
   getAllSettings(): Promise<Setting[]>;
+  
+  // Transactions
+  createTransaction(transaction: InsertTransaction): Promise<Transaction>;
+  getUserTransactions(userId: string): Promise<Transaction[]>;
+  getTransaction(id: string): Promise<Transaction | undefined>;
+  
+  // Recharge Requests
+  createRechargeRequest(request: InsertRechargeRequest): Promise<RechargeRequest>;
+  getUserRechargeRequests(userId: string): Promise<RechargeRequest[]>;
+  getAllRechargeRequests(): Promise<RechargeRequest[]>;
+  getPendingRechargeRequests(): Promise<RechargeRequest[]>;
+  updateRechargeRequest(id: string, data: UpdateRechargeRequest): Promise<RechargeRequest | undefined>;
+  
+  // Saved Addresses
+  createSavedAddress(address: InsertSavedAddress): Promise<SavedAddress>;
+  getUserSavedAddresses(userId: string): Promise<SavedAddress[]>;
+  getSavedAddress(id: string): Promise<SavedAddress | undefined>;
+  updateSavedAddress(id: string, data: Partial<InsertSavedAddress>): Promise<SavedAddress | undefined>;
+  deleteSavedAddress(id: string): Promise<void>;
+  
+  // Saved Packages
+  createSavedPackage(pkg: InsertSavedPackage): Promise<SavedPackage>;
+  getUserSavedPackages(userId: string): Promise<SavedPackage[]>;
+  getSavedPackage(id: string): Promise<SavedPackage | undefined>;
+  updateSavedPackage(id: string, data: Partial<InsertSavedPackage>): Promise<SavedPackage | undefined>;
+  deleteSavedPackage(id: string): Promise<void>;
+  
+  // Billing Profiles
+  createBillingProfile(profile: InsertBillingProfile): Promise<BillingProfile>;
+  getUserBillingProfiles(userId: string): Promise<BillingProfile[]>;
+  getBillingProfile(id: string): Promise<BillingProfile | undefined>;
+  updateBillingProfile(id: string, data: Partial<InsertBillingProfile>): Promise<BillingProfile | undefined>;
+  deleteBillingProfile(id: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -199,6 +250,211 @@ export class DatabaseStorage implements IStorage {
     return await db
       .select()
       .from(settings);
+  }
+
+  // User Shipments
+  async getUserShipments(userId: string): Promise<Shipment[]> {
+    return await db
+      .select()
+      .from(shipments)
+      .where(eq(shipments.userId, userId))
+      .orderBy(desc(shipments.createdAt));
+  }
+
+  // User Balance
+  async updateUserBalance(userId: string, newBalance: string): Promise<User | undefined> {
+    const [updated] = await db
+      .update(users)
+      .set({ balance: newBalance, updatedAt: new Date() })
+      .where(eq(users.id, userId))
+      .returning();
+    return updated || undefined;
+  }
+
+  // Transactions
+  async createTransaction(insertTransaction: InsertTransaction): Promise<Transaction> {
+    const [transaction] = await db
+      .insert(transactions)
+      .values(insertTransaction)
+      .returning();
+    return transaction;
+  }
+
+  async getUserTransactions(userId: string): Promise<Transaction[]> {
+    return await db
+      .select()
+      .from(transactions)
+      .where(eq(transactions.userId, userId))
+      .orderBy(desc(transactions.createdAt));
+  }
+
+  async getTransaction(id: string): Promise<Transaction | undefined> {
+    const [transaction] = await db
+      .select()
+      .from(transactions)
+      .where(eq(transactions.id, id));
+    return transaction || undefined;
+  }
+
+  // Recharge Requests
+  async createRechargeRequest(insertRequest: InsertRechargeRequest): Promise<RechargeRequest> {
+    const [request] = await db
+      .insert(rechargeRequests)
+      .values(insertRequest)
+      .returning();
+    return request;
+  }
+
+  async getUserRechargeRequests(userId: string): Promise<RechargeRequest[]> {
+    return await db
+      .select()
+      .from(rechargeRequests)
+      .where(eq(rechargeRequests.userId, userId))
+      .orderBy(desc(rechargeRequests.createdAt));
+  }
+
+  async getAllRechargeRequests(): Promise<RechargeRequest[]> {
+    return await db
+      .select()
+      .from(rechargeRequests)
+      .orderBy(desc(rechargeRequests.createdAt));
+  }
+
+  async getPendingRechargeRequests(): Promise<RechargeRequest[]> {
+    return await db
+      .select()
+      .from(rechargeRequests)
+      .where(eq(rechargeRequests.status, 'pending'))
+      .orderBy(desc(rechargeRequests.createdAt));
+  }
+
+  async updateRechargeRequest(id: string, data: UpdateRechargeRequest): Promise<RechargeRequest | undefined> {
+    const [updated] = await db
+      .update(rechargeRequests)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(rechargeRequests.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  // Saved Addresses
+  async createSavedAddress(insertAddress: InsertSavedAddress): Promise<SavedAddress> {
+    const [address] = await db
+      .insert(savedAddresses)
+      .values(insertAddress)
+      .returning();
+    return address;
+  }
+
+  async getUserSavedAddresses(userId: string): Promise<SavedAddress[]> {
+    return await db
+      .select()
+      .from(savedAddresses)
+      .where(eq(savedAddresses.userId, userId))
+      .orderBy(desc(savedAddresses.createdAt));
+  }
+
+  async getSavedAddress(id: string): Promise<SavedAddress | undefined> {
+    const [address] = await db
+      .select()
+      .from(savedAddresses)
+      .where(eq(savedAddresses.id, id));
+    return address || undefined;
+  }
+
+  async updateSavedAddress(id: string, data: Partial<InsertSavedAddress>): Promise<SavedAddress | undefined> {
+    const [updated] = await db
+      .update(savedAddresses)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(savedAddresses.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteSavedAddress(id: string): Promise<void> {
+    await db
+      .delete(savedAddresses)
+      .where(eq(savedAddresses.id, id));
+  }
+
+  // Saved Packages
+  async createSavedPackage(insertPackage: InsertSavedPackage): Promise<SavedPackage> {
+    const [pkg] = await db
+      .insert(savedPackages)
+      .values(insertPackage)
+      .returning();
+    return pkg;
+  }
+
+  async getUserSavedPackages(userId: string): Promise<SavedPackage[]> {
+    return await db
+      .select()
+      .from(savedPackages)
+      .where(eq(savedPackages.userId, userId))
+      .orderBy(desc(savedPackages.createdAt));
+  }
+
+  async getSavedPackage(id: string): Promise<SavedPackage | undefined> {
+    const [pkg] = await db
+      .select()
+      .from(savedPackages)
+      .where(eq(savedPackages.id, id));
+    return pkg || undefined;
+  }
+
+  async updateSavedPackage(id: string, data: Partial<InsertSavedPackage>): Promise<SavedPackage | undefined> {
+    const [updated] = await db
+      .update(savedPackages)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(savedPackages.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteSavedPackage(id: string): Promise<void> {
+    await db
+      .delete(savedPackages)
+      .where(eq(savedPackages.id, id));
+  }
+
+  // Billing Profiles
+  async createBillingProfile(insertProfile: InsertBillingProfile): Promise<BillingProfile> {
+    const [profile] = await db
+      .insert(billingProfiles)
+      .values(insertProfile)
+      .returning();
+    return profile;
+  }
+
+  async getUserBillingProfiles(userId: string): Promise<BillingProfile[]> {
+    return await db
+      .select()
+      .from(billingProfiles)
+      .where(eq(billingProfiles.userId, userId))
+      .orderBy(desc(billingProfiles.createdAt));
+  }
+
+  async getBillingProfile(id: string): Promise<BillingProfile | undefined> {
+    const [profile] = await db
+      .select()
+      .from(billingProfiles)
+      .where(eq(billingProfiles.id, id));
+    return profile || undefined;
+  }
+
+  async updateBillingProfile(id: string, data: Partial<InsertBillingProfile>): Promise<BillingProfile | undefined> {
+    const [updated] = await db
+      .update(billingProfiles)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(billingProfiles.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteBillingProfile(id: string): Promise<void> {
+    await db
+      .delete(billingProfiles)
+      .where(eq(billingProfiles.id, id));
   }
 }
 
