@@ -13,11 +13,22 @@ import {
   type ShipmentRequest 
 } from "@shared/schema";
 
+const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&_\-.,])[A-Za-z\d@$!%*?&_\-.,]{8,}$/;
+
 const registerSchema = z.object({
   email: z.string().email("Email inválido"),
-  password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres"),
+  password: z.string()
+    .min(8, "La contraseña debe tener al menos 8 caracteres")
+    .regex(passwordRegex, "La contraseña debe contener: 1 mayúscula, 1 minúscula, 1 número y 1 carácter especial"),
+  confirmPassword: z.string().min(1, "Confirma tu contraseña"),
   firstName: z.string().min(1, "Nombre requerido"),
   lastName: z.string().optional(),
+  birthDay: z.coerce.number().min(1).max(31, "Día inválido"),
+  birthMonth: z.coerce.number().min(1).max(12, "Mes inválido"),
+  birthYear: z.coerce.number().min(1900).max(new Date().getFullYear(), "Año inválido"),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Las contraseñas no coinciden",
+  path: ["confirmPassword"],
 });
 
 const loginSchema = z.object({
@@ -53,12 +64,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Hash password
       const hashedPassword = await bcrypt.hash(validatedData.password, 10);
 
-      // Create user
+      // Create date of birth from day, month, year
+      const dateOfBirth = new Date(
+        validatedData.birthYear,
+        validatedData.birthMonth - 1, // Month is 0-indexed
+        validatedData.birthDay
+      );
+
+      // Validate the date is valid
+      if (isNaN(dateOfBirth.getTime())) {
+        return res.status(400).json({
+          success: false,
+          error: "Fecha de nacimiento inválida"
+        });
+      }
+
+      // Create user (confirmPassword is only for validation, not stored)
       const user = await storage.createUser({
         email: validatedData.email,
         password: hashedPassword,
         firstName: validatedData.firstName,
         lastName: validatedData.lastName || null,
+        dateOfBirth,
       });
 
       // Log in the user automatically
