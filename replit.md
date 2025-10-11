@@ -82,7 +82,7 @@ Preferred communication style: Simple, everyday language.
 
 **Schema Design:**
 - `users` table - Stores authenticated user profiles with contact and billing data:
-  - Contact: id, email, firstName, lastName, phone, profileImageUrl
+  - Contact: id, email, firstName, lastName, phone, profileImageUrl, dateOfBirth
   - Billing: rfc, razonSocial, direccionFiscal, codigoPostalFiscal, ciudadFiscal, estadoFiscal
   - Auth: password (hashed with bcrypt, can be null), googleId, facebookId (OAuth provider IDs)
   - Role: 'admin' or 'user' for access control
@@ -104,6 +104,10 @@ Preferred communication style: Simple, everyday language.
 - **Hybrid Authentication**: Supports local email/password and Google OAuth
 - **Local Authentication**: 
   - Email/password registration with bcrypt hashing (10 rounds)
+  - Enhanced registration collects: email, password, confirm password, first name, last name, date of birth (day/month/year selectors)
+  - Strong password validation: minimum 8 characters, 1 uppercase, 1 lowercase, 1 number, 1 special character (@$!%*?&_-.,)
+  - Password confirmation validation enforced in both frontend and backend
+  - Date of birth validation: numeric ranges (day 1-31, month 1-12, year 1900-current) + Date object validity check
   - Passport-local strategy for credential validation
   - Auto-login after successful registration
 - **Google OAuth Authentication**:
@@ -155,8 +159,9 @@ Preferred communication style: Simple, everyday language.
 - Bcrypt with 10 salt rounds for password hashing
 - Session cookies with httpOnly and secure flags
 - Backend Zod validation on all profile update endpoints
+- Strong password requirements: minimum 8 characters, 1 uppercase, 1 lowercase, 1 number, 1 special character
+- Password confirmation field validated but not stored in database
 - Password change requires current password verification (not required when adding first password to OAuth account)
-- Minimum 6-character password length enforced on server-side
 - Cannot unlink last authentication method (enforced in backend to prevent account lockout)
 - Multiple authentication methods supported simultaneously for redundancy
 
