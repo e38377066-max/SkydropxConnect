@@ -215,6 +215,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get system settings (admin only)
+  app.get('/api/admin/settings', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const settings = await storage.getAllSettings();
+      res.json({ 
+        success: true, 
+        settings 
+      });
+    } catch (error) {
+      console.error("Error fetching settings:", error);
+      res.status(500).json({ message: "Error al obtener configuración" });
+    }
+  });
+
+  // Get specific setting value (public for quotes)
+  app.get('/api/settings/:key', async (req, res) => {
+    try {
+      const { key } = req.params;
+      const setting = await storage.getSetting(key);
+      
+      if (!setting) {
+        return res.status(404).json({ message: "Configuración no encontrada" });
+      }
+      
+      res.json({ 
+        success: true, 
+        setting 
+      });
+    } catch (error) {
+      console.error("Error fetching setting:", error);
+      res.status(500).json({ message: "Error al obtener configuración" });
+    }
+  });
+
+  // Update system settings (admin only)
+  app.patch('/api/admin/settings', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      // Validate profit margin percentage setting
+      if (req.body.key === 'profit_margin_percentage') {
+        const profitMarginSchema = z.object({
+          key: z.literal('profit_margin_percentage'),
+          value: z.coerce.number().min(0, "El porcentaje no puede ser negativo").max(100, "El porcentaje no puede ser mayor a 100"),
+          description: z.string().optional(),
+        });
+
+        const validated = profitMarginSchema.parse(req.body);
+        
+        // Convert number back to string for storage
+        const setting = await storage.upsertSetting({
+          key: validated.key,
+          value: validated.value.toString(),
+          description: validated.description,
+        });
+        
+        return res.json({ 
+          success: true, 
+          setting 
+        });
+      }
+
+      // Generic setting validation for other settings
+      const settingsSchema = z.object({
+        key: z.string().min(1),
+        value: z.string().min(1),
+        description: z.string().optional(),
+      });
+
+      const validatedData = settingsSchema.parse(req.body);
+      const setting = await storage.upsertSetting(validatedData);
+      
+      res.json({ 
+        success: true, 
+        setting 
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors[0].message });
+      }
+      console.error("Error updating setting:", error);
+      res.status(500).json({ message: "Error al actualizar configuración" });
+    }
+  });
+
   // Update contact information
   app.patch('/api/user/contact', isAuthenticated, async (req: any, res) => {
     try {
@@ -465,6 +548,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const rates = await skydropxService.getQuotes(skydropxRequest);
 
+      // Get profit margin from settings
+      const profitMarginSetting = await storage.getSetting('profit_margin_percentage');
+      let profitMarginPercentage = 15; // Default 15%
+      
+      if (profitMarginSetting) {
+        const parsed = parseFloat(profitMarginSetting.value);
+        if (!isNaN(parsed) && parsed >= 0 && parsed <= 100) {
+          profitMarginPercentage = parsed;
+        }
+      }
+
+      // Apply profit margin to all rates
+      const ratesWithMargin = Array.isArray(rates) ? rates.map((rate: any) => {
+        const baseAmount = parseFloat(rate.amount_local);
+        const basePricing = parseFloat(rate.total_pricing);
+        
+        // Validate that amounts are valid numbers
+        if (isNaN(baseAmount) || isNaN(basePricing)) {
+          console.error('Invalid rate amounts:', rate);
+          return rate; // Return original rate if invalid
+        }
+        
+        return {
+          ...rate,
+          amount_local: baseAmount * (1 + profitMarginPercentage / 100),
+          total_pricing: basePricing * (1 + profitMarginPercentage / 100),
+        };
+      }) : rates;
+
       const quote = await storage.createQuote({
         fromZipCode: validatedData.fromZipCode,
         toZipCode: validatedData.toZipCode,
@@ -472,14 +584,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         length: validatedData.length?.toString(),
         width: validatedData.width?.toString(),
         height: validatedData.height?.toString(),
-        quotesData: rates as any,
+        quotesData: ratesWithMargin as any,
       });
 
       res.json({
         success: true,
         data: {
           quoteId: quote.id,
-          rates: rates,
+          rates: ratesWithMargin,
         },
       });
     } catch (error: any) {

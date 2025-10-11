@@ -116,6 +116,14 @@ export const trackingEvents = pgTable("tracking_events", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+// System settings table for configurable values
+export const settings = pgTable("settings", {
+  key: varchar("key").primaryKey(), // e.g., 'profit_margin_percentage'
+  value: text("value").notNull(), // stored as string, parsed as needed
+  description: text("description"), // human-readable description
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 export const insertShipmentSchema = createInsertSchema(shipments).omit({
   id: true,
   createdAt: true,
@@ -140,6 +148,9 @@ export type Quote = typeof quotes.$inferSelect;
 
 export type InsertTrackingEvent = z.infer<typeof insertTrackingEventSchema>;
 export type TrackingEvent = typeof trackingEvents.$inferSelect;
+
+export type Setting = typeof settings.$inferSelect;
+export type UpsertSetting = typeof settings.$inferInsert;
 
 export const quoteRequestSchema = z.object({
   fromZipCode: z.string().min(5, "Código postal inválido"),

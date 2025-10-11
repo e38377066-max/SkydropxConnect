@@ -7,10 +7,13 @@ import {
   type InsertTrackingEvent,
   type User,
   type UpsertUser,
+  type Setting,
+  type UpsertSetting,
   shipments,
   quotes,
   trackingEvents,
   users,
+  settings,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc } from "drizzle-orm";
@@ -34,6 +37,10 @@ export interface IStorage {
   createUser(user: UpsertUser): Promise<User>;
   upsertUser(user: UpsertUser): Promise<User>;
   updateUser(id: string, data: Partial<UpsertUser>): Promise<User | undefined>;
+  
+  getSetting(key: string): Promise<Setting | undefined>;
+  upsertSetting(setting: UpsertSetting): Promise<Setting>;
+  getAllSettings(): Promise<Setting[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -162,6 +169,36 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, id))
       .returning();
     return updated || undefined;
+  }
+
+  async getSetting(key: string): Promise<Setting | undefined> {
+    const [setting] = await db
+      .select()
+      .from(settings)
+      .where(eq(settings.key, key));
+    return setting || undefined;
+  }
+
+  async upsertSetting(settingData: UpsertSetting): Promise<Setting> {
+    const [setting] = await db
+      .insert(settings)
+      .values(settingData)
+      .onConflictDoUpdate({
+        target: settings.key,
+        set: {
+          value: settingData.value,
+          description: settingData.description,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return setting;
+  }
+
+  async getAllSettings(): Promise<Setting[]> {
+    return await db
+      .select()
+      .from(settings);
   }
 }
 

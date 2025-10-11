@@ -1,12 +1,17 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Loader2, User, Mail, Shield, Calendar, UserCog } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Loader2, User, Mail, Shield, Calendar, UserCog, Settings, Percent, Save } from "lucide-react";
 import { SiGoogle, SiFacebook } from "react-icons/si";
 import { useLocation } from "wouter";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 type AdminUser = {
   id: string;
@@ -21,9 +26,19 @@ type AdminUser = {
   createdAt: string;
 };
 
+type Setting = {
+  key: string;
+  value: string;
+  description?: string;
+  updatedAt: string;
+};
+
 export default function AdminUsersPage() {
   const { user: currentUser } = useAuth();
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [profitMargin, setProfitMargin] = useState("");
 
   // Redirect if not admin
   useEffect(() => {
@@ -36,6 +51,60 @@ export default function AdminUsersPage() {
     queryKey: ['/api/admin/usuarios'],
     enabled: currentUser?.role === 'admin',
   });
+
+  const { data: settingsData } = useQuery<{ success: boolean; settings: Setting[] }>({
+    queryKey: ['/api/admin/settings'],
+    enabled: currentUser?.role === 'admin',
+  });
+
+  const updateSettingMutation = useMutation({
+    mutationFn: async (data: { key: string; value: string; description?: string }) => {
+      const response = await apiRequest("PATCH", "/api/admin/settings", data);
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/settings'] });
+      toast({
+        title: "Configuración actualizada",
+        description: "El porcentaje de ganancia se ha guardado correctamente",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error al actualizar",
+        description: error.message || "No se pudo guardar la configuración",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Load profit margin from settings
+  useEffect(() => {
+    if (settingsData?.settings) {
+      const profitSetting = settingsData.settings.find(s => s.key === 'profit_margin_percentage');
+      if (profitSetting) {
+        setProfitMargin(profitSetting.value);
+      }
+    }
+  }, [settingsData]);
+
+  const handleSaveProfitMargin = () => {
+    const value = parseFloat(profitMargin);
+    if (isNaN(value) || value < 0 || value > 100) {
+      toast({
+        title: "Valor inválido",
+        description: "El porcentaje debe ser un número entre 0 y 100",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    updateSettingMutation.mutate({
+      key: 'profit_margin_percentage',
+      value: profitMargin,
+      description: 'Porcentaje de ganancia aplicado a las cotizaciones de envío',
+    });
+  };
 
   if (isLoading) {
     return (
@@ -117,6 +186,67 @@ export default function AdminUsersPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* System Configuration */}
+        <Card className="border-0 shadow-xl mb-8">
+          <CardHeader className="pb-4">
+            <div className="flex items-center gap-3">
+              <Settings className="w-6 h-6 text-primary" />
+              <h2 className="text-2xl font-bold text-foreground">Configuración del Sistema</h2>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="max-w-2xl">
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="profit-margin" className="text-base font-semibold">
+                    Porcentaje de Ganancia
+                  </Label>
+                  <p className="text-sm text-muted-foreground mt-1 mb-3">
+                    Este porcentaje se suma al precio base de Skydropx en las cotizaciones. Es tu margen de ganancia.
+                  </p>
+                  <div className="flex gap-3">
+                    <div className="relative flex-1 max-w-xs">
+                      <Input
+                        id="profit-margin"
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.1"
+                        value={profitMargin}
+                        onChange={(e) => setProfitMargin(e.target.value)}
+                        placeholder="15"
+                        className="pr-10"
+                        data-testid="input-profit-margin"
+                      />
+                      <Percent className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    </div>
+                    <Button
+                      onClick={handleSaveProfitMargin}
+                      disabled={updateSettingMutation.isPending}
+                      data-testid="button-save-profit-margin"
+                    >
+                      {updateSettingMutation.isPending ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Guardando...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="w-4 h-4 mr-2" />
+                          Guardar
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Ejemplo: Con 15%, un envío de $100 se cotiza en $115
+                  </p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Users Table */}
         <Card className="border-0 shadow-xl">
