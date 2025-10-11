@@ -22,6 +22,7 @@ export const users = pgTable("users", {
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
+  dateOfBirth: timestamp("date_of_birth"), // fecha de nacimiento
   
   // OAuth provider IDs (null if not connected)
   googleId: varchar("google_id").unique(),
