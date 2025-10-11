@@ -358,6 +358,7 @@ export const shipmentRequestSchema = z.object({
   
   carrier: z.string().min(1, "Selecciona una paquetería"),
   rateId: z.string().optional(),
+  expectedAmount: z.number().positive("Monto esperado requerido"),
 });
 
 export type QuoteRequest = z.infer<typeof quoteRequestSchema>;

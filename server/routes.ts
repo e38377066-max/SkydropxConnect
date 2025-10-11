@@ -611,8 +611,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/shipments", async (req, res) => {
+  app.post("/api/shipments", isAuthenticated, async (req, res) => {
     try {
+      // Get userId from authenticated user
+      const userId = req.user!.isLocal || req.user!.isGoogle ? req.user!.id : req.user!.claims.sub;
+      
       const validatedData = shipmentRequestSchema.parse({
         senderName: req.body.senderName,
         senderPhone: req.body.senderPhone,
@@ -629,8 +632,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         description: req.body.description,
         carrier: req.body.carrier,
         rateId: req.body.rateId,
+        expectedAmount: parseFloat(req.body.expectedAmount),
       }) as ShipmentRequest;
 
+      // Get user to check balance
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          error: "Usuario no encontrado",
+        });
+      }
+
+      // Verify balance BEFORE calling Skydropx
+      const expectedAmount = validatedData.expectedAmount;
+      const currentBalance = parseFloat(user.balance);
+      
+      if (currentBalance < expectedAmount) {
+        return res.status(400).json({
+          success: false,
+          error: `Saldo insuficiente. Tu saldo actual es $${currentBalance.toFixed(2)} MXN y el costo estimado del envío es $${expectedAmount.toFixed(2)} MXN. Por favor, recarga tu billetera para continuar.`,
+        });
+      }
+
+      // Only if balance is sufficient, create shipment in Skydropx
       const skydropxRequest = {
         address_from: {
           name: validatedData.senderName,
@@ -656,8 +681,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       const skydropxShipment = await skydropxService.createShipment(skydropxRequest);
+      
+      // Use the actual amount from Skydropx (should match expected amount)
+      const actualAmount = parseFloat(skydropxShipment.rate.amount_local);
+      
+      // Verify actual amount doesn't exceed current balance
+      if (actualAmount > currentBalance) {
+        return res.status(400).json({
+          success: false,
+          error: `El costo real del envío ($${actualAmount.toFixed(2)} MXN) excede tu saldo disponible ($${currentBalance.toFixed(2)} MXN). Por favor, recarga tu billetera.`,
+        });
+      }
+      
+      // Verify actual amount is within reasonable tolerance of expected (±5%)
+      const tolerance = expectedAmount * 0.05;
+      if (Math.abs(actualAmount - expectedAmount) > tolerance) {
+        console.warn(`Amount mismatch: expected ${expectedAmount}, got ${actualAmount}`);
+        return res.status(400).json({
+          success: false,
+          error: `El costo real del envío ($${actualAmount.toFixed(2)} MXN) difiere significativamente del costo estimado ($${expectedAmount.toFixed(2)} MXN). Por favor, solicita una nueva cotización.`,
+        });
+      }
 
+      // Calculate new balance using actual amount
+      const newBalance = (currentBalance - actualAmount).toFixed(2);
+
+      // Create shipment with userId
       const shipment = await storage.createShipment({
+        userId: userId,
         trackingNumber: skydropxShipment.tracking_number,
         carrier: validatedData.carrier,
         senderName: validatedData.senderName,
@@ -673,12 +724,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         width: validatedData.width?.toString(),
         height: validatedData.height?.toString(),
         description: validatedData.description,
-        amount: skydropxShipment.rate.amount_local.toString(),
+        amount: actualAmount.toString(),
         currency: skydropxShipment.rate.currency_local,
         status: "pending",
         labelUrl: skydropxShipment.label_url,
         skydropxShipmentId: skydropxShipment.id,
         skydropxData: skydropxShipment as any,
+      });
+
+      // Update user balance
+      await storage.updateUserBalance(userId, newBalance);
+
+      // Create transaction record
+      await storage.createTransaction({
+        userId: userId,
+        type: "withdrawal",
+        amount: `-${actualAmount.toFixed(2)}`,
+        balanceAfter: newBalance,
+        description: `Envío ${validatedData.carrier} - ${shipment.trackingNumber}`,
+        referenceId: shipment.id,
+        referenceType: "shipment",
+        status: "completed",
+        metadata: {
+          trackingNumber: shipment.trackingNumber,
+          carrier: validatedData.carrier,
+          senderZipCode: validatedData.senderZipCode,
+          receiverZipCode: validatedData.receiverZipCode,
+        } as any,
       });
 
       await storage.createTrackingEvent({
@@ -693,6 +765,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({
         success: true,
         data: shipment,
+        message: `Envío creado exitosamente. Se descontaron $${actualAmount.toFixed(2)} MXN de tu saldo. Saldo restante: $${newBalance} MXN`,
       });
     } catch (error: any) {
       console.error("Error creating shipment:", error);
