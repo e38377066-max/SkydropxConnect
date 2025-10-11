@@ -710,9 +710,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/shipments", async (req, res) => {
+  app.get("/api/shipments", isAuthenticated, async (req, res) => {
     try {
-      const shipments = await storage.getAllShipments();
+      const userId = req.user!.isLocal || req.user!.isGoogle ? req.user!.id : req.user!.claims.sub;
+      const shipments = await storage.getUserShipments(userId);
       
       res.json({
         success: true,
