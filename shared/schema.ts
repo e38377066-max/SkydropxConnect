@@ -42,6 +42,9 @@ export const users = pgTable("users", {
   ciudadFiscal: varchar("ciudad_fiscal"),
   estadoFiscal: varchar("estado_fiscal"),
   
+  // Wallet balance
+  balance: decimal("balance", { precision: 10, scale: 2 }).notNull().default("0"),
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -124,6 +127,40 @@ export const settings = pgTable("settings", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+// Transactions table for wallet operations
+export const transactions = pgTable("transactions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  
+  // Transaction type: 'deposit', 'withdrawal', 'shipment'
+  type: varchar("type").notNull(),
+  
+  // Amount (positive for deposits, negative for withdrawals/shipments)
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  
+  // Balance after transaction
+  balanceAfter: decimal("balance_after", { precision: 10, scale: 2 }).notNull(),
+  
+  // Description of the transaction
+  description: text("description").notNull(),
+  
+  // Reference to related entities (e.g., shipment ID, payment intent ID)
+  referenceId: varchar("reference_id"),
+  referenceType: varchar("reference_type"), // 'shipment', 'stripe_payment', etc.
+  
+  // Payment provider information (for deposits)
+  paymentProvider: varchar("payment_provider"), // 'stripe', 'paypal', etc.
+  paymentIntentId: varchar("payment_intent_id"),
+  
+  // Status: 'pending', 'completed', 'failed', 'refunded'
+  status: varchar("status").notNull().default("completed"),
+  
+  // Metadata for additional information
+  metadata: jsonb("metadata"),
+  
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 export const insertShipmentSchema = createInsertSchema(shipments).omit({
   id: true,
   createdAt: true,
@@ -151,6 +188,14 @@ export type TrackingEvent = typeof trackingEvents.$inferSelect;
 
 export type Setting = typeof settings.$inferSelect;
 export type UpsertSetting = typeof settings.$inferInsert;
+
+export const insertTransactionSchema = createInsertSchema(transactions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
+export type Transaction = typeof transactions.$inferSelect;
 
 export const quoteRequestSchema = z.object({
   fromZipCode: z.string().min(5, "Código postal inválido"),
