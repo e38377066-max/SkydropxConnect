@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Package, Loader2 } from "lucide-react";
 import { SiGoogle } from "react-icons/si";
 import { useForm } from "react-hook-form";
@@ -13,11 +14,22 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 
+const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&_\-.,])[A-Za-z\d@$!%*?&_\-.,]{8,}$/;
+
 const registerSchema = z.object({
   email: z.string().email("Email inválido"),
-  password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres"),
+  password: z.string()
+    .min(8, "La contraseña debe tener al menos 8 caracteres")
+    .regex(passwordRegex, "Debe contener: 1 mayúscula, 1 minúscula, 1 número y 1 carácter especial (@$!%*?&_-.,)"),
+  confirmPassword: z.string().min(1, "Confirma tu contraseña"),
   firstName: z.string().min(1, "Nombre requerido"),
   lastName: z.string().optional(),
+  birthDay: z.string().min(1, "Selecciona el día"),
+  birthMonth: z.string().min(1, "Selecciona el mes"),
+  birthYear: z.string().min(1, "Selecciona el año"),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Las contraseñas no coinciden",
+  path: ["confirmPassword"],
 });
 
 const loginSchema = z.object({
@@ -39,8 +51,12 @@ export default function Auth() {
     defaultValues: {
       email: "",
       password: "",
+      confirmPassword: "",
       firstName: "",
       lastName: "",
+      birthDay: "",
+      birthMonth: "",
+      birthYear: "",
     },
   });
 
@@ -187,31 +203,33 @@ export default function Auth() {
           </form>
         ) : (
           <form onSubmit={registerForm.handleSubmit(handleRegister)} className="space-y-4">
-            <div>
-              <Label htmlFor="register-firstName">Nombre</Label>
-              <Input
-                id="register-firstName"
-                type="text"
-                placeholder="Juan"
-                {...registerForm.register("firstName")}
-                data-testid="input-register-firstname"
-              />
-              {registerForm.formState.errors.firstName && (
-                <p className="text-sm text-destructive mt-1">
-                  {registerForm.formState.errors.firstName.message}
-                </p>
-              )}
-            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="register-firstName">Nombre</Label>
+                <Input
+                  id="register-firstName"
+                  type="text"
+                  placeholder="Juan"
+                  {...registerForm.register("firstName")}
+                  data-testid="input-register-firstname"
+                />
+                {registerForm.formState.errors.firstName && (
+                  <p className="text-sm text-destructive mt-1">
+                    {registerForm.formState.errors.firstName.message}
+                  </p>
+                )}
+              </div>
 
-            <div>
-              <Label htmlFor="register-lastName">Apellido (opcional)</Label>
-              <Input
-                id="register-lastName"
-                type="text"
-                placeholder="Pérez"
-                {...registerForm.register("lastName")}
-                data-testid="input-register-lastname"
-              />
+              <div>
+                <Label htmlFor="register-lastName">Apellido (opcional)</Label>
+                <Input
+                  id="register-lastName"
+                  type="text"
+                  placeholder="Pérez"
+                  {...registerForm.register("lastName")}
+                  data-testid="input-register-lastname"
+                />
+              </div>
             </div>
 
             <div>
@@ -231,17 +249,91 @@ export default function Auth() {
             </div>
 
             <div>
+              <Label>Fecha de Nacimiento</Label>
+              <div className="grid grid-cols-3 gap-2">
+                <Select onValueChange={(value) => registerForm.setValue("birthDay", value)}>
+                  <SelectTrigger data-testid="select-birth-day">
+                    <SelectValue placeholder="Día" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+                      <SelectItem key={day} value={day.toString()}>
+                        {day}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select onValueChange={(value) => registerForm.setValue("birthMonth", value)}>
+                  <SelectTrigger data-testid="select-birth-month">
+                    <SelectValue placeholder="Mes" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">Enero</SelectItem>
+                    <SelectItem value="2">Febrero</SelectItem>
+                    <SelectItem value="3">Marzo</SelectItem>
+                    <SelectItem value="4">Abril</SelectItem>
+                    <SelectItem value="5">Mayo</SelectItem>
+                    <SelectItem value="6">Junio</SelectItem>
+                    <SelectItem value="7">Julio</SelectItem>
+                    <SelectItem value="8">Agosto</SelectItem>
+                    <SelectItem value="9">Septiembre</SelectItem>
+                    <SelectItem value="10">Octubre</SelectItem>
+                    <SelectItem value="11">Noviembre</SelectItem>
+                    <SelectItem value="12">Diciembre</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select onValueChange={(value) => registerForm.setValue("birthYear", value)}>
+                  <SelectTrigger data-testid="select-birth-year">
+                    <SelectValue placeholder="Año" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - 18 - i).map((year) => (
+                      <SelectItem key={year} value={year.toString()}>
+                        {year}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {(registerForm.formState.errors.birthDay || registerForm.formState.errors.birthMonth || registerForm.formState.errors.birthYear) && (
+                <p className="text-sm text-destructive mt-1">
+                  {registerForm.formState.errors.birthDay?.message || 
+                   registerForm.formState.errors.birthMonth?.message || 
+                   registerForm.formState.errors.birthYear?.message}
+                </p>
+              )}
+            </div>
+
+            <div>
               <Label htmlFor="register-password">Contraseña</Label>
               <Input
                 id="register-password"
                 type="password"
-                placeholder="Mínimo 6 caracteres"
+                placeholder="Mín. 8 caracteres"
                 {...registerForm.register("password")}
                 data-testid="input-register-password"
               />
               {registerForm.formState.errors.password && (
                 <p className="text-sm text-destructive mt-1">
                   {registerForm.formState.errors.password.message}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <Label htmlFor="register-confirmPassword">Repetir Contraseña</Label>
+              <Input
+                id="register-confirmPassword"
+                type="password"
+                placeholder="Confirma tu contraseña"
+                {...registerForm.register("confirmPassword")}
+                data-testid="input-register-confirm-password"
+              />
+              {registerForm.formState.errors.confirmPassword && (
+                <p className="text-sm text-destructive mt-1">
+                  {registerForm.formState.errors.confirmPassword.message}
                 </p>
               )}
             </div>
