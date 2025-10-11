@@ -1025,6 +1025,399 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Saved Addresses endpoints (protected)
+  app.get("/api/addresses", isAuthenticated, async (req, res) => {
+    try {
+      const addresses = await storage.getUserSavedAddresses(req.user!.id);
+      
+      res.json({
+        success: true,
+        data: addresses,
+      });
+    } catch (error: any) {
+      console.error("Error getting addresses:", error);
+      res.status(500).json({
+        success: false,
+        error: "Error al obtener direcciones",
+      });
+    }
+  });
+
+  const savedAddressSchema = z.object({
+    name: z.string().min(1, "Nombre de la dirección requerido"),
+    contactName: z.string().min(1, "Nombre de contacto requerido"),
+    phone: z.string().min(1, "Teléfono requerido"),
+    address: z.string().min(1, "Dirección requerida"),
+    zipCode: z.string().min(1, "Código postal requerido"),
+    city: z.string().optional(),
+    state: z.string().optional(),
+    type: z.enum(['origin', 'destination', 'both']).default('both'),
+  });
+
+  app.post("/api/addresses", isAuthenticated, async (req, res) => {
+    try {
+      const validatedData = savedAddressSchema.parse(req.body);
+      
+      const address = await storage.createSavedAddress({
+        userId: req.user!.id,
+        ...validatedData,
+      });
+
+      res.json({
+        success: true,
+        data: address,
+      });
+    } catch (error: any) {
+      console.error("Error creating address:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({
+          success: false,
+          error: "Datos inválidos",
+          details: error.errors,
+        });
+      }
+      res.status(500).json({
+        success: false,
+        error: "Error al crear dirección",
+      });
+    }
+  });
+
+  app.patch("/api/addresses/:id", isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const validatedData = savedAddressSchema.partial().parse(req.body);
+      
+      // Verify ownership before updating
+      const addresses = await storage.getUserSavedAddresses(req.user!.id);
+      const existingAddress = addresses.find(a => a.id === id);
+      
+      if (!existingAddress) {
+        return res.status(404).json({
+          success: false,
+          error: "Dirección no encontrada",
+        });
+      }
+      
+      const updated = await storage.updateSavedAddress(id, validatedData);
+
+      res.json({
+        success: true,
+        data: updated,
+      });
+    } catch (error: any) {
+      console.error("Error updating address:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({
+          success: false,
+          error: "Datos inválidos",
+          details: error.errors,
+        });
+      }
+      res.status(500).json({
+        success: false,
+        error: "Error al actualizar dirección",
+      });
+    }
+  });
+
+  app.delete("/api/addresses/:id", isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      // Verify ownership before deleting
+      const addresses = await storage.getUserSavedAddresses(req.user!.id);
+      const existingAddress = addresses.find(a => a.id === id);
+      
+      if (!existingAddress) {
+        return res.status(404).json({
+          success: false,
+          error: "Dirección no encontrada",
+        });
+      }
+      
+      await storage.deleteSavedAddress(id);
+
+      res.json({
+        success: true,
+        message: "Dirección eliminada correctamente",
+      });
+    } catch (error: any) {
+      console.error("Error deleting address:", error);
+      res.status(500).json({
+        success: false,
+        error: "Error al eliminar dirección",
+      });
+    }
+  });
+
+  // Saved Packages endpoints (protected)
+  app.get("/api/packages", isAuthenticated, async (req, res) => {
+    try {
+      const packages = await storage.getUserSavedPackages(req.user!.id);
+      
+      res.json({
+        success: true,
+        data: packages,
+      });
+    } catch (error: any) {
+      console.error("Error getting packages:", error);
+      res.status(500).json({
+        success: false,
+        error: "Error al obtener paquetes",
+      });
+    }
+  });
+
+  const savedPackageSchema = z.object({
+    alias: z.string().min(1, "Nombre del paquete requerido"),
+    weight: z.coerce.number().positive("Peso debe ser mayor a 0"),
+    length: z.coerce.number().positive("Largo debe ser mayor a 0"),
+    width: z.coerce.number().positive("Ancho debe ser mayor a 0"),
+    height: z.coerce.number().positive("Alto debe ser mayor a 0"),
+  });
+
+  app.post("/api/packages", isAuthenticated, async (req, res) => {
+    try {
+      const validatedData = savedPackageSchema.parse(req.body);
+      
+      const pkg = await storage.createSavedPackage({
+        userId: req.user!.id,
+        alias: validatedData.alias,
+        weight: validatedData.weight.toString(),
+        length: validatedData.length.toString(),
+        width: validatedData.width.toString(),
+        height: validatedData.height.toString(),
+      });
+
+      res.json({
+        success: true,
+        data: pkg,
+      });
+    } catch (error: any) {
+      console.error("Error creating package:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({
+          success: false,
+          error: "Datos inválidos",
+          details: error.errors,
+        });
+      }
+      res.status(500).json({
+        success: false,
+        error: "Error al crear paquete",
+      });
+    }
+  });
+
+  app.patch("/api/packages/:id", isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const validatedData = savedPackageSchema.partial().parse(req.body);
+      
+      // Verify ownership before updating
+      const packages = await storage.getUserSavedPackages(req.user!.id);
+      const existingPackage = packages.find(p => p.id === id);
+      
+      if (!existingPackage) {
+        return res.status(404).json({
+          success: false,
+          error: "Paquete no encontrado",
+        });
+      }
+      
+      const updateData: any = {
+        alias: validatedData.alias,
+        weight: validatedData.weight?.toString(),
+        length: validatedData.length?.toString(),
+        width: validatedData.width?.toString(),
+        height: validatedData.height?.toString(),
+      };
+
+      // Remove undefined values
+      Object.keys(updateData).forEach(key => 
+        updateData[key] === undefined && delete updateData[key]
+      );
+      
+      const updated = await storage.updateSavedPackage(id, updateData);
+
+      res.json({
+        success: true,
+        data: updated,
+      });
+    } catch (error: any) {
+      console.error("Error updating package:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({
+          success: false,
+          error: "Datos inválidos",
+          details: error.errors,
+        });
+      }
+      res.status(500).json({
+        success: false,
+        error: "Error al actualizar paquete",
+      });
+    }
+  });
+
+  app.delete("/api/packages/:id", isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      // Verify ownership before deleting
+      const packages = await storage.getUserSavedPackages(req.user!.id);
+      const existingPackage = packages.find(p => p.id === id);
+      
+      if (!existingPackage) {
+        return res.status(404).json({
+          success: false,
+          error: "Paquete no encontrado",
+        });
+      }
+      
+      await storage.deleteSavedPackage(id);
+
+      res.json({
+        success: true,
+        message: "Paquete eliminado correctamente",
+      });
+    } catch (error: any) {
+      console.error("Error deleting package:", error);
+      res.status(500).json({
+        success: false,
+        error: "Error al eliminar paquete",
+      });
+    }
+  });
+
+  // Billing Profiles endpoints (protected)
+  app.get("/api/billing-profiles", isAuthenticated, async (req, res) => {
+    try {
+      const profiles = await storage.getUserBillingProfiles(req.user!.id);
+      
+      res.json({
+        success: true,
+        data: profiles,
+      });
+    } catch (error: any) {
+      console.error("Error getting billing profiles:", error);
+      res.status(500).json({
+        success: false,
+        error: "Error al obtener perfiles de facturación",
+      });
+    }
+  });
+
+  const billingProfileSchema = z.object({
+    rfc: z.string().min(12, "RFC debe tener al menos 12 caracteres").max(13),
+    razonSocial: z.string().min(1, "Razón social requerida"),
+    usoCFDI: z.string().optional(),
+    email: z.string().email("Email inválido"),
+    direccionFiscal: z.string().optional(),
+    codigoPostalFiscal: z.string().optional(),
+    ciudadFiscal: z.string().optional(),
+    estadoFiscal: z.string().optional(),
+    isDefault: z.enum(['true', 'false']).default('false'),
+  });
+
+  app.post("/api/billing-profiles", isAuthenticated, async (req, res) => {
+    try {
+      const validatedData = billingProfileSchema.parse(req.body);
+      
+      const profile = await storage.createBillingProfile({
+        userId: req.user!.id,
+        ...validatedData,
+      });
+
+      res.json({
+        success: true,
+        data: profile,
+      });
+    } catch (error: any) {
+      console.error("Error creating billing profile:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({
+          success: false,
+          error: "Datos inválidos",
+          details: error.errors,
+        });
+      }
+      res.status(500).json({
+        success: false,
+        error: "Error al crear perfil de facturación",
+      });
+    }
+  });
+
+  app.patch("/api/billing-profiles/:id", isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const validatedData = billingProfileSchema.partial().parse(req.body);
+      
+      // Verify ownership before updating
+      const profiles = await storage.getUserBillingProfiles(req.user!.id);
+      const existingProfile = profiles.find(p => p.id === id);
+      
+      if (!existingProfile) {
+        return res.status(404).json({
+          success: false,
+          error: "Perfil de facturación no encontrado",
+        });
+      }
+      
+      const updated = await storage.updateBillingProfile(id, validatedData);
+
+      res.json({
+        success: true,
+        data: updated,
+      });
+    } catch (error: any) {
+      console.error("Error updating billing profile:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({
+          success: false,
+          error: "Datos inválidos",
+          details: error.errors,
+        });
+      }
+      res.status(500).json({
+        success: false,
+        error: "Error al actualizar perfil de facturación",
+      });
+    }
+  });
+
+  app.delete("/api/billing-profiles/:id", isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      // Verify ownership before deleting
+      const profiles = await storage.getUserBillingProfiles(req.user!.id);
+      const existingProfile = profiles.find(p => p.id === id);
+      
+      if (!existingProfile) {
+        return res.status(404).json({
+          success: false,
+          error: "Perfil de facturación no encontrado",
+        });
+      }
+      
+      await storage.deleteBillingProfile(id);
+
+      res.json({
+        success: true,
+        message: "Perfil de facturación eliminado correctamente",
+      });
+    } catch (error: any) {
+      console.error("Error deleting billing profile:", error);
+      res.status(500).json({
+        success: false,
+        error: "Error al eliminar perfil de facturación",
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
