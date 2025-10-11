@@ -10,7 +10,8 @@ import {
   quoteRequestSchema, 
   shipmentRequestSchema,
   type QuoteRequest,
-  type ShipmentRequest 
+  type ShipmentRequest,
+  type UpdateRechargeRequest,
 } from "@shared/schema";
 
 const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&_\-.,])[A-Za-z\d@$!%*?&_\-.,]{8,}$/;
@@ -814,6 +815,212 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(statusCode).json({
         success: false,
         error: error.message || "Error al rastrear el paquete",
+      });
+    }
+  });
+
+  // Wallet endpoints (protected)
+  app.get("/api/wallet/balance", isAuthenticated, async (req, res) => {
+    try {
+      const user = await storage.getUserById(req.user!.id);
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          error: "Usuario no encontrado",
+        });
+      }
+
+      res.json({
+        success: true,
+        data: {
+          balance: user.balance,
+        },
+      });
+    } catch (error: any) {
+      console.error("Error getting balance:", error);
+      res.status(500).json({
+        success: false,
+        error: "Error al obtener saldo",
+      });
+    }
+  });
+
+  app.get("/api/wallet/transactions", isAuthenticated, async (req, res) => {
+    try {
+      const transactions = await storage.getUserTransactions(req.user!.id);
+      
+      res.json({
+        success: true,
+        data: transactions,
+      });
+    } catch (error: any) {
+      console.error("Error getting transactions:", error);
+      res.status(500).json({
+        success: false,
+        error: "Error al obtener transacciones",
+      });
+    }
+  });
+
+  const rechargeRequestSchema = z.object({
+    amount: z.coerce.number().positive("El monto debe ser mayor a 0"),
+    paymentMethod: z.string().min(1, "Método de pago requerido"),
+    paymentReference: z.string().optional(),
+  });
+
+  app.post("/api/wallet/recharge/request", isAuthenticated, async (req, res) => {
+    try {
+      const validatedData = rechargeRequestSchema.parse(req.body);
+      
+      const rechargeRequest = await storage.createRechargeRequest({
+        userId: req.user!.id,
+        amount: validatedData.amount.toString(),
+        paymentMethod: validatedData.paymentMethod,
+        paymentReference: validatedData.paymentReference || null,
+        status: 'pending',
+        adminNotes: null,
+        adminId: null,
+      });
+
+      res.json({
+        success: true,
+        data: rechargeRequest,
+      });
+    } catch (error: any) {
+      console.error("Error creating recharge request:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({
+          success: false,
+          error: "Datos inválidos",
+          details: error.errors,
+        });
+      }
+      res.status(500).json({
+        success: false,
+        error: "Error al crear solicitud de recarga",
+      });
+    }
+  });
+
+  app.get("/api/wallet/recharge/requests", isAuthenticated, async (req, res) => {
+    try {
+      const requests = await storage.getUserRechargeRequests(req.user!.id);
+      
+      res.json({
+        success: true,
+        data: requests,
+      });
+    } catch (error: any) {
+      console.error("Error getting recharge requests:", error);
+      res.status(500).json({
+        success: false,
+        error: "Error al obtener solicitudes de recarga",
+      });
+    }
+  });
+
+  // Admin-only middleware (reuse existing from profile section)
+
+  app.get("/api/admin/recharge/requests", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const status = req.query.status as 'pending' | 'approved' | 'rejected' | undefined;
+      
+      let requests;
+      if (status === 'pending') {
+        requests = await storage.getPendingRechargeRequests();
+      } else {
+        requests = await storage.getAllRechargeRequests();
+        if (status) {
+          requests = requests.filter(r => r.status === status);
+        }
+      }
+      
+      res.json({
+        success: true,
+        data: requests,
+      });
+    } catch (error: any) {
+      console.error("Error getting recharge requests:", error);
+      res.status(500).json({
+        success: false,
+        error: "Error al obtener solicitudes de recarga",
+      });
+    }
+  });
+
+  const updateRechargeRequestSchema = z.object({
+    status: z.enum(['pending', 'approved', 'rejected']),
+    adminNotes: z.string().optional(),
+  });
+
+  app.patch("/api/admin/recharge/requests/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const validatedData = updateRechargeRequestSchema.parse(req.body);
+      
+      const rechargeRequest = await storage.getRechargeRequest(id);
+      if (!rechargeRequest) {
+        return res.status(404).json({
+          success: false,
+          error: "Solicitud de recarga no encontrada",
+        });
+      }
+
+      // Prepare update data
+      const updateData: UpdateRechargeRequest = {
+        status: validatedData.status,
+        adminNotes: validatedData.adminNotes || undefined,
+        adminId: req.user!.id,
+      };
+
+      // If approving, set processedAt and update user balance
+      if (validatedData.status === 'approved') {
+        updateData.processedAt = new Date();
+        
+        const user = await storage.getUserById(rechargeRequest.userId);
+        if (!user) {
+          return res.status(404).json({
+            success: false,
+            error: "Usuario no encontrado",
+          });
+        }
+
+        const currentBalance = parseFloat(user.balance || '0');
+        const rechargeAmount = parseFloat(rechargeRequest.amount);
+        const newBalance = (currentBalance + rechargeAmount).toFixed(2);
+
+        await storage.updateUserBalance(rechargeRequest.userId, newBalance);
+        
+        await storage.createTransaction({
+          userId: rechargeRequest.userId,
+          type: 'deposit',
+          amount: rechargeRequest.amount,
+          balanceAfter: newBalance,
+          description: `Recarga aprobada - ${rechargeRequest.paymentMethod}`,
+          metadata: { rechargeRequestId: id } as any,
+        });
+      } else if (validatedData.status === 'rejected') {
+        updateData.processedAt = new Date();
+      }
+
+      const updated = await storage.updateRechargeRequest(id, updateData);
+
+      res.json({
+        success: true,
+        data: updated,
+      });
+    } catch (error: any) {
+      console.error("Error updating recharge request:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({
+          success: false,
+          error: "Datos inválidos",
+          details: error.errors,
+        });
+      }
+      res.status(500).json({
+        success: false,
+        error: "Error al actualizar solicitud de recarga",
       });
     }
   });

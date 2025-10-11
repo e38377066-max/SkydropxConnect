@@ -50,6 +50,7 @@ export interface IStorage {
   
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
+  getUserById(id: string): Promise<User | undefined>;
   getAllUsers(): Promise<User[]>;
   createUser(user: UpsertUser): Promise<User>;
   upsertUser(user: UpsertUser): Promise<User>;
@@ -67,6 +68,7 @@ export interface IStorage {
   
   // Recharge Requests
   createRechargeRequest(request: InsertRechargeRequest): Promise<RechargeRequest>;
+  getRechargeRequest(id: string): Promise<RechargeRequest | undefined>;
   getUserRechargeRequests(userId: string): Promise<RechargeRequest[]>;
   getAllRechargeRequests(): Promise<RechargeRequest[]>;
   getPendingRechargeRequests(): Promise<RechargeRequest[]>;
@@ -180,6 +182,14 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(users)
       .where(eq(users.email, email));
+    return user || undefined;
+  }
+
+  async getUserById(id: string): Promise<User | undefined> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, id));
     return user || undefined;
   }
 
@@ -303,6 +313,14 @@ export class DatabaseStorage implements IStorage {
       .values(insertRequest)
       .returning();
     return request;
+  }
+
+  async getRechargeRequest(id: string): Promise<RechargeRequest | undefined> {
+    const [request] = await db
+      .select()
+      .from(rechargeRequests)
+      .where(eq(rechargeRequests.id, id));
+    return request || undefined;
   }
 
   async getUserRechargeRequests(userId: string): Promise<RechargeRequest[]> {
