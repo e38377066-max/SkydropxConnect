@@ -144,13 +144,9 @@ export const transactions = pgTable("transactions", {
   // Description of the transaction
   description: text("description").notNull(),
   
-  // Reference to related entities (e.g., shipment ID, payment intent ID)
+  // Reference to related entities (e.g., shipment ID, recharge request ID)
   referenceId: varchar("reference_id"),
-  referenceType: varchar("reference_type"), // 'shipment', 'stripe_payment', etc.
-  
-  // Payment provider information (for deposits)
-  paymentProvider: varchar("payment_provider"), // 'stripe', 'paypal', etc.
-  paymentIntentId: varchar("payment_intent_id"),
+  referenceType: varchar("reference_type"), // 'shipment', 'recharge_request', etc.
   
   // Status: 'pending', 'completed', 'failed', 'refunded'
   status: varchar("status").notNull().default("completed"),
@@ -159,6 +155,35 @@ export const transactions = pgTable("transactions", {
   metadata: jsonb("metadata"),
   
   createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// Recharge requests table for manual balance top-ups
+export const rechargeRequests = pgTable("recharge_requests", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  
+  // Requested amount
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  
+  // Payment method: 'bank_transfer', 'cash_deposit', 'oxxo', etc.
+  paymentMethod: varchar("payment_method").notNull(),
+  
+  // Payment reference/proof (optional, can be added later)
+  paymentReference: text("payment_reference"),
+  
+  // Status: 'pending', 'approved', 'rejected'
+  status: varchar("status").notNull().default("pending"),
+  
+  // Admin notes (reason for rejection, etc.)
+  adminNotes: text("admin_notes"),
+  
+  // Admin who approved/rejected
+  adminId: varchar("admin_id").references(() => users.id),
+  
+  // Timestamps
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  processedAt: timestamp("processed_at"),
 });
 
 export const insertShipmentSchema = createInsertSchema(shipments).omit({
