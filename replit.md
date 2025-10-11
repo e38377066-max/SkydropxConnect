@@ -38,7 +38,7 @@ Preferred communication style: Simple, everyday language.
 - Middleware-based request processing pipeline
 
 **API Routes:**
-- `/api/quotes` - POST endpoint for shipping rate quotes (public)
+- `/api/quotes` - POST endpoint for shipping rate quotes (public, applies profit margin)
 - `/api/shipments` - POST/GET endpoints for shipment creation and retrieval (public)
 - `/api/tracking/:trackingNumber` - GET endpoint for package tracking (public)
 - `/api/register` - POST endpoint for local user registration (public)
@@ -53,6 +53,9 @@ Preferred communication style: Simple, everyday language.
 - `/api/user/add-password` - POST endpoint to add password to OAuth-only accounts (protected)
 - `/api/user/unlink-provider` - POST endpoint to unlink OAuth provider with validation (protected, supports google/facebook)
 - `/api/user/avatar` - PATCH endpoint to update profile image URL (protected)
+- `/api/admin/settings` - GET endpoint to retrieve all system settings (admin only)
+- `/api/settings/:key` - GET endpoint to retrieve specific setting value (public)
+- `/api/admin/settings` - PATCH endpoint to update system settings (admin only)
 
 **Required Environment Variables:**
 - `GOOGLE_CLIENT_ID` - Google OAuth 2.0 Client ID from Google Cloud Console
@@ -91,6 +94,11 @@ Preferred communication style: Simple, everyday language.
 - `shipments` table - Core shipment data with sender/receiver details
 - `quotes` table - Shipping rate quote records
 - `trackingEvents` table - Timeline of package tracking updates
+- `settings` table - System configuration storage (key-value pairs):
+  - key (varchar, primary key) - Setting identifier
+  - value (text) - Setting value stored as string
+  - description (text, optional) - Human-readable description
+  - updatedAt (timestamp) - Last update timestamp
 
 **Data Models:**
 - Shared TypeScript types via Drizzle schema exports
@@ -190,3 +198,30 @@ Preferred communication style: Simple, everyday language.
 **Image Assets:**
 - Static images stored in `attached_assets/generated_images`
 - Hero background image for landing page
+
+## Profit Margin System
+
+**Configurable Pricing:**
+- Platform charges customers the Skydropx base price plus a configurable profit margin
+- Margin percentage stored in `settings` table with key `profit_margin_percentage`
+- Default profit margin: 15% when no setting exists or invalid data detected
+- Only admin users can modify profit margin through admin panel
+
+**Price Calculation:**
+- Formula: `price_with_margin = base_price * (1 + margin_percentage / 100)`
+- Applied to both `amount_local` and `total_pricing` fields in quote responses
+- Validation ensures margin is between 0-100%
+- NaN guards prevent invalid prices from reaching customers
+
+**Admin Configuration:**
+- AdminUsersPage (/admin/usuarios) contains profit margin configuration card
+- Number input with min=0, max=100 validation
+- Real-time updates to quote system
+- Backend validation using z.coerce.number().min(0).max(100)
+- Fallback to 15% if stored value is invalid or missing
+
+**Security & Validation:**
+- PATCH /api/admin/settings validates profit_margin_percentage with strict numeric bounds
+- Quote endpoint validates rate amounts before applying margin
+- Returns original Skydropx rate if amounts are invalid (NaN protection)
+- All margin changes require admin authentication
