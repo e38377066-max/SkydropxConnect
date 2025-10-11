@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Package, Loader2 } from "lucide-react";
+import { Package, Loader2, Check, X } from "lucide-react";
 import { SiGoogle } from "react-icons/si";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -42,6 +42,7 @@ type LoginData = z.infer<typeof loginSchema>;
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
+  const [passwordValue, setPasswordValue] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
@@ -123,6 +124,15 @@ export default function Auth() {
   const handleLogin = (data: LoginData) => {
     loginMutation.mutate(data);
   };
+
+  // Password requirements validation
+  const passwordRequirements = [
+    { id: 1, text: "Mínimo 8 caracteres", test: (pw: string) => pw.length >= 8 },
+    { id: 2, text: "Una letra mayúscula", test: (pw: string) => /[A-Z]/.test(pw) },
+    { id: 3, text: "Una letra minúscula", test: (pw: string) => /[a-z]/.test(pw) },
+    { id: 4, text: "Un número", test: (pw: string) => /\d/.test(pw) },
+    { id: 5, text: "Un carácter especial (@$!%*?&_-.,)", test: (pw: string) => /[@$!%*?&_\-.,]/.test(pw) },
+  ];
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-6">
@@ -312,9 +322,34 @@ export default function Auth() {
                 id="register-password"
                 type="password"
                 placeholder="Mín. 8 caracteres"
-                {...registerForm.register("password")}
+                {...registerForm.register("password", {
+                  onChange: (e) => setPasswordValue(e.target.value)
+                })}
                 data-testid="input-register-password"
               />
+              {passwordValue && (
+                <div className="mt-2 space-y-1" data-testid="password-requirements">
+                  {passwordRequirements.map((req) => {
+                    const isMet = req.test(passwordValue);
+                    return (
+                      <div
+                        key={req.id}
+                        className={`flex items-center gap-2 text-sm ${
+                          isMet ? "text-green-600 dark:text-green-500" : "text-red-600 dark:text-red-500"
+                        }`}
+                        data-testid={`requirement-${req.id}`}
+                      >
+                        {isMet ? (
+                          <Check className="w-4 h-4" />
+                        ) : (
+                          <X className="w-4 h-4" />
+                        )}
+                        <span>{req.text}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
               {registerForm.formState.errors.password && (
                 <p className="text-sm text-destructive mt-1">
                   {registerForm.formState.errors.password.message}
