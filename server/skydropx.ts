@@ -114,46 +114,38 @@ export class SkydropxService {
     try {
       console.log("🔄 Generating new Skydropx Bearer token...");
       
-      // Intentar varios posibles endpoints OAuth
-      const possibleEndpoints = [
-        `${this.baseUrl}/oauth/token`,
-        `https://api.skydropx.com/oauth/token`,
-      ];
+      const endpoint = "https://api.skydropx.com/api/v1/oauth/token";
+      
+      console.log("📡 Request details:", {
+        endpoint,
+        method: "POST",
+        clientId: this.clientId?.substring(0, 10) + "...",
+      });
 
-      let tokenResponse: SkydropxTokenResponse | null = null;
-      let lastError: Error | null = null;
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+          grant_type: "client_credentials",
+          client_id: this.clientId,
+          client_secret: this.clientSecret,
+        }).toString(),
+      });
 
-      for (const endpoint of possibleEndpoints) {
-        try {
-          const response = await fetch(endpoint, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/x-www-form-urlencoded",
-            },
-            body: new URLSearchParams({
-              grant_type: "client_credentials",
-              client_id: this.clientId,
-              client_secret: this.clientSecret,
-            }).toString(),
-          });
+      console.log("📥 Response status:", response.status);
+      console.log("📥 Response headers:", Object.fromEntries(response.headers.entries()));
 
-          if (response.ok) {
-            tokenResponse = await response.json();
-            console.log(`✅ Token generated successfully from: ${endpoint}`);
-            break;
-          } else {
-            const errorText = await response.text();
-            console.log(`❌ Failed at ${endpoint}: ${response.status} - ${errorText}`);
-          }
-        } catch (err) {
-          lastError = err as Error;
-          console.log(`❌ Error at ${endpoint}:`, err);
-        }
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`❌ Failed to generate token: ${response.status}`);
+        console.error(`❌ Response body (first 500 chars):`, errorText.substring(0, 500));
+        throw new Error(`Error de autenticación Skydropx: ${response.status} - ${errorText.substring(0, 200)}`);
       }
 
-      if (!tokenResponse) {
-        throw new Error(`No se pudo generar el Bearer token. Último error: ${lastError?.message || 'Unknown'}`);
-      }
+      const tokenResponse: SkydropxTokenResponse = await response.json();
+      console.log("✅ Skydropx Bearer token generated successfully!");
       
       // Guardar el token y calcular cuándo expira (2 horas = 7200 segundos)
       // Restamos 5 minutos (300 segundos) para renovar antes de que expire
