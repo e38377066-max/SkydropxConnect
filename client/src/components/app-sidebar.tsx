@@ -91,15 +91,17 @@ export function AppSidebar() {
   return (
     <Sidebar>
       <SidebarHeader className="p-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary text-primary-foreground">
-            <Package className="h-6 w-6" />
+        <Link href="/" data-testid="sidebar-link-home">
+          <div className="flex items-center gap-3 hover-elevate active-elevate-2 p-2 rounded-lg -m-2 cursor-pointer">
+            <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary text-primary-foreground">
+              <Package className="h-6 w-6" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-sm font-semibold">Manuel Dev</span>
+              <span className="text-xs text-muted-foreground">Envíos</span>
+            </div>
           </div>
-          <div className="flex flex-col">
-            <span className="text-sm font-semibold">Manuel Dev</span>
-            <span className="text-xs text-muted-foreground">Envíos</span>
-          </div>
-        </div>
+        </Link>
       </SidebarHeader>
 
       <SidebarContent>
