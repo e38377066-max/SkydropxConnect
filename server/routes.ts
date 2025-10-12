@@ -540,10 +540,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         zip_from: validatedData.fromZipCode,
         zip_to: validatedData.toZipCode,
         parcel: {
-          weight: validatedData.weight,
-          length: validatedData.length,
-          width: validatedData.width,
-          height: validatedData.height,
+          weight: validatedData.weight.toString(),
+          length: validatedData.length?.toString(),
+          width: validatedData.width?.toString(),
+          height: validatedData.height?.toString(),
         },
       };
 

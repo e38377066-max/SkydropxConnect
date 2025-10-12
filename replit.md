@@ -72,7 +72,7 @@ The application uses PostgreSQL, accessed via the Neon serverless driver, and `D
 
 ## Third-Party APIs
 
--   **Skydropx API**: Used for shipping rate quotes, label generation, and real-time package tracking across various carriers.
+-   **Skydropx API**: Integrated for shipping rate quotes, label generation, and real-time package tracking across various carriers. Uses API Key authentication with the format `Authorization: Token token=API_KEY`. The service is configured to work with both production API keys and falls back to mock data when credentials are not configured.
 -   **Google OAuth 2.0 API**: Integrated for secure user authentication via Google accounts.
 
 ## Libraries
