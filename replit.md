@@ -19,10 +19,11 @@ The application implements a dual-navigation system:
 - **Available to:** Authenticated users only
 - **Layout:** Sidebar + Content area (no header/footer)
 - **Sidebar Navigation:**
-  - Principal: Dashboard, Cotizar Envío, Crear Guía, Mis Envíos, Rastrear, Billetera
+  - Principal: Inicio (returns to /), Dashboard, Cotizar Envío, Crear Guía, Mis Envíos, Rastrear, Billetera
   - Configuración: Direcciones, Paquetes
   - Mi Cuenta: Mi Perfil
   - Admin: Usuarios, Recargas (admin-only)
+- **Logo:** Clickeable link to homepage (/)
 - **Protected Routes:** /dashboard, /cotizar, /crear-guia, /rastrear, /envios, /perfil, /billetera, /configuracion/*, /admin/*
 
 # User Preferences

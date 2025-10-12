@@ -1,4 +1,4 @@
-import { Home, Package, DollarSign, MapPin, FileText, Settings, Users, BarChart3 } from "lucide-react";
+import { Home, Package, DollarSign, MapPin, FileText, Settings, Users, BarChart3, LayoutDashboard } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -17,9 +17,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const menuItems = [
   {
+    title: "Inicio",
+    url: "/",
+    icon: Home,
+  },
+  {
     title: "Dashboard",
     url: "/dashboard",
-    icon: Home,
+    icon: LayoutDashboard,
   },
   {
     title: "Cotizar Envío",
