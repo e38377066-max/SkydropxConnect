@@ -683,7 +683,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const skydropxShipment = await skydropxService.createShipment(skydropxRequest);
       
       // Use the actual amount from Skydropx (should match expected amount)
-      const actualAmount = parseFloat(skydropxShipment.rate.amount_local);
+      const actualAmount = typeof skydropxShipment.rate.amount_local === 'string' 
+        ? parseFloat(skydropxShipment.rate.amount_local)
+        : skydropxShipment.rate.amount_local;
       
       // Verify actual amount doesn't exceed current balance
       if (actualAmount > currentBalance) {
