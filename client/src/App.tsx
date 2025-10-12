@@ -55,10 +55,9 @@ function ProtectedRoutes() {
       <Route path="/rastrear" component={TrackingPage} />
       <Route path="/envios" component={ShipmentsPage} />
       <Route path="/perfil" component={ProfilePage} />
-      <Route path="/configuracion/billetera" component={WalletPage} />
+      <Route path="/billetera" component={WalletPage} />
       <Route path="/configuracion/direcciones" component={AddressesPage} />
       <Route path="/configuracion/paquetes" component={PackagesPage} />
-      <Route path="/configuracion/facturacion" component={BillingProfilesPage} />
       <Route path="/admin/usuarios" component={AdminUsersPage} />
       <Route path="/admin/recargas" component={AdminRechargesPage} />
       <Route component={NotFound} />

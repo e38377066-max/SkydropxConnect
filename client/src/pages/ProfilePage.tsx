@@ -26,13 +26,15 @@ import {
   MapPin,
   Lock,
   Key,
-  AlertCircle
+  AlertCircle,
+  FileText
 } from "lucide-react";
 import { SiGoogle, SiFacebook } from "react-icons/si";
 import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import BillingProfilesManager from "@/components/BillingProfilesManager";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -369,14 +371,14 @@ export default function ProfilePage() {
 
         {/* Tabs - Enhanced */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3 mb-8 h-auto p-1 bg-muted/50 backdrop-blur-sm">
+          <TabsList className="grid w-full grid-cols-4 mb-8 h-auto p-1 bg-muted/50 backdrop-blur-sm">
             <TabsTrigger 
               value="contact" 
               data-testid="tab-contact"
               className="gap-2 py-3 data-[state=active]:bg-background data-[state=active]:shadow-md"
             >
               <User className="w-4 h-4" />
-              <span className="hidden sm:inline">Datos de Contacto</span>
+              <span className="hidden sm:inline">Contacto</span>
               <span className="sm:hidden">Contacto</span>
             </TabsTrigger>
             <TabsTrigger 
@@ -387,6 +389,15 @@ export default function ProfilePage() {
               <CreditCard className="w-4 h-4" />
               <span className="hidden sm:inline">Facturación</span>
               <span className="sm:hidden">Factura</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="profiles" 
+              data-testid="tab-profiles"
+              className="gap-2 py-3 data-[state=active]:bg-background data-[state=active]:shadow-md"
+            >
+              <FileText className="w-4 h-4" />
+              <span className="hidden sm:inline">Perfiles</span>
+              <span className="sm:hidden">Perfiles</span>
             </TabsTrigger>
             <TabsTrigger 
               value="security" 
@@ -635,6 +646,31 @@ export default function ProfilePage() {
                     )}
                   </Button>
                 </form>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Billing Profiles Tab */}
+          <TabsContent value="profiles">
+            <Card className="border-0 shadow-lg">
+              <CardHeader className="pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <FileText className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-foreground">
+                      Perfiles de Facturación
+                    </h2>
+                    <p className="text-sm text-muted-foreground">
+                      Administra tus perfiles de facturación guardados
+                    </p>
+                  </div>
+                </div>
+              </CardHeader>
+              <Separator />
+              <CardContent className="pt-6">
+                <BillingProfilesManager />
               </CardContent>
             </Card>
           </TabsContent>

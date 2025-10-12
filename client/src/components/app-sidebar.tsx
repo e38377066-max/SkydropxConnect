@@ -41,14 +41,14 @@ const menuItems = [
     url: "/rastrear",
     icon: MapPin,
   },
+  {
+    title: "Billetera",
+    url: "/billetera",
+    icon: DollarSign,
+  },
 ];
 
 const configItems = [
-  {
-    title: "Billetera",
-    url: "/configuracion/billetera",
-    icon: DollarSign,
-  },
   {
     title: "Direcciones",
     url: "/configuracion/direcciones",
@@ -58,11 +58,6 @@ const configItems = [
     title: "Paquetes",
     url: "/configuracion/paquetes",
     icon: Package,
-  },
-  {
-    title: "Facturación",
-    url: "/configuracion/facturacion",
-    icon: FileText,
   },
 ];
 
