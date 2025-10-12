@@ -2,6 +2,29 @@
 
 This shipping management platform, "Manuel Dev," is designed for the Mexican market, integrating with the Skydropx API to offer comprehensive logistics solutions. It enables users to compare shipping rates from various carriers (DHL, FedEx, Estafeta, UPS), generate shipping labels, and track packages in real-time. The application is a full-stack TypeScript project, featuring a React frontend and an Express backend, developed as a professional, efficient, and trustworthy logistics tool.
 
+## Navigation Architecture
+
+The application implements a dual-navigation system:
+
+### Public Landing Page (/)
+- **Available to:** All users (authenticated and non-authenticated)
+- **Layout:** Header + Footer (no sidebar)
+- **Components:** Hero section, How It Works, Carriers, Features, CTA sections
+- **Header Actions:**
+  - Non-authenticated: "Iniciar Sesión" and "Registrarse" buttons
+  - Authenticated: "Mi Dashboard" button (prominent, navigates to /dashboard)
+- **Behavior:** Users clicking "Cotizar" when not authenticated are redirected to /auth
+
+### Dashboard & Internal Pages (/dashboard, /cotizar, etc.)
+- **Available to:** Authenticated users only
+- **Layout:** Sidebar + Content area (no header/footer)
+- **Sidebar Navigation:**
+  - Principal: Dashboard, Cotizar Envío, Crear Guía, Mis Envíos, Rastrear, Billetera
+  - Configuración: Direcciones, Paquetes
+  - Mi Cuenta: Mi Perfil
+  - Admin: Usuarios, Recargas (admin-only)
+- **Protected Routes:** /dashboard, /cotizar, /crear-guia, /rastrear, /envios, /perfil, /billetera, /configuracion/*, /admin/*
+
 # User Preferences
 
 Preferred communication style: Simple, everyday language.

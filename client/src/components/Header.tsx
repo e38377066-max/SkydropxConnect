@@ -50,6 +50,16 @@ export default function Header() {
 
           {isAuthenticated && user ? (
             <div className="hidden md:flex items-center gap-3">
+              <Link href="/dashboard">
+                <Button 
+                  variant="default"
+                  size="sm"
+                  data-testid="link-dashboard"
+                >
+                  <Package className="w-4 h-4 mr-2" />
+                  Mi Dashboard
+                </Button>
+              </Link>
               {user.role === 'admin' && (
                 <Link href="/admin/usuarios">
                   <Button 
@@ -134,6 +144,17 @@ export default function Header() {
                     {user.firstName || user.email?.split('@')[0] || 'Usuario'}
                   </span>
                 </div>
+                <Link href="/dashboard">
+                  <Button
+                    variant="default"
+                    className="w-full justify-start"
+                    onClick={() => setMobileMenuOpen(false)}
+                    data-testid="link-mobile-dashboard"
+                  >
+                    <Package className="w-4 h-4 mr-2" />
+                    Mi Dashboard
+                  </Button>
+                </Link>
                 <Link href="/perfil">
                   <Button
                     variant="ghost"

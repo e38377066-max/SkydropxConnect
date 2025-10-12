@@ -41,22 +41,21 @@ export default function AdminRechargesPage() {
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
   const [adminNotes, setAdminNotes] = useState("");
 
-  const { data: pendingRequests, isLoading: isLoadingPending } = useQuery<RechargeRequest[]>({
+  const { data: pendingRequestsData, isLoading: isLoadingPending } = useQuery<{ data: RechargeRequest[] }>({
     queryKey: ["/api/admin/recharge/requests?status=pending"],
   });
 
-  const { data: allRequests, isLoading: isLoadingAll } = useQuery<RechargeRequest[]>({
+  const { data: allRequestsData, isLoading: isLoadingAll } = useQuery<{ data: RechargeRequest[] }>({
     queryKey: ["/api/admin/recharge/requests"],
   });
 
-  const processedRequests = allRequests?.filter(r => r.status !== 'pending') || [];
+  const pendingRequests = pendingRequestsData?.data || [];
+  const allRequests = allRequestsData?.data || [];
+  const processedRequests = allRequests.filter(r => r.status !== 'pending');
 
   const updateRequestMutation = useMutation({
     mutationFn: async ({ id, status, adminNotes }: { id: string; status: 'approved' | 'rejected'; adminNotes?: string }) => {
-      return await apiRequest(`/api/admin/recharge/requests/${id}`, {
-        method: "PATCH",
-        body: JSON.stringify({ status, adminNotes }),
-      });
+      return await apiRequest("PATCH", `/api/admin/recharge/requests/${id}`, { status, adminNotes });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/recharge/requests"] });
