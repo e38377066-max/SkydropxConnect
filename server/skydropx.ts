@@ -73,69 +73,159 @@ interface SkydropxTrackingResponse {
   tracking_history: SkydropxTrackingEvent[];
 }
 
+interface SkydropxTokenResponse {
+  access_token: string;
+  token_type: string;
+  expires_in: number;
+}
+
 export class SkydropxService {
-  private apiKey: string | undefined;
+  private clientId: string | undefined;
+  private clientSecret: string | undefined;
   private baseUrl = "https://api.skydropx.com/v1";
+  private bearerToken: string | null = null;
+  private tokenExpiresAt: number | null = null;
 
   constructor() {
-    this.apiKey = process.env.SKYDROPX_API_KEY;
+    this.clientId = process.env.SKYDROPX_API_KEY;
+    this.clientSecret = process.env.SKYDROPX_API_SECRET;
     
-    if (this.apiKey) {
-      console.log("✅ Skydropx API Key configured");
+    if (this.clientId && this.clientSecret) {
+      console.log("✅ Skydropx credentials configured (Client ID & Secret)");
     } else {
-      console.log("⚠️ Skydropx running in MOCK mode (no API key configured)");
+      console.log("⚠️ Skydropx running in MOCK mode (no credentials configured)");
+    }
+  }
+
+  private async getBearerToken(): Promise<string> {
+    // Si el token existe y no ha expirado (con margen de 5 minutos), retornarlo
+    const now = Date.now();
+    if (this.bearerToken && this.tokenExpiresAt && now < this.tokenExpiresAt) {
+      const remainingMinutes = Math.floor((this.tokenExpiresAt - now) / 1000 / 60);
+      console.log(`🔑 Using existing Bearer token (expires in ${remainingMinutes} minutes)`);
+      return this.bearerToken;
+    }
+
+    // Si no tenemos credenciales, lanzar error
+    if (!this.clientId || !this.clientSecret) {
+      throw new Error("Skydropx credentials not configured");
+    }
+
+    try {
+      console.log("🔄 Generating new Skydropx Bearer token...");
+      
+      // Intentar varios posibles endpoints OAuth
+      const possibleEndpoints = [
+        `${this.baseUrl}/oauth/token`,
+        `https://api.skydropx.com/oauth/token`,
+      ];
+
+      let tokenResponse: SkydropxTokenResponse | null = null;
+      let lastError: Error | null = null;
+
+      for (const endpoint of possibleEndpoints) {
+        try {
+          const response = await fetch(endpoint, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: new URLSearchParams({
+              grant_type: "client_credentials",
+              client_id: this.clientId,
+              client_secret: this.clientSecret,
+            }).toString(),
+          });
+
+          if (response.ok) {
+            tokenResponse = await response.json();
+            console.log(`✅ Token generated successfully from: ${endpoint}`);
+            break;
+          } else {
+            const errorText = await response.text();
+            console.log(`❌ Failed at ${endpoint}: ${response.status} - ${errorText}`);
+          }
+        } catch (err) {
+          lastError = err as Error;
+          console.log(`❌ Error at ${endpoint}:`, err);
+        }
+      }
+
+      if (!tokenResponse) {
+        throw new Error(`No se pudo generar el Bearer token. Último error: ${lastError?.message || 'Unknown'}`);
+      }
+      
+      // Guardar el token y calcular cuándo expira (2 horas = 7200 segundos)
+      // Restamos 5 minutos (300 segundos) para renovar antes de que expire
+      this.bearerToken = tokenResponse.access_token;
+      const expiresIn = tokenResponse.expires_in || 7200; // Default 2 horas
+      this.tokenExpiresAt = Date.now() + ((expiresIn - 300) * 1000);
+      
+      const expiresInMinutes = Math.floor(expiresIn / 60);
+      console.log(`✅ Bearer token generated successfully (expires in ${expiresInMinutes} minutes)`);
+      
+      return this.bearerToken;
+    } catch (error: any) {
+      console.error("❌ Error generating Skydropx Bearer token:", error);
+      throw new Error(`Error de autenticación Skydropx: ${error.message}`);
     }
   }
 
   async getQuotes(request: SkydropxQuoteRequest): Promise<SkydropxRate[]> {
-    if (this.apiKey) {
+    if (this.clientId && this.clientSecret) {
       return this.getRealQuotes(request);
     }
+    console.log("📝 Using MOCK quotes (no credentials configured)");
     return this.getMockQuotes(request);
   }
 
   async createShipment(request: SkydropxShipmentRequest): Promise<SkydropxShipmentResponse> {
-    if (this.apiKey) {
+    if (this.clientId && this.clientSecret) {
       return this.createRealShipment(request);
     }
+    console.log("📝 Using MOCK shipment (no credentials configured)");
     return this.createMockShipment(request);
   }
 
   async trackShipment(trackingNumber: string): Promise<SkydropxTrackingResponse> {
-    if (this.apiKey) {
+    if (this.clientId && this.clientSecret) {
       return this.trackRealShipment(trackingNumber);
     }
+    console.log("📝 Using MOCK tracking (no credentials configured)");
     return this.trackMockShipment(trackingNumber);
   }
 
   private async getRealQuotes(request: SkydropxQuoteRequest): Promise<SkydropxRate[]> {
     try {
+      const token = await this.getBearerToken();
+      
+      console.log("📤 Sending request to Skydropx /quotations");
       const response = await fetch(`${this.baseUrl}/quotations`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Token token=${this.apiKey}`,
+          "Authorization": `Bearer ${token}`,
         },
         body: JSON.stringify(request),
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        console.error("Skydropx API error response:", errorData);
+        console.error("❌ Skydropx API error response:", errorData);
         throw new Error(errorData.message || `Skydropx API error: ${response.statusText}`);
       }
 
       const result = await response.json();
-      console.log("Skydropx quotes response:", JSON.stringify(result, null, 2));
+      console.log("✅ Skydropx quotes response received:", JSON.stringify(result, null, 2));
       
       if (!result.data || !Array.isArray(result.data)) {
-        console.warn("Unexpected Skydropx response structure:", result);
+        console.warn("⚠️ Unexpected Skydropx response structure:", result);
         return [];
       }
 
       return result.data;
     } catch (error: any) {
-      console.error("Error calling Skydropx quotes API:", error);
+      console.error("❌ Error calling Skydropx quotes API:", error);
       throw new Error(`Error al obtener cotizaciones: ${error.message}`);
     }
   }
@@ -196,32 +286,35 @@ export class SkydropxService {
 
   private async createRealShipment(request: SkydropxShipmentRequest): Promise<SkydropxShipmentResponse> {
     try {
+      const token = await this.getBearerToken();
+      
+      console.log("📤 Sending request to Skydropx /shipments");
       const response = await fetch(`${this.baseUrl}/shipments`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Token token=${this.apiKey}`,
+          "Authorization": `Bearer ${token}`,
         },
         body: JSON.stringify(request),
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        console.error("Skydropx shipment error:", errorData);
+        console.error("❌ Skydropx shipment error:", errorData);
         throw new Error(errorData.message || `Skydropx API error: ${response.statusText}`);
       }
 
       const result = await response.json();
-      console.log("Skydropx shipment response:", JSON.stringify(result, null, 2));
+      console.log("✅ Skydropx shipment response received:", JSON.stringify(result, null, 2));
       
       if (!result.data) {
-        console.warn("Unexpected Skydropx shipment response structure:", result);
+        console.warn("⚠️ Unexpected Skydropx shipment response structure:", result);
         throw new Error("Respuesta inválida de Skydropx");
       }
 
       return result.data;
     } catch (error: any) {
-      console.error("Error calling Skydropx shipment API:", error);
+      console.error("❌ Error calling Skydropx shipment API:", error);
       throw new Error(`Error al crear guía: ${error.message}`);
     }
   }
@@ -247,31 +340,34 @@ export class SkydropxService {
 
   private async trackRealShipment(trackingNumber: string): Promise<SkydropxTrackingResponse> {
     try {
+      const token = await this.getBearerToken();
+      
+      console.log(`📤 Sending request to Skydropx /trackings/${trackingNumber}`);
       const response = await fetch(`${this.baseUrl}/trackings/${trackingNumber}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Token token=${this.apiKey}`,
+          "Authorization": `Bearer ${token}`,
         },
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        console.error("Skydropx tracking error:", errorData);
+        console.error("❌ Skydropx tracking error:", errorData);
         throw new Error(errorData.message || `Skydropx API error: ${response.statusText}`);
       }
 
       const result = await response.json();
-      console.log("Skydropx tracking response:", JSON.stringify(result, null, 2));
+      console.log("✅ Skydropx tracking response received:", JSON.stringify(result, null, 2));
       
       if (!result.data) {
-        console.warn("Unexpected Skydropx tracking response structure:", result);
+        console.warn("⚠️ Unexpected Skydropx tracking response structure:", result);
         throw new Error("Respuesta inválida de Skydropx");
       }
 
       return result.data;
     } catch (error: any) {
-      console.error("Error calling Skydropx tracking API:", error);
+      console.error("❌ Error calling Skydropx tracking API:", error);
       throw new Error(`Error al rastrear paquete: ${error.message}`);
     }
   }
