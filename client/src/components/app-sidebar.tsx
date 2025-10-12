@@ -18,7 +18,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 const menuItems = [
   {
     title: "Inicio",
-    url: "/dashboard",
+    url: "/",
     icon: Home,
   },
   {

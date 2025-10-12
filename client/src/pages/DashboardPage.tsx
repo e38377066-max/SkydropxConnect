@@ -29,7 +29,7 @@ export default function DashboardPage() {
       icon: DollarSign,
       color: "text-green-600",
       bgColor: "bg-green-100 dark:bg-green-900/20",
-      link: "/configuracion/billetera",
+      link: "/billetera",
     },
     {
       title: "Envíos Totales",
@@ -190,7 +190,7 @@ export default function DashboardPage() {
             <p className="text-sm text-muted-foreground mb-4">
               Recarga tu billetera para poder crear envíos sin interrupciones.
             </p>
-            <Link href="/configuracion/billetera">
+            <Link href="/billetera">
               <Button data-testid="button-recharge-wallet">
                 <DollarSign className="mr-2 h-4 w-4" />
                 Recargar Saldo

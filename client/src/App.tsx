@@ -46,9 +46,7 @@ function PublicRoutes() {
 function ProtectedRoutes() {
   return (
     <Switch>
-      <Route path="/">
-        <Redirect to="/dashboard" />
-      </Route>
+      <Route path="/" component={HomePage} />
       <Route path="/dashboard" component={DashboardPage} />
       <Route path="/cotizar" component={QuotePage} />
       <Route path="/crear-guia" component={CreateShipmentPage} />
