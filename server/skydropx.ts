@@ -114,7 +114,7 @@ export class SkydropxService {
     try {
       console.log("🔄 Generating new Skydropx Bearer token...");
       
-      const endpoint = "https://app.skydropx.com/api/v1/oauth/token";
+      const endpoint = "https://pro.skydropx.com/api/v1/oauth/token";
       
       console.log("📡 Request details:", {
         endpoint,
@@ -131,7 +131,6 @@ export class SkydropxService {
           grant_type: "client_credentials",
           client_id: this.clientId,
           client_secret: this.clientSecret,
-          redirect_uri: "urn:ietf:wg:oauth:2.0:oob",
           scope: "default orders.create",
         }).toString(),
       });
