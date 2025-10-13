@@ -125,14 +125,14 @@ export class SkydropxService {
       const response = await fetch(endpoint, {
         method: "POST",
         headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
+          "Content-Type": "application/json",
         },
-        body: new URLSearchParams({
+        body: JSON.stringify({
           grant_type: "client_credentials",
           client_id: this.clientId,
           client_secret: this.clientSecret,
           scope: "default orders.create",
-        }).toString(),
+        }),
       });
 
       console.log("📥 Response status:", response.status);
