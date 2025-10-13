@@ -200,27 +200,24 @@ export class SkydropxService {
   }
 
   async getQuotes(request: SkydropxQuoteRequest): Promise<SkydropxRate[]> {
-    if (this.clientId && this.clientSecret) {
-      return this.getRealQuotes(request);
+    if (!this.clientId || !this.clientSecret) {
+      throw new Error("Credenciales de Skydropx no configuradas");
     }
-    console.log("📝 Using MOCK quotes (no credentials configured)");
-    return this.getMockQuotes(request);
+    return this.getRealQuotes(request);
   }
 
   async createShipment(request: SkydropxShipmentRequest): Promise<SkydropxShipmentResponse> {
-    if (this.clientId && this.clientSecret) {
-      return this.createRealShipment(request);
+    if (!this.clientId || !this.clientSecret) {
+      throw new Error("Credenciales de Skydropx no configuradas");
     }
-    console.log("📝 Using MOCK shipment (no credentials configured)");
-    return this.createMockShipment(request);
+    return this.createRealShipment(request);
   }
 
   async trackShipment(trackingNumber: string): Promise<SkydropxTrackingResponse> {
-    if (this.clientId && this.clientSecret) {
-      return this.trackRealShipment(trackingNumber);
+    if (!this.clientId || !this.clientSecret) {
+      throw new Error("Credenciales de Skydropx no configuradas");
     }
-    console.log("📝 Using MOCK tracking (no credentials configured)");
-    return this.trackMockShipment(trackingNumber);
+    return this.trackRealShipment(trackingNumber);
   }
 
   private async getZipCodeInfo(postalCode: string): Promise<SkydropxZipCodeInfo> {
@@ -344,60 +341,6 @@ export class SkydropxService {
     }
   }
 
-  private getMockQuotes(request: SkydropxQuoteRequest): SkydropxRate[] {
-    const weight = parseFloat(request.parcel.weight);
-    const basePrice = weight * 50;
-    const distance = Math.abs(parseInt(request.zip_from.slice(0, 2)) - parseInt(request.zip_to.slice(0, 2))) * 10;
-    
-    return [
-      {
-        id: "rate_dhl_express",
-        provider: "DHL",
-        service_level_name: "Express",
-        total_pricing: basePrice + distance + 150,
-        currency: "MXN",
-        days: 1,
-        available_for_pickup: true,
-      },
-      {
-        id: "rate_fedex_standard",
-        provider: "FedEx",
-        service_level_name: "Standard",
-        total_pricing: basePrice + distance + 120,
-        currency: "MXN",
-        days: 2,
-        available_for_pickup: true,
-      },
-      {
-        id: "rate_estafeta_terrestre",
-        provider: "Estafeta",
-        service_level_name: "Terrestre",
-        total_pricing: basePrice + distance + 80,
-        currency: "MXN",
-        days: 3,
-        available_for_pickup: false,
-      },
-      {
-        id: "rate_ups_ground",
-        provider: "UPS",
-        service_level_name: "Ground",
-        total_pricing: basePrice + distance + 100,
-        currency: "MXN",
-        days: 3,
-        available_for_pickup: true,
-      },
-      {
-        id: "rate_redpack_express",
-        provider: "Redpack",
-        service_level_name: "Express",
-        total_pricing: basePrice + distance + 90,
-        currency: "MXN",
-        days: 2,
-        available_for_pickup: false,
-      },
-    ].sort((a, b) => a.total_pricing - b.total_pricing);
-  }
-
   private async createRealShipment(request: SkydropxShipmentRequest): Promise<SkydropxShipmentResponse> {
     try {
       const token = await this.getBearerToken();
@@ -431,25 +374,6 @@ export class SkydropxService {
       console.error("❌ Error calling Skydropx shipment API:", error);
       throw new Error(`Error al crear guía: ${error.message}`);
     }
-  }
-
-  private createMockShipment(request: SkydropxShipmentRequest): SkydropxShipmentResponse {
-    const trackingNumber = `SKY${Date.now().toString().slice(-9)}MX`;
-    const mockProvider = request.rate_id?.split("_")[1]?.toUpperCase() || "ESTAFETA";
-    const mockPrice = Math.floor(Math.random() * 200) + 100;
-    
-    return {
-      id: `shipment_${Date.now()}`,
-      tracking_number: trackingNumber,
-      label_url: `https://api.skydropx.com/labels/${trackingNumber}.pdf`,
-      tracking_url_provider: `https://track.carrier.com/${trackingNumber}`,
-      rate: {
-        amount_local: mockPrice,
-        currency_local: "MXN",
-        provider: mockProvider,
-        service_level_name: "Express",
-      },
-    };
   }
 
   private async trackRealShipment(trackingNumber: string): Promise<SkydropxTrackingResponse> {
@@ -486,36 +410,6 @@ export class SkydropxService {
     }
   }
 
-  private trackMockShipment(trackingNumber: string): SkydropxTrackingResponse {
-    const now = new Date();
-    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    const twoDaysAgo = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000);
-    
-    return {
-      tracking_number: trackingNumber,
-      tracking_status: "in_transit",
-      tracking_history: [
-        {
-          status: "in_transit",
-          description: "El paquete está en tránsito",
-          location: "Centro de Distribución Monterrey, NL",
-          timestamp: now.toISOString(),
-        },
-        {
-          status: "in_transit",
-          description: "El paquete llegó al centro de distribución",
-          location: "Centro de Distribución CDMX",
-          timestamp: yesterday.toISOString(),
-        },
-        {
-          status: "pickup",
-          description: "Paquete recolectado",
-          location: "Sucursal Roma Norte, CDMX",
-          timestamp: twoDaysAgo.toISOString(),
-        },
-      ],
-    };
-  }
 }
 
 export const skydropxService = new SkydropxService();

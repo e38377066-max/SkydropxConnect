@@ -26,7 +26,6 @@ export const users = pgTable("users", {
   
   // OAuth provider IDs (null if not connected)
   googleId: varchar("google_id").unique(),
-  facebookId: varchar("facebook_id").unique(),
   
   // Role for access control
   role: varchar("role").notNull().default("user"), // 'admin' or 'user'

@@ -451,7 +451,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Validate input
       const unlinkSchema = z.object({
-        provider: z.enum(['google', 'facebook'], { errorMap: () => ({ message: "Proveedor inválido" }) }),
+        provider: z.enum(['google'], { errorMap: () => ({ message: "Proveedor inválido" }) }),
       });
 
       const { provider } = unlinkSchema.parse(req.body);
@@ -466,9 +466,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check that user has at least one other auth method
       const hasPassword = !!user.password;
       const hasGoogle = !!user.googleId;
-      const hasFacebook = !!user.facebookId;
 
-      const totalAuthMethods = [hasPassword, hasGoogle, hasFacebook].filter(Boolean).length;
+      const totalAuthMethods = [hasPassword, hasGoogle].filter(Boolean).length;
 
       if (totalAuthMethods <= 1) {
         return res.status(400).json({ 
@@ -480,9 +479,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (provider === 'google' && hasGoogle) {
         await storage.updateUser(userId, { googleId: null });
         res.json({ success: true, message: "Google desvinculado correctamente" });
-      } else if (provider === 'facebook' && hasFacebook) {
-        await storage.updateUser(userId, { facebookId: null });
-        res.json({ success: true, message: "Facebook desvinculado correctamente" });
       } else {
         res.status(400).json({ message: "Este proveedor no está vinculado a tu cuenta" });
       }

@@ -29,7 +29,7 @@ import {
   AlertCircle,
   FileText
 } from "lucide-react";
-import { SiGoogle, SiFacebook } from "react-icons/si";
+import { SiGoogle } from "react-icons/si";
 import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -94,11 +94,10 @@ export default function ProfilePage() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("contact");
   const [showAvatarDialog, setShowAvatarDialog] = useState(false);
-  const [unlinkProvider, setUnlinkProvider] = useState<'google' | 'facebook' | null>(null);
+  const [unlinkProvider, setUnlinkProvider] = useState<'google' | null>(null);
 
   const hasPassword = !!user?.password;
   const hasGoogle = !!user?.googleId;
-  const hasFacebook = !!user?.facebookId;
 
   const contactForm = useForm<ContactData>({
     resolver: zodResolver(contactSchema),
@@ -267,7 +266,7 @@ export default function ProfilePage() {
 
   // Unlink provider mutation
   const unlinkProviderMutation = useMutation({
-    mutationFn: async (provider: 'google' | 'facebook') => {
+    mutationFn: async (provider: 'google') => {
       const response = await apiRequest("POST", "/api/user/unlink-provider", { provider });
       return await response.json();
     },
@@ -276,7 +275,7 @@ export default function ProfilePage() {
       setUnlinkProvider(null);
       toast({
         title: "Proveedor desvinculado",
-        description: "La red social se desvinculó correctamente",
+        description: "Google se desvinculó correctamente",
       });
     },
     onError: (error: Error) => {
@@ -288,14 +287,9 @@ export default function ProfilePage() {
     },
   });
 
-  const handleLinkProvider = (provider: 'google' | 'facebook') => {
+  const handleLinkProvider = (provider: 'google') => {
     if (provider === 'google') {
       window.location.href = '/api/login-google';
-    } else if (provider === 'facebook') {
-      toast({
-        title: "Próximamente",
-        description: "La integración con Facebook estará disponible pronto",
-      });
     }
   };
 
@@ -355,12 +349,6 @@ export default function ProfilePage() {
                     <Badge variant="secondary" className="shadow-md" data-testid="badge-has-google">
                       <SiGoogle className="w-3 h-3 mr-1" />
                       Google
-                    </Badge>
-                  )}
-                  {hasFacebook && (
-                    <Badge variant="secondary" className="shadow-md" data-testid="badge-has-facebook">
-                      <SiFacebook className="w-3 h-3 mr-1" />
-                      Facebook
                     </Badge>
                   )}
                 </div>
@@ -860,58 +848,7 @@ export default function ProfilePage() {
                   )}
                 </div>
 
-                {/* Facebook */}
-                <div className="flex items-center justify-between p-5 border-2 rounded-xl hover:border-primary/50 transition-colors bg-gradient-to-r from-card to-card/50">
-                  <div className="flex items-center gap-4">
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                      hasFacebook ? 'bg-gradient-to-br from-blue-500/20 to-blue-700/20' : 'bg-muted'
-                    }`}>
-                      <SiFacebook className={`w-6 h-6 ${hasFacebook ? 'text-blue-600' : 'text-muted-foreground'}`} />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-lg">Facebook</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        {hasFacebook ? (
-                          <>
-                            <Check className="w-4 h-4 text-green-500" />
-                            <p className="text-sm text-green-500 font-medium">Conectado</p>
-                          </>
-                        ) : (
-                          <>
-                            <X className="w-4 h-4 text-muted-foreground" />
-                            <p className="text-sm text-muted-foreground">Próximamente</p>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  {hasFacebook ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setUnlinkProvider('facebook')}
-                      className="gap-2"
-                      data-testid="button-unlink-facebook"
-                    >
-                      <Unlink className="w-4 h-4" />
-                      Desvincular
-                    </Button>
-                  ) : (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleLinkProvider('facebook')}
-                      className="gap-2"
-                      data-testid="button-link-facebook"
-                      disabled
-                    >
-                      <LinkIcon className="w-4 h-4" />
-                      Próximamente
-                    </Button>
-                  )}
-                </div>
-
-                {!hasPassword && (hasGoogle || hasFacebook) && (
+                {!hasPassword && hasGoogle && (
                   <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-xl">
                     <p className="text-sm text-amber-700 dark:text-amber-400 flex items-start gap-2">
                       <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
@@ -989,7 +926,7 @@ export default function ProfilePage() {
           <AlertDialogHeader>
             <AlertDialogTitle className="text-2xl">¿Desvincular cuenta?</AlertDialogTitle>
             <AlertDialogDescription className="text-base">
-              Estás a punto de desvincular tu cuenta de {unlinkProvider === 'google' ? 'Google' : 'Facebook'}. 
+              Estás a punto de desvincular tu cuenta de Google. 
               {hasPassword 
                 ? ' Podrás seguir accediendo con tu contraseña.' 
                 : ' Asegúrate de tener otro método de autenticación configurado.'}
