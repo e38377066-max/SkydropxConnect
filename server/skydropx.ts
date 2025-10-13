@@ -237,11 +237,11 @@ export class SkydropxService {
     return this.createRealShipment(request);
   }
 
-  async trackShipment(trackingNumber: string): Promise<SkydropxTrackingResponse> {
+  async trackShipment(trackingNumber: string, carrierName?: string): Promise<SkydropxTrackingResponse> {
     if (!this.clientId || !this.clientSecret) {
       throw new Error("Credenciales de Skydropx no configuradas");
     }
-    return this.trackRealShipment(trackingNumber);
+    return this.trackRealShipment(trackingNumber, carrierName);
   }
 
   async getShipmentStatus(shipmentId: string): Promise<SkydropxShipmentResponse> {
@@ -508,12 +508,18 @@ export class SkydropxService {
     }
   }
 
-  private async trackRealShipment(trackingNumber: string): Promise<SkydropxTrackingResponse> {
+  private async trackRealShipment(trackingNumber: string, carrierName?: string): Promise<SkydropxTrackingResponse> {
     try {
       const token = await this.getBearerToken();
       
-      console.log(`📤 Sending request to Skydropx /trackings/${trackingNumber}`);
-      const response = await fetch(`${this.baseUrl}/trackings/${trackingNumber}`, {
+      // Usar el endpoint correcto con query params
+      let endpoint = `${this.baseUrl}/shipments/tracking?tracking_number=${encodeURIComponent(trackingNumber)}`;
+      if (carrierName) {
+        endpoint += `&carrier_name=${encodeURIComponent(carrierName)}`;
+      }
+      
+      console.log(`📤 Sending request to Skydropx tracking endpoint: ${endpoint}`);
+      const response = await fetch(endpoint, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -522,20 +528,33 @@ export class SkydropxService {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error("❌ Skydropx tracking error:", errorData);
-        throw new Error(errorData.message || `Skydropx API error: ${response.statusText}`);
+        const errorText = await response.text();
+        console.error("❌ Skydropx tracking error:", errorText);
+        
+        let errorMessage = `Error al rastrear: ${response.status}`;
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        } catch (e) {
+          errorMessage = errorText.substring(0, 200);
+        }
+        
+        throw new Error(errorMessage);
       }
 
       const result = await response.json();
       console.log("✅ Skydropx tracking response received:", JSON.stringify(result, null, 2));
       
-      if (!result.data) {
+      // Procesar respuesta de Skydropx
+      if (result.data) {
+        return result.data;
+      } else if (result.tracking_number) {
+        // Formato directo
+        return result;
+      } else {
         console.warn("⚠️ Unexpected Skydropx tracking response structure:", result);
         throw new Error("Respuesta inválida de Skydropx");
       }
-
-      return result.data;
     } catch (error: any) {
       console.error("❌ Error calling Skydropx tracking API:", error);
       throw new Error(`Error al rastrear paquete: ${error.message}`);

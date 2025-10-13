@@ -988,7 +988,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const trackingData = await skydropxService.trackShipment(trackingNumber);
+      // Pasar el carrier_name a Skydropx para mejor tracking
+      const trackingData = await skydropxService.trackShipment(trackingNumber, shipment.carrier);
       const existingEvents = await storage.getTrackingEvents(trackingNumber);
 
       for (const event of trackingData.tracking_history) {
