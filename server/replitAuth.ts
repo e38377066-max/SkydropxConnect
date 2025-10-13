@@ -107,61 +107,65 @@ export async function setupAuth(app: Express) {
     }
   ));
 
-  // Google OAuth strategy - use dynamic callback based on request
-  passport.use(new GoogleStrategy(
-    {
-      clientID: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      callbackURL: '/api/auth/google/callback', // Relative URL - will use the actual domain
-      scope: ['profile', 'email']
-    },
-    async (accessToken, refreshToken, profile, done) => {
-      try {
-        // Extract user info from Google profile
-        const email = profile.emails?.[0]?.value;
-        const googleId = profile.id; // Google's unique ID
-        const firstName = profile.name?.givenName || profile.displayName;
-        const lastName = profile.name?.familyName || '';
-        const profileImageUrl = profile.photos?.[0]?.value;
+  // Google OAuth strategy - only enable if credentials are provided
+  const hasGoogleCredentials = process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET;
+  
+  if (hasGoogleCredentials) {
+    passport.use(new GoogleStrategy(
+      {
+        clientID: process.env.GOOGLE_CLIENT_ID!,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+        callbackURL: '/api/auth/google/callback', // Relative URL - will use the actual domain
+        scope: ['profile', 'email']
+      },
+      async (accessToken, refreshToken, profile, done) => {
+        try {
+          // Extract user info from Google profile
+          const email = profile.emails?.[0]?.value;
+          const googleId = profile.id; // Google's unique ID
+          const firstName = profile.name?.givenName || profile.displayName;
+          const lastName = profile.name?.familyName || '';
+          const profileImageUrl = profile.photos?.[0]?.value;
 
-        if (!email) {
-          return done(new Error('No email found in Google profile'));
-        }
+          if (!email) {
+            return done(new Error('No email found in Google profile'));
+          }
 
-        // Check if user exists
-        let user = await storage.getUserByEmail(email);
+          // Check if user exists
+          let user = await storage.getUserByEmail(email);
 
-        if (!user) {
-          // Create new user with Google ID
-          user = await storage.createUser({
-            email,
-            googleId,
-            firstName,
-            lastName,
-            profileImageUrl,
-            password: null, // Google users don't need passwords initially
+          if (!user) {
+            // Create new user with Google ID
+            user = await storage.createUser({
+              email,
+              googleId,
+              firstName,
+              lastName,
+              profileImageUrl,
+              password: null, // Google users don't need passwords initially
+            });
+          } else {
+            // Update user info from Google and link Google ID
+            await storage.updateUser(user.id, {
+              googleId,
+              firstName,
+              lastName,
+              profileImageUrl,
+            });
+          }
+
+          // Return user for session
+          return done(null, {
+            id: user.id,
+            email: user.email,
+            isGoogle: true
           });
-        } else {
-          // Update user info from Google and link Google ID
-          await storage.updateUser(user.id, {
-            googleId,
-            firstName,
-            lastName,
-            profileImageUrl,
-          });
+        } catch (error) {
+          return done(error as Error);
         }
-
-        // Return user for session
-        return done(null, {
-          id: user.id,
-          email: user.email,
-          isGoogle: true
-        });
-      } catch (error) {
-        return done(error as Error);
       }
-    }
-  ));
+    ));
+  }
 
   const config = await getOidcConfig();
 
@@ -199,18 +203,20 @@ export async function setupAuth(app: Express) {
   passport.serializeUser((user: Express.User, cb) => cb(null, user));
   passport.deserializeUser((user: Express.User, cb) => cb(null, user));
 
-  // Google OAuth login route
-  app.get("/api/login-google", passport.authenticate('google', {
-    scope: ['profile', 'email']
-  }));
+  // Google OAuth login route - only enable if credentials are configured
+  if (hasGoogleCredentials) {
+    app.get("/api/login-google", passport.authenticate('google', {
+      scope: ['profile', 'email']
+    }));
 
-  // Google OAuth callback route
-  app.get("/api/auth/google/callback", 
-    passport.authenticate('google', { 
-      failureRedirect: '/auth',
-      successRedirect: '/'
-    })
-  );
+    // Google OAuth callback route
+    app.get("/api/auth/google/callback", 
+      passport.authenticate('google', { 
+        failureRedirect: '/auth',
+        successRedirect: '/'
+      })
+    );
+  }
 
   app.get("/api/logout", (req, res) => {
     req.logout(() => {
