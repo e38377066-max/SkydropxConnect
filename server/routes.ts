@@ -765,6 +765,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Calculate new balance using actual amount
       const newBalance = (currentBalance - actualAmount).toFixed(2);
 
+      // Map Skydropx workflow_status to our status
+      let shipmentStatus = "pending";
+      if (skydropxShipment.workflow_status === "completed" && skydropxShipment.tracking_number) {
+        shipmentStatus = "created";
+      } else if (skydropxShipment.workflow_status === "in_progress") {
+        shipmentStatus = "pending";
+      }
+
       // Create shipment with userId
       const shipment = await storage.createShipment({
         userId: userId,
@@ -785,7 +793,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         description: validatedData.description,
         amount: actualAmount.toString(),
         currency: "MXN",
-        status: "pending",
+        status: shipmentStatus,
         labelUrl: skydropxShipment.label_url,
         skydropxShipmentId: skydropxShipment.id,
         skydropxData: skydropxShipment as any,
@@ -884,6 +892,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({
         success: false,
         error: "Error al obtener el envío",
+      });
+    }
+  });
+
+  // Sincronizar estado del envío desde Skydropx
+  app.post("/api/shipments/:id/sync", isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const userId = req.user!.isLocal || req.user!.isGoogle ? req.user!.id : req.user!.claims.sub;
+      
+      const shipment = await storage.getShipment(id);
+
+      if (!shipment) {
+        return res.status(404).json({
+          success: false,
+          error: "Envío no encontrado",
+        });
+      }
+
+      // Verificar que el usuario sea dueño del envío
+      if (shipment.userId !== userId) {
+        return res.status(403).json({
+          success: false,
+          error: "No tienes permiso para sincronizar este envío",
+        });
+      }
+
+      if (!shipment.skydropxShipmentId) {
+        return res.status(400).json({
+          success: false,
+          error: "Este envío no tiene ID de Skydropx",
+        });
+      }
+
+      // Obtener estado actualizado de Skydropx
+      const skydropxData = await skydropxService.getShipmentStatus(shipment.skydropxShipmentId);
+      
+      // Mapear estado de Skydropx
+      let newStatus = shipment.status;
+      if (skydropxData.workflow_status === "completed" && skydropxData.tracking_number) {
+        newStatus = "created";
+      } else if (skydropxData.workflow_status === "in_progress") {
+        newStatus = "pending";
+      }
+
+      // Actualizar envío en DB
+      const updatedShipment = await storage.updateShipment(id, {
+        trackingNumber: skydropxData.tracking_number || shipment.trackingNumber,
+        status: newStatus,
+        labelUrl: skydropxData.label_url || shipment.labelUrl,
+        skydropxData: skydropxData as any,
+      });
+
+      // Si ahora tenemos tracking number y no había antes, crear evento
+      if (skydropxData.tracking_number && !shipment.trackingNumber) {
+        await storage.createTrackingEvent({
+          shipmentId: shipment.id,
+          trackingNumber: skydropxData.tracking_number,
+          status: "created",
+          description: "Guía de envío procesada",
+          location: "Sistema",
+          eventDate: new Date(),
+        });
+      }
+
+      res.json({
+        success: true,
+        data: updatedShipment,
+        message: "Estado del envío sincronizado correctamente",
+      });
+    } catch (error: any) {
+      console.error("Error syncing shipment:", error);
+      res.status(500).json({
+        success: false,
+        error: error.message || "Error al sincronizar el envío",
       });
     }
   });

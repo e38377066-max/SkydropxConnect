@@ -2,10 +2,11 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Eye, Download, Search, Package, Loader2 } from "lucide-react";
+import { Eye, Download, Search, Package, Loader2, RefreshCcw } from "lucide-react";
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 type OrderStatus = "pending" | "in_transit" | "in-transit" | "delivered" | "cancelled" | "created";
 
@@ -32,11 +33,40 @@ const statusConfig: Record<string, { label: string; variant: "default" | "second
 
 export default function OrdersTable() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [syncingId, setSyncingId] = useState<string | null>(null);
   const { toast } = useToast();
 
   const { data, isLoading, isError } = useQuery<{ success: boolean; data: Order[] }>({
     queryKey: ['/api/shipments'],
   });
+
+  const syncMutation = useMutation({
+    mutationFn: async (shipmentId: string) => {
+      const response = await apiRequest("POST", `/api/shipments/${shipmentId}/sync`, {});
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/shipments'] });
+      toast({
+        title: "Estado sincronizado",
+        description: data.message || "El estado del envío se actualizó correctamente",
+      });
+      setSyncingId(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error al sincronizar",
+        description: error.message || "No se pudo actualizar el estado del envío",
+        variant: "destructive",
+      });
+      setSyncingId(null);
+    },
+  });
+
+  const handleSync = (shipmentId: string) => {
+    setSyncingId(shipmentId);
+    syncMutation.mutate(shipmentId);
+  };
 
   useEffect(() => {
     if (isError) {
@@ -52,7 +82,7 @@ export default function OrdersTable() {
 
   const filteredOrders = orders.filter(
     (order) =>
-      order.trackingNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.trackingNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.carrier.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.senderZipCode.includes(searchTerm) ||
       order.receiverZipCode.includes(searchTerm)
@@ -118,7 +148,9 @@ export default function OrdersTable() {
                   data-testid={`row-order-${order.id}`}
                 >
                   <td className="py-4 px-4">
-                    <code className="text-sm font-mono text-foreground">{order.trackingNumber}</code>
+                    <code className="text-sm font-mono text-foreground">
+                      {order.trackingNumber || <span className="text-muted-foreground italic">Procesando...</span>}
+                    </code>
                   </td>
                   <td className="py-4 px-4">
                     <span className="text-sm font-medium text-foreground">{order.carrier}</span>
@@ -148,11 +180,25 @@ export default function OrdersTable() {
                   </td>
                   <td className="py-4 px-4">
                     <div className="flex items-center justify-end gap-2">
+                      {order.status === "pending" && (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => handleSync(order.id)}
+                          disabled={syncingId === order.id}
+                          data-testid={`button-sync-${order.id}`}
+                          title="Sincronizar estado"
+                        >
+                          <RefreshCcw className={`w-4 h-4 ${syncingId === order.id ? 'animate-spin' : ''}`} />
+                        </Button>
+                      )}
                       <Button
                         size="icon"
                         variant="ghost"
-                        onClick={() => window.location.href = `/rastrear?tracking=${order.trackingNumber}`}
+                        onClick={() => order.trackingNumber && (window.location.href = `/rastrear?tracking=${order.trackingNumber}`)}
+                        disabled={!order.trackingNumber}
                         data-testid={`button-view-${order.id}`}
+                        title="Ver rastreo"
                       >
                         <Eye className="w-4 h-4" />
                       </Button>
@@ -161,6 +207,7 @@ export default function OrdersTable() {
                         variant="ghost"
                         onClick={() => console.log("Descargar etiqueta:", order.id)}
                         data-testid={`button-download-${order.id}`}
+                        title="Descargar etiqueta"
                       >
                         <Download className="w-4 h-4" />
                       </Button>

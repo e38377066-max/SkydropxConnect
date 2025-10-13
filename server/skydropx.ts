@@ -106,9 +106,10 @@ interface SkydropxShipmentRequest {
 
 interface SkydropxShipmentResponse {
   id: string;
-  tracking_number: string;
-  label_url: string;
+  tracking_number: string | null;
+  label_url: string | null;
   tracking_url_provider: string;
+  workflow_status?: string; // "in_progress", "completed", etc.
   rate: {
     amount_local: number;
     currency_local: string;
@@ -241,6 +242,65 @@ export class SkydropxService {
       throw new Error("Credenciales de Skydropx no configuradas");
     }
     return this.trackRealShipment(trackingNumber);
+  }
+
+  async getShipmentStatus(shipmentId: string): Promise<SkydropxShipmentResponse> {
+    if (!this.clientId || !this.clientSecret) {
+      throw new Error("Credenciales de Skydropx no configuradas");
+    }
+    
+    try {
+      const token = await this.getBearerToken();
+      
+      console.log(`📤 Fetching shipment status from Skydropx for ID: ${shipmentId}`);
+      const response = await fetch(`${this.baseUrl}/shipments/${shipmentId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("❌ Skydropx get shipment error:", errorText);
+        throw new Error(`Error al obtener estado del envío: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log("✅ Skydropx shipment status received:", JSON.stringify(result, null, 2));
+      
+      // Procesar la respuesta usando la misma lógica que createShipment
+      let shipmentData: SkydropxShipmentResponse;
+      
+      if (result.data && result.data.attributes) {
+        const attrs = result.data.attributes;
+        const packageData = result.included?.find((item: any) => item.type === 'package');
+        const trackingNumber = packageData?.attributes?.tracking_number || null;
+        const labelUrl = packageData?.attributes?.label_url || null;
+        
+        shipmentData = {
+          id: result.data.id,
+          tracking_number: trackingNumber,
+          label_url: labelUrl,
+          tracking_url_provider: packageData?.attributes?.tracking_url_provider || '',
+          workflow_status: attrs.workflow_status,
+          rate: {
+            amount_local: parseFloat(attrs.total || '0'),
+            currency_local: 'MXN',
+            provider: attrs.carrier_name || '',
+            service_level_name: '',
+          }
+        };
+      } else {
+        shipmentData = result.data || result;
+      }
+      
+      return shipmentData;
+    } catch (error: any) {
+      console.error("❌ Error fetching shipment status:", error);
+      throw new Error(`Error al obtener estado del envío: ${error.message}`);
+    }
   }
 
   private async getZipCodeInfo(postalCode: string): Promise<SkydropxZipCodeInfo> {
@@ -406,14 +466,37 @@ export class SkydropxService {
       const result = await response.json();
       console.log("✅ Skydropx shipment response received:", JSON.stringify(result, null, 2));
       
-      // Skydropx PRO puede devolver el shipment directamente o en result.data
-      const shipmentData = result.data || result;
+      // Skydropx PRO devuelve estructura JSON:API con data.attributes
+      let shipmentData: SkydropxShipmentResponse;
       
-      if (!shipmentData.id && !shipmentData.tracking_number) {
-        console.warn("⚠️ Unexpected Skydropx shipment response structure:", result);
-        throw new Error("Respuesta inválida de Skydropx");
+      if (result.data && result.data.attributes) {
+        // Formato JSON:API de Skydropx PRO
+        const attrs = result.data.attributes;
+        
+        // Extraer tracking_number de included[0].attributes si existe
+        const packageData = result.included?.find((item: any) => item.type === 'package');
+        const trackingNumber = packageData?.attributes?.tracking_number || null;
+        const labelUrl = packageData?.attributes?.label_url || null;
+        
+        shipmentData = {
+          id: result.data.id,
+          tracking_number: trackingNumber,
+          label_url: labelUrl,
+          tracking_url_provider: packageData?.attributes?.tracking_url_provider || '',
+          workflow_status: attrs.workflow_status,
+          rate: {
+            amount_local: parseFloat(attrs.total || '0'),
+            currency_local: 'MXN',
+            provider: attrs.carrier_name || '',
+            service_level_name: '',
+          }
+        };
+      } else {
+        // Formato directo (fallback)
+        shipmentData = result.data || result;
       }
-
+      
+      console.log("📦 Processed shipment data:", JSON.stringify(shipmentData, null, 2));
       return shipmentData;
     } catch (error: any) {
       console.error("❌ Error calling Skydropx shipment API:", error);

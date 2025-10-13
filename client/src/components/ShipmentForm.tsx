@@ -180,7 +180,9 @@ export default function ShipmentForm() {
         setStep(3);
         toast({
           title: "¡Guía creada exitosamente!",
-          description: `Número de rastreo: ${data.data.trackingNumber}`,
+          description: data.data.trackingNumber 
+            ? `Número de rastreo: ${data.data.trackingNumber}` 
+            : "Tu envío está siendo procesado por la paquetería",
         });
       }
     },
@@ -607,7 +609,9 @@ export default function ShipmentForm() {
               <div className="space-y-4">
                 <div>
                   <Label className="text-sm text-muted-foreground">Número de Rastreo</Label>
-                  <p className="text-xl font-mono font-semibold text-foreground">{createdShipment.trackingNumber}</p>
+                  <p className="text-xl font-mono font-semibold text-foreground">
+                    {createdShipment.trackingNumber || <span className="text-muted-foreground italic">Procesando...</span>}
+                  </p>
                 </div>
                 <Separator />
                 <div className="grid grid-cols-2 gap-4">

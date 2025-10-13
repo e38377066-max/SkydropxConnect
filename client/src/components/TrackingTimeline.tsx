@@ -44,7 +44,7 @@ export default function TrackingTimeline({ events, shipment }: TrackingTimelineP
         <div>
           <h2 className="text-2xl font-bold text-foreground">Estado del Envío</h2>
           <p className="text-sm text-muted-foreground">
-            Guía: <span className="font-mono font-semibold">{shipment.trackingNumber}</span> | {shipment.carrier}
+            Guía: <span className="font-mono font-semibold">{shipment.trackingNumber || 'Procesando...'}</span> | {shipment.carrier}
           </p>
         </div>
       </div>
