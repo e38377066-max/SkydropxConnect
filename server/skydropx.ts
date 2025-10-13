@@ -55,31 +55,53 @@ interface SkydropxRate {
 }
 
 interface SkydropxShipmentRequest {
-  address_from: {
-    name: string;
-    phone: string;
-    street1: string;
-    zip: string;
-    city?: string;
-    province?: string;
-    country: string;
+  shipment: {
+    rate_id: string;
+    printing_format?: string;
+    address_from: {
+      street1: string;
+      name: string;
+      company: string;
+      phone: string;
+      email: string;
+      reference: string;
+    };
+    address_to: {
+      street1: string;
+      name: string;
+      company: string;
+      phone: string;
+      email: string;
+      reference?: string;
+    };
+    packages: Array<{
+      package_number: string;
+      package_protected: boolean;
+      weight: number;
+      length: number;
+      width: number;
+      height: number;
+      weight_unit: string;
+      distance_unit: string;
+      declared_value: number;
+      consignment_note: string;
+      package_type: string;
+      content: string;
+      products: Array<{
+        product_id?: string;
+        name: string;
+        description_en?: string;
+        quantity: number;
+        price: number;
+        sku?: string;
+        hs_code?: string;
+        hs_code_description?: string;
+        product_type_code?: string;
+        product_type_name?: string;
+        country_code?: string;
+      }>;
+    }>;
   };
-  address_to: {
-    name: string;
-    phone: string;
-    street1: string;
-    zip: string;
-    city?: string;
-    province?: string;
-    country: string;
-  };
-  parcels: Array<{
-    weight: number;
-    length?: number;
-    width?: number;
-    height?: number;
-  }>;
-  rate_id?: string;
 }
 
 interface SkydropxShipmentResponse {
@@ -353,6 +375,8 @@ export class SkydropxService {
       const token = await this.getBearerToken();
       
       console.log("📤 Sending request to Skydropx /shipments");
+      console.log("📤 Request body:", JSON.stringify(request, null, 2));
+      
       const response = await fetch(`${this.baseUrl}/shipments`, {
         method: "POST",
         headers: {
@@ -362,21 +386,35 @@ export class SkydropxService {
         body: JSON.stringify(request),
       });
 
+      console.log("📥 Response status:", response.status);
+      
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error("❌ Skydropx shipment error:", errorData);
-        throw new Error(errorData.message || `Skydropx API error: ${response.statusText}`);
+        const errorText = await response.text();
+        console.error("❌ Skydropx shipment error:", errorText);
+        
+        let errorMessage = `Error de Skydropx: ${response.status}`;
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        } catch (e) {
+          errorMessage = errorText.substring(0, 200);
+        }
+        
+        throw new Error(errorMessage);
       }
 
       const result = await response.json();
       console.log("✅ Skydropx shipment response received:", JSON.stringify(result, null, 2));
       
-      if (!result.data) {
+      // Skydropx PRO puede devolver el shipment directamente o en result.data
+      const shipmentData = result.data || result;
+      
+      if (!shipmentData.id && !shipmentData.tracking_number) {
         console.warn("⚠️ Unexpected Skydropx shipment response structure:", result);
         throw new Error("Respuesta inválida de Skydropx");
       }
 
-      return result.data;
+      return shipmentData;
     } catch (error: any) {
       console.error("❌ Error calling Skydropx shipment API:", error);
       throw new Error(`Error al crear guía: ${error.message}`);

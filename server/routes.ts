@@ -695,29 +695,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Only if balance is sufficient, create shipment in Skydropx
+      // Only if balance is sufficient, create shipment in Skydropx PRO format
+      if (!validatedData.rateId) {
+        return res.status(400).json({
+          success: false,
+          error: "El ID de la cotización es requerido",
+        });
+      }
+
       const skydropxRequest = {
-        address_from: {
-          name: validatedData.senderName,
-          phone: validatedData.senderPhone,
-          street1: validatedData.senderAddress,
-          zip: validatedData.senderZipCode,
-          country: "MX",
+        shipment: {
+          rate_id: validatedData.rateId as string,
+          printing_format: "thermal", // Formato térmico para impresoras de etiquetas
+          address_from: {
+            street1: validatedData.senderAddress,
+            name: validatedData.senderName,
+            company: user.razonSocial || "Particular",
+            phone: validatedData.senderPhone,
+            email: user.email,
+            reference: validatedData.senderZipCode,
+          },
+          address_to: {
+            street1: validatedData.receiverAddress,
+            name: validatedData.receiverName,
+            company: "Destinatario",
+            phone: validatedData.receiverPhone,
+            email: user.email, // Usamos el email del usuario como respaldo
+            reference: validatedData.receiverZipCode,
+          },
+          packages: [{
+            package_number: "1",
+            package_protected: false, // El usuario puede configurar esto después
+            weight: validatedData.weight,
+            length: validatedData.length || 10, // Valor por defecto si no se especifica
+            width: validatedData.width || 10,
+            height: validatedData.height || 10,
+            weight_unit: "KG",
+            distance_unit: "CM",
+            declared_value: validatedData.expectedAmount, // Valor del envío
+            consignment_note: "53102400", // Código SAT genérico para envíos
+            package_type: "4G", // Tipo de paquete genérico
+            content: validatedData.description || "Paquete",
+            products: [{
+              name: validatedData.description || "Paquete",
+              description_en: validatedData.description || "Package",
+              quantity: 1,
+              price: validatedData.expectedAmount,
+              product_type_code: "P",
+              product_type_name: "Producto",
+              country_code: "MX",
+            }],
+          }],
         },
-        address_to: {
-          name: validatedData.receiverName,
-          phone: validatedData.receiverPhone,
-          street1: validatedData.receiverAddress,
-          zip: validatedData.receiverZipCode,
-          country: "MX",
-        },
-        parcels: [{
-          weight: validatedData.weight,
-          length: validatedData.length,
-          width: validatedData.width,
-          height: validatedData.height,
-        }],
-        rate_id: validatedData.rateId,
       };
 
       const skydropxShipment = await skydropxService.createShipment(skydropxRequest);

@@ -46,7 +46,7 @@ export default function ShipmentForm() {
   });
 
   // Obtener saldo del usuario
-  const { data: userData } = useQuery({
+  const { data: userData } = useQuery<any>({
     queryKey: ['/api/auth/user'],
   });
 
@@ -265,13 +265,11 @@ export default function ShipmentForm() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="senderZipCode">Código Postal</Label>
-                <Input
-                  id="senderZipCode"
-                  name="senderZipCode"
-                  placeholder="06600"
+                <ZipCodeInput
+                  label="Código Postal de Origen"
                   value={formData.senderZipCode}
-                  onChange={handleInputChange}
+                  onChange={(value) => handleZipCodeChange('senderZipCode', value)}
+                  placeholder="06600"
                   required
                   data-testid="input-sender-zipcode"
                 />
@@ -322,13 +320,11 @@ export default function ShipmentForm() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="receiverZipCode">Código Postal</Label>
-                <Input
-                  id="receiverZipCode"
-                  name="receiverZipCode"
-                  placeholder="64000"
+                <ZipCodeInput
+                  label="Código Postal de Destino"
                   value={formData.receiverZipCode}
-                  onChange={handleInputChange}
+                  onChange={(value) => handleZipCodeChange('receiverZipCode', value)}
+                  placeholder="64000"
                   required
                   data-testid="input-receiver-zipcode"
                 />
