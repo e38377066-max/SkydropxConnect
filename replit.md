@@ -60,7 +60,13 @@ The backend is an Express.js application with TypeScript, following a RESTful AP
 -   **Wallet System**: Protected endpoints for retrieving wallet balance, transaction history, and managing recharge requests (`/api/wallet/*`). Admin users can approve or reject recharge requests.
 -   **Saved Data**: Protected endpoints for managing user's saved addresses, package presets, and billing profiles (`/api/addresses`, `/api/packages`, `/api/billing-profiles`).
 -   **Profit Margin System**: Configurable profit margin applied to Skydropx base prices, stored in the `settings` table. Only admin users can modify this percentage via a dedicated admin panel, with validation ensuring the margin is between 0-100%. Default margin: 15%.
--   **Zip Code Autocomplete**: Local database of 157,127 Mexican postal codes (SEPOMEX) covering all 32 states. Endpoint `/api/zipcodes/search` provides fast autocomplete with indexed searches. Data imported from official SEPOMEX Excel file into `zip_codes` table with fields: codigo_postal, colonia, municipio, estado, ciudad. No external API dependency for zip code lookups.
+-   **Zip Code Autocomplete with Colonia Selection**: Two-step address entry system using local database of 157,127 Mexican postal codes (SEPOMEX) covering all 32 states.
+    - **Step 1**: Endpoint `/api/zipcodes/search` returns unique zip codes only (fast search, minimal results)
+    - **Step 2**: Endpoint `/api/zipcodes/:codigo_postal/colonias` returns colonias for selected zip code (filtered subcatalog)
+    - **Benefits**: Faster performance, better UX - users first select CP, then choose from relevant colonias only
+    - Data imported from official SEPOMEX Excel file into `zip_codes` table with indexed columns
+    - Colonia data persisted in shipments table (senderColonia, receiverColonia) and sent to Skydropx in street addresses
+    - No external API dependency for zip code lookups
 
 ## Data Storage
 

@@ -523,27 +523,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Search Mexican zip codes (SEPOMEX) from local database
+  // Search Mexican zip codes (SEPOMEX) from local database - returns unique zip codes only
   app.get("/api/zipcodes/search", async (req, res) => {
     try {
       const { q } = req.query;
       
-      if (!q || typeof q !== 'string' || q.length < 4) {
+      if (!q || typeof q !== 'string' || q.length < 3) {
         return res.json({ success: true, data: [] });
       }
 
-      // Search in local database
+      // Search for unique zip codes only
       const results = await db.execute(
         sql`
-          SELECT DISTINCT ON (codigo_postal, colonia)
+          SELECT DISTINCT ON (codigo_postal)
             codigo_postal, 
-            colonia, 
             municipio, 
-            estado,
-            ciudad
+            estado
           FROM zip_codes
           WHERE codigo_postal LIKE ${q + '%'}
-          ORDER BY codigo_postal, colonia
+          ORDER BY codigo_postal
           LIMIT 20
         `
       );
@@ -551,7 +549,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Transform to expected format
       const formattedResults = results.rows.map((row: any) => ({
         codigo_postal: row.codigo_postal,
-        colonia: row.colonia,
         municipio: row.municipio,
         estado: row.estado,
       }));
@@ -563,11 +560,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get colonias for a specific zip code
+  app.get("/api/zipcodes/:codigo_postal/colonias", async (req, res) => {
+    try {
+      const { codigo_postal } = req.params;
+      
+      if (!codigo_postal || codigo_postal.length !== 5) {
+        return res.status(400).json({ message: "Código postal inválido" });
+      }
+
+      // Get all colonias for this zip code
+      const results = await db.execute(
+        sql`
+          SELECT DISTINCT colonia
+          FROM zip_codes
+          WHERE codigo_postal = ${codigo_postal}
+          ORDER BY colonia
+        `
+      );
+
+      const colonias = results.rows.map((row: any) => row.colonia);
+
+      res.json({ success: true, data: colonias });
+    } catch (error) {
+      console.error("Error fetching colonias:", error);
+      res.status(500).json({ message: "Error al obtener colonias" });
+    }
+  });
+
   app.post("/api/quotes", async (req, res) => {
     try {
       const validatedData = quoteRequestSchema.parse({
         fromZipCode: req.body.fromZipCode,
+        fromColonia: req.body.fromColonia,
         toZipCode: req.body.toZipCode,
+        toColonia: req.body.toColonia,
         weight: parseFloat(req.body.weight),
         length: req.body.length ? parseFloat(req.body.length) : undefined,
         width: req.body.width ? parseFloat(req.body.width) : undefined,
@@ -661,10 +688,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         senderPhone: req.body.senderPhone,
         senderAddress: req.body.senderAddress,
         senderZipCode: req.body.senderZipCode,
+        senderColonia: req.body.senderColonia,
         receiverName: req.body.receiverName,
         receiverPhone: req.body.receiverPhone,
         receiverAddress: req.body.receiverAddress,
         receiverZipCode: req.body.receiverZipCode,
+        receiverColonia: req.body.receiverColonia,
         weight: parseFloat(req.body.weight),
         length: req.body.length ? parseFloat(req.body.length) : undefined,
         width: req.body.width ? parseFloat(req.body.width) : undefined,
@@ -708,7 +737,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           rate_id: validatedData.rateId as string,
           printing_format: "thermal", // Formato térmico para impresoras de etiquetas
           address_from: {
-            street1: validatedData.senderAddress,
+            street1: `${validatedData.senderAddress}${validatedData.senderColonia ? `, ${validatedData.senderColonia}` : ''}`,
             name: validatedData.senderName,
             company: user.razonSocial || "Particular",
             phone: validatedData.senderPhone,
@@ -716,7 +745,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             reference: validatedData.senderZipCode,
           },
           address_to: {
-            street1: validatedData.receiverAddress,
+            street1: `${validatedData.receiverAddress}${validatedData.receiverColonia ? `, ${validatedData.receiverColonia}` : ''}`,
             name: validatedData.receiverName,
             company: "Destinatario",
             phone: validatedData.receiverPhone,
@@ -784,10 +813,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         senderPhone: validatedData.senderPhone,
         senderAddress: validatedData.senderAddress,
         senderZipCode: validatedData.senderZipCode,
+        senderColonia: validatedData.senderColonia,
         receiverName: validatedData.receiverName,
         receiverPhone: validatedData.receiverPhone,
         receiverAddress: validatedData.receiverAddress,
         receiverZipCode: validatedData.receiverZipCode,
+        receiverColonia: validatedData.receiverColonia,
         weight: validatedData.weight.toString(),
         length: validatedData.length?.toString(),
         width: validatedData.width?.toString(),

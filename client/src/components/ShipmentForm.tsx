@@ -36,10 +36,12 @@ export default function ShipmentForm() {
     senderPhone: "",
     senderAddress: "",
     senderZipCode: "",
+    senderColonia: "",
     receiverName: "",
     receiverPhone: "",
     receiverAddress: "",
     receiverZipCode: "",
+    receiverColonia: "",
     weight: "1",
     length: "10",
     width: "10",
@@ -270,10 +272,12 @@ export default function ShipmentForm() {
       senderPhone: "",
       senderAddress: "",
       senderZipCode: "",
+      senderColonia: "",
       receiverName: "",
       receiverPhone: "",
       receiverAddress: "",
       receiverZipCode: "",
+      receiverColonia: "",
       weight: "1",
       length: "10",
       width: "10",
@@ -371,14 +375,17 @@ export default function ShipmentForm() {
                   data-testid="input-sender-address"
                 />
               </div>
-              <div className="space-y-2">
+              <div className="md:col-span-2">
                 <ZipCodeInput
-                  label="Código Postal de Origen"
-                  value={formData.senderZipCode}
-                  onChange={(value) => handleZipCodeChange('senderZipCode', value)}
-                  placeholder="06600"
+                  zipCodeLabel="Código Postal de Origen"
+                  coloniaLabel="Colonia de Origen"
+                  zipCodeValue={formData.senderZipCode}
+                  coloniaValue={formData.senderColonia}
+                  onZipCodeChange={(value) => handleZipCodeChange('senderZipCode', value)}
+                  onColoniaChange={(value) => setFormData({ ...formData, senderColonia: value })}
                   required
-                  data-testid="input-sender-zipcode"
+                  zipCodeTestId="input-sender-zipcode"
+                  coloniaTestId="select-sender-colonia"
                 />
               </div>
             </div>
@@ -426,14 +433,17 @@ export default function ShipmentForm() {
                   data-testid="input-receiver-address"
                 />
               </div>
-              <div className="space-y-2">
+              <div className="md:col-span-2">
                 <ZipCodeInput
-                  label="Código Postal de Destino"
-                  value={formData.receiverZipCode}
-                  onChange={(value) => handleZipCodeChange('receiverZipCode', value)}
-                  placeholder="64000"
+                  zipCodeLabel="Código Postal de Destino"
+                  coloniaLabel="Colonia de Destino"
+                  zipCodeValue={formData.receiverZipCode}
+                  coloniaValue={formData.receiverColonia}
+                  onZipCodeChange={(value) => handleZipCodeChange('receiverZipCode', value)}
+                  onColoniaChange={(value) => setFormData({ ...formData, receiverColonia: value })}
                   required
-                  data-testid="input-receiver-zipcode"
+                  zipCodeTestId="input-receiver-zipcode"
+                  coloniaTestId="select-receiver-colonia"
                 />
               </div>
             </div>

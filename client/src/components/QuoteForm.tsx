@@ -28,7 +28,9 @@ export default function QuoteForm() {
   const [quoteId, setQuoteId] = useState<string>("");
   const [formData, setFormData] = useState({
     fromZipCode: "",
+    fromColonia: "",
     toZipCode: "",
+    toColonia: "",
     weight: "",
     length: "",
     width: "",
@@ -113,23 +115,29 @@ export default function QuoteForm() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <ZipCodeInput
-              label="Código Postal Origen"
-              value={formData.fromZipCode}
-              onChange={(value) => setFormData({ ...formData, fromZipCode: value })}
-              placeholder="06600"
+              zipCodeLabel="Código Postal Origen"
+              coloniaLabel="Colonia Origen"
+              zipCodeValue={formData.fromZipCode}
+              coloniaValue={formData.fromColonia}
+              onZipCodeChange={(value) => setFormData({ ...formData, fromZipCode: value })}
+              onColoniaChange={(value) => setFormData({ ...formData, fromColonia: value })}
               required
-              testId="input-from-zipcode"
+              zipCodeTestId="input-from-zipcode"
+              coloniaTestId="select-from-colonia"
             />
 
             <ZipCodeInput
-              label="Código Postal Destino"
-              value={formData.toZipCode}
-              onChange={(value) => setFormData({ ...formData, toZipCode: value })}
-              placeholder="64000"
+              zipCodeLabel="Código Postal Destino"
+              coloniaLabel="Colonia Destino"
+              zipCodeValue={formData.toZipCode}
+              coloniaValue={formData.toColonia}
+              onZipCodeChange={(value) => setFormData({ ...formData, toZipCode: value })}
+              onColoniaChange={(value) => setFormData({ ...formData, toColonia: value })}
               required
-              testId="input-to-zipcode"
+              zipCodeTestId="input-to-zipcode"
+              coloniaTestId="select-to-colonia"
             />
           </div>
 

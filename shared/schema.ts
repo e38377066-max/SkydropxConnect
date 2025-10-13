@@ -61,6 +61,7 @@ export const shipments = pgTable("shipments", {
   senderPhone: text("sender_phone").notNull(),
   senderAddress: text("sender_address").notNull(),
   senderZipCode: text("sender_zip_code").notNull(),
+  senderColonia: text("sender_colonia"),
   senderCity: text("sender_city"),
   senderState: text("sender_state"),
   
@@ -68,6 +69,7 @@ export const shipments = pgTable("shipments", {
   receiverPhone: text("receiver_phone").notNull(),
   receiverAddress: text("receiver_address").notNull(),
   receiverZipCode: text("receiver_zip_code").notNull(),
+  receiverColonia: text("receiver_colonia"),
   receiverCity: text("receiver_city"),
   receiverState: text("receiver_state"),
   
@@ -345,7 +347,9 @@ export type BillingProfile = typeof billingProfiles.$inferSelect;
 
 export const quoteRequestSchema = z.object({
   fromZipCode: z.string().min(5, "Código postal inválido"),
+  fromColonia: z.string().optional(),
   toZipCode: z.string().min(5, "Código postal inválido"),
+  toColonia: z.string().optional(),
   weight: z.number().positive("El peso debe ser mayor a 0"),
   length: z.number().positive().optional(),
   width: z.number().positive().optional(),
@@ -357,11 +361,13 @@ export const shipmentRequestSchema = z.object({
   senderPhone: z.string().min(10, "Teléfono inválido"),
   senderAddress: z.string().min(1, "Dirección requerida"),
   senderZipCode: z.string().min(5, "Código postal inválido"),
+  senderColonia: z.string().min(1, "Colonia requerida"),
   
   receiverName: z.string().min(1, "Nombre requerido"),
   receiverPhone: z.string().min(10, "Teléfono inválido"),
   receiverAddress: z.string().min(1, "Dirección requerida"),
   receiverZipCode: z.string().min(5, "Código postal inválido"),
+  receiverColonia: z.string().min(1, "Colonia requerida"),
   
   weight: z.number().positive("El peso debe ser mayor a 0"),
   length: z.number().positive().optional(),
