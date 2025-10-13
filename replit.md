@@ -51,6 +51,7 @@ The backend is an Express.js application with TypeScript, following a RESTful AP
 -   **Wallet System**: Protected endpoints for retrieving wallet balance, transaction history, and managing recharge requests (`/api/wallet/*`). Admin users can approve or reject recharge requests.
 -   **Saved Data**: Protected endpoints for managing user's saved addresses, package presets, and billing profiles (`/api/addresses`, `/api/packages`, `/api/billing-profiles`).
 -   **Profit Margin System**: Configurable profit margin applied to Skydropx base prices, stored in the `settings` table. Only admin users can modify this percentage via a dedicated admin panel, with validation ensuring the margin is between 0-100%. Default margin: 15%.
+-   **Zip Code Autocomplete**: Local database of 157,127 Mexican postal codes (SEPOMEX) covering all 32 states. Endpoint `/api/zipcodes/search` provides fast autocomplete with indexed searches. Data imported from official SEPOMEX Excel file into `zip_codes` table with fields: codigo_postal, colonia, municipio, estado, ciudad. No external API dependency for zip code lookups.
 
 ## Data Storage
 
@@ -61,6 +62,7 @@ The application uses PostgreSQL, accessed via the Neon serverless driver, and `D
 -   `settings`: Stores system configurations like profit margin.
 -   `transactions`, `recharge_requests`: For the wallet system.
 -   `saved_addresses`, `saved_packages`, `billing_profiles`: For user-saved preferences.
+-   `zip_codes`: Contains 157,127 Mexican postal codes from SEPOMEX with indexed columns (codigo_postal, estado) for fast autocomplete queries. Covers all 32 states of Mexico.
 
 ## System Design Choices
 

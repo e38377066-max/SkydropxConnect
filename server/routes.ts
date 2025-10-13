@@ -13,6 +13,8 @@ import {
   type ShipmentRequest,
   type UpdateRechargeRequest,
 } from "@shared/schema";
+import { db } from "./db";
+import { sql } from "drizzle-orm";
 
 const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&_\-.,])[A-Za-z\d@$!%*?&_\-.,]{8,}$/;
 
