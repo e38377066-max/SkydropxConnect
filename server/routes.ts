@@ -988,6 +988,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // Si el envío está cancelado, retornar estado sin intentar rastrear en Skydropx
+      if (shipment.status === 'cancelled') {
+        const existingEvents = await storage.getTrackingEvents(trackingNumber);
+        return res.json({
+          success: true,
+          data: {
+            shipment,
+            tracking: {
+              status: 'cancelled',
+              history: existingEvents,
+            },
+          },
+          message: "Este envío fue cancelado",
+        });
+      }
+
       // Pasar el carrier_name a Skydropx para mejor tracking
       const trackingData = await skydropxService.trackShipment(trackingNumber, shipment.carrier);
       const existingEvents = await storage.getTrackingEvents(trackingNumber);
