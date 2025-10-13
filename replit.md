@@ -75,13 +75,13 @@ The application uses PostgreSQL, accessed via the Neon serverless driver, and `D
 -   **Skydropx API**: Integrated for shipping rate quotes, label generation, and real-time package tracking across various carriers. 
     - **Authentication**: OAuth 2.0 using client_credentials flow
     - **Base URL**: `https://app.skydropx.com/v1`
-    - **OAuth Endpoint**: `https://app.skydropx.com/api/v1/oauth/token`
+    - **OAuth Endpoint**: `https://pro.skydropx.com/api/v1/oauth/token` (Corrected)
     - **Credentials**: Stored in `SKYDROPX_API_KEY` (client_id) and `SKYDROPX_API_SECRET` (client_secret)
     - **Token**: Bearer token with 2-hour expiration, auto-refreshes 5 minutes before expiry
     - **Scope**: `default orders.create`
     - **Endpoints**: `/quotations`, `/shipments`, `/trackings/{tracking_number}`
     - **Fallback**: Mock data mode when credentials are not configured
-    - **Note**: Currently pending configuration verification with Skydropx support (see SKYDROPX_CONFIG.md)
+    - **Status**: OAuth endpoint correcto identificado, error 401 "invalid_client" pendiente de resolver con soporte (ver SKYDROPX_CONFIG.md)
 -   **Google OAuth 2.0 API**: Integrated for secure user authentication via Google accounts.
 
 ## Libraries
