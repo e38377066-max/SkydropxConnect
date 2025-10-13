@@ -2,6 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Truck, Clock, Check } from "lucide-react";
+import { getCarrierLogo } from "@/lib/carrierLogos";
 
 interface Rate {
   id: string;
@@ -39,8 +40,16 @@ export default function QuoteResults({ rates, onSelectRate }: QuoteResultsProps)
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <Truck className="w-6 h-6 text-primary" />
+                  <div className="w-16 h-16 rounded-lg bg-white dark:bg-gray-100 border border-border flex items-center justify-center p-2">
+                    {getCarrierLogo(rate.provider) ? (
+                      <img 
+                        src={getCarrierLogo(rate.provider)!} 
+                        alt={`${rate.provider} logo`}
+                        className="w-full h-full object-contain"
+                      />
+                    ) : (
+                      <Truck className="w-8 h-8 text-primary" />
+                    )}
                   </div>
                   <div>
                     <h4 className="text-lg font-semibold text-foreground">

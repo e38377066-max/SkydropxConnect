@@ -521,6 +521,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Search Mexican zip codes (SEPOMEX)
+  app.get("/api/zipcodes/search", async (req, res) => {
+    try {
+      const { q } = req.query;
+      
+      if (!q || typeof q !== 'string' || q.length < 4) {
+        return res.json({ success: true, data: [] });
+      }
+
+      // Use public SEPOMEX API
+      const response = await fetch(`https://api.copomex.com/query/info_cp/${q}?type=simplified&token=pruebas`);
+      
+      if (!response.ok) {
+        console.warn(`Zipcode API error: ${response.status}`);
+        return res.json({ success: true, data: [] });
+      }
+
+      const data = await response.json();
+      
+      // Transform response to our format
+      const results = data.response?.map((item: any) => ({
+        codigo_postal: item.cp,
+        colonia: item.asentamiento,
+        municipio: item.municipio,
+        estado: item.estado,
+      })) || [];
+
+      res.json({ success: true, data: results });
+    } catch (error) {
+      console.error("Error searching zipcodes:", error);
+      res.json({ success: true, data: [] });
+    }
+  });
+
   app.post("/api/quotes", async (req, res) => {
     try {
       const validatedData = quoteRequestSchema.parse({

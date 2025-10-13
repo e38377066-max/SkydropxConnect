@@ -3,11 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Calculator, Package, MapPin, Loader2 } from "lucide-react";
+import { Calculator, Package, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import QuoteResults from "./QuoteResults";
+import ZipCodeInput from "./ZipCodeInput";
 
 interface Rate {
   id: string;
@@ -78,37 +79,23 @@ export default function QuoteForm() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="fromZipCode" className="flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-primary" />
-                Código Postal Origen
-              </Label>
-              <Input
-                id="fromZipCode"
-                name="fromZipCode"
-                placeholder="06600"
-                value={formData.fromZipCode}
-                onChange={handleInputChange}
-                required
-                data-testid="input-from-zipcode"
-              />
-            </div>
+            <ZipCodeInput
+              label="Código Postal Origen"
+              value={formData.fromZipCode}
+              onChange={(value) => setFormData({ ...formData, fromZipCode: value })}
+              placeholder="06600"
+              required
+              testId="input-from-zipcode"
+            />
 
-            <div className="space-y-2">
-              <Label htmlFor="toZipCode" className="flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-primary" />
-                Código Postal Destino
-              </Label>
-              <Input
-                id="toZipCode"
-                name="toZipCode"
-                placeholder="64000"
-                value={formData.toZipCode}
-                onChange={handleInputChange}
-                required
-                data-testid="input-to-zipcode"
-              />
-            </div>
+            <ZipCodeInput
+              label="Código Postal Destino"
+              value={formData.toZipCode}
+              onChange={(value) => setFormData({ ...formData, toZipCode: value })}
+              placeholder="64000"
+              required
+              testId="input-to-zipcode"
+            />
           </div>
 
           <div className="space-y-2">
