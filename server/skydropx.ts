@@ -125,11 +125,12 @@ export class SkydropxService {
     this.clientId = process.env.SKYDROPX_API_KEY;
     this.clientSecret = process.env.SKYDROPX_API_SECRET;
     
-    if (this.clientId && this.clientSecret) {
-      console.log("✅ Skydropx credentials configured (Client ID & Secret)");
-    } else {
-      console.log("⚠️ Skydropx running in MOCK mode (no credentials configured)");
+    if (!this.clientId || !this.clientSecret) {
+      console.error("❌ Error: Credenciales de Skydropx no configuradas. La aplicación requiere SKYDROPX_API_KEY y SKYDROPX_API_SECRET");
+      throw new Error("Credenciales de Skydropx no configuradas. Por favor configura SKYDROPX_API_KEY y SKYDROPX_API_SECRET en el archivo .env");
     }
+    
+    console.log("✅ Skydropx credentials configured (Client ID & Secret)");
   }
 
   private async getBearerToken(): Promise<string> {
