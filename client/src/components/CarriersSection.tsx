@@ -7,8 +7,12 @@ const carriers = [
   { name: "FedEx" },
   { name: "Estafeta" },
   { name: "UPS" },
-  { name: "Redpack" },
   { name: "99 Minutos" },
+  { name: "Paquetexpress" },
+  { name: "Quiken" },
+  { name: "Sendex" },
+  { name: "AMPM" },
+  { name: "J&T Express" },
 ];
 
 export default function CarriersSection() {
@@ -24,7 +28,7 @@ export default function CarriersSection() {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
           {carriers.map((carrier, index) => {
             const logo = getCarrierLogo(carrier.name);
             
