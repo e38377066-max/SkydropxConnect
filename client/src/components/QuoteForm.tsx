@@ -69,7 +69,7 @@ export default function QuoteForm() {
   };
 
   const handleSelectRate = (rate: Rate) => {
-    // Guardar datos de cotización completos en localStorage para saltar al paso 2
+    // Guardar datos de cotización para ir directo a crear envío
     const quoteData = {
       fromZipCode: formData.fromZipCode,
       toZipCode: formData.toZipCode,
@@ -78,7 +78,6 @@ export default function QuoteForm() {
       width: formData.width,
       height: formData.height,
       quoteId: quoteId,
-      allRates: rates,
       selectedRate: {
         id: rate.id,
         provider: rate.provider,

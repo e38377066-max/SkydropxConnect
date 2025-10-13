@@ -72,13 +72,11 @@ export default function ShipmentForm() {
           height: data.height || "10",
         }));
         
-        // Si hay cotización completa (quoteId + rates + selectedRate), ir directo al paso 2
-        if (data.quoteId && data.allRates && data.selectedRate) {
+        // Si hay cotización completa (quoteId + selectedRate), quedarse en paso 1 pero marcar como fromQuote
+        if (data.quoteId && data.selectedRate) {
           setQuoteId(data.quoteId);
-          setAllRates(data.allRates);
           setSelectedRate(data.selectedRate);
           setFromQuote(true);
-          setStep(2);
           
           toast({
             title: "Cotización cargada",
@@ -204,8 +202,13 @@ export default function ShipmentForm() {
   const handleQuoteSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Siempre hacer cotización para obtener tarifas actualizadas
-    quoteMutation.mutate();
+    // Si viene desde cotización con paquetería ya seleccionada, crear envío directo
+    if (fromQuote && selectedRate) {
+      handleShipmentSubmit();
+    } else {
+      // Si no, hacer cotización normal
+      quoteMutation.mutate();
+    }
   };
 
   const handleShipmentSubmit = () => {
@@ -291,6 +294,12 @@ export default function ShipmentForm() {
                 <h2 className="text-2xl font-bold text-foreground">Crear Envío</h2>
                 <p className="text-sm text-muted-foreground">Completa los datos para generar tu etiqueta</p>
               </div>
+              {fromQuote && selectedRate && (
+                <Badge variant="default" className="gap-2">
+                  <Check className="w-4 h-4" />
+                  {selectedRate.provider} - ${selectedRate.total_pricing.toFixed(2)}
+                </Badge>
+              )}
             </div>
 
             <form onSubmit={handleQuoteSubmit} className="space-y-8">
@@ -444,12 +453,21 @@ export default function ShipmentForm() {
                 {quoteMutation.isPending || shipmentMutation.isPending ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    {quoteMutation.isPending ? 'Obteniendo Cotizaciones...' : 'Procesando...'}
+                    {quoteMutation.isPending ? 'Obteniendo Cotizaciones...' : 'Creando Envío...'}
                   </>
                 ) : (
                   <>
-                    <ArrowRight className="w-4 h-4 mr-2" />
-                    Continuar
+                    {fromQuote && selectedRate ? (
+                      <>
+                        <Check className="w-4 h-4 mr-2" />
+                        Crear Envío
+                      </>
+                    ) : (
+                      <>
+                        <ArrowRight className="w-4 h-4 mr-2" />
+                        Continuar
+                      </>
+                    )}
                   </>
                 )}
               </Button>
