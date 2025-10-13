@@ -82,7 +82,7 @@ interface SkydropxTokenResponse {
 export class SkydropxService {
   private clientId: string | undefined;
   private clientSecret: string | undefined;
-  private baseUrl = "https://pro.skydropx.com/v1";
+  private baseUrl = "https://api.skydropx.com/v1";
   private bearerToken: string | null = null;
   private tokenExpiresAt: number | null = null;
 
@@ -192,8 +192,12 @@ export class SkydropxService {
     try {
       const token = await this.getBearerToken();
       
+      const endpoint = `${this.baseUrl}/quotations`;
       console.log("📤 Sending request to Skydropx /quotations");
-      const response = await fetch(`${this.baseUrl}/quotations`, {
+      console.log("📤 Endpoint:", endpoint);
+      console.log("📤 Request body:", JSON.stringify(request, null, 2));
+      
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -202,10 +206,22 @@ export class SkydropxService {
         body: JSON.stringify(request),
       });
 
+      console.log("📥 Response status:", response.status);
+      console.log("📥 Response statusText:", response.statusText);
+
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error("❌ Skydropx API error response:", errorData);
-        throw new Error(errorData.message || `Skydropx API error: ${response.statusText}`);
+        const errorText = await response.text();
+        console.error("❌ Skydropx API error response (first 500 chars):", errorText.substring(0, 500));
+        
+        // Try to parse as JSON, but if it's HTML, just use status text
+        let errorMessage = `Skydropx API error: ${response.status} ${response.statusText}`;
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.message || errorMessage;
+        } catch (e) {
+          // It's HTML or not JSON, stick with status text
+        }
+        throw new Error(errorMessage);
       }
 
       const result = await response.json();
