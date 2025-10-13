@@ -314,11 +314,17 @@ export class SkydropxService {
 
       const result = await response.json();
       console.log("✅ Skydropx quotes response received");
+      console.log("📊 Full response structure:", JSON.stringify(result, null, 2).substring(0, 2000));
       
       // Skydropx PRO devuelve { rates: [...], is_completed: boolean, ... }
       if (!result.rates || !Array.isArray(result.rates)) {
         console.warn("⚠️ Unexpected Skydropx response structure:", result);
         return [];
+      }
+
+      // Log primera cotización para ver estructura
+      if (result.rates.length > 0) {
+        console.log("📦 Sample rate structure:", JSON.stringify(result.rates[0], null, 2));
       }
 
       // Filtrar solo cotizaciones exitosas con precio
