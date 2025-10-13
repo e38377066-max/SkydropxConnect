@@ -93,7 +93,7 @@ export default function QuoteResults({ rates, onSelectRate }: QuoteResultsProps)
                     onClick={() => onSelectRate(rate)}
                     data-testid={`button-select-rate-${index}`}
                   >
-                    Seleccionar
+                    Enviar
                   </Button>
                 )}
               </div>

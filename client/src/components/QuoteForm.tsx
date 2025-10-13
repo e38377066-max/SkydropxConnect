@@ -9,6 +9,7 @@ import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import QuoteResults from "./QuoteResults";
 import ZipCodeInput from "./ZipCodeInput";
+import { useLocation } from "wouter";
 
 interface Rate {
   id: string;
@@ -22,6 +23,7 @@ interface Rate {
 
 export default function QuoteForm() {
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [rates, setRates] = useState<Rate[]>([]);
   const [formData, setFormData] = useState({
     fromZipCode: "",
@@ -62,6 +64,36 @@ export default function QuoteForm() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     quoteMutation.mutate(formData);
+  };
+
+  const handleSelectRate = (rate: Rate) => {
+    // Guardar datos de cotización en localStorage para pre-llenar el formulario de envío
+    const quoteData = {
+      fromZipCode: formData.fromZipCode,
+      toZipCode: formData.toZipCode,
+      weight: formData.weight,
+      length: formData.length,
+      width: formData.width,
+      height: formData.height,
+      selectedRate: {
+        id: rate.id,
+        provider: rate.provider,
+        service_level_name: rate.service_level_name,
+        total_pricing: rate.total_pricing,
+        currency: rate.currency,
+        days: rate.days,
+      }
+    };
+    
+    localStorage.setItem('prefilledQuoteData', JSON.stringify(quoteData));
+    
+    toast({
+      title: "Redirigiendo...",
+      description: `Creando envío con ${rate.provider}`,
+    });
+    
+    // Navegar a la página de crear envío
+    setLocation('/crear-guia');
   };
 
   return (
@@ -173,7 +205,7 @@ export default function QuoteForm() {
         </form>
       </Card>
 
-      {rates.length > 0 && <QuoteResults rates={rates} />}
+      {rates.length > 0 && <QuoteResults rates={rates} onSelectRate={handleSelectRate} />}
     </div>
   );
 }
