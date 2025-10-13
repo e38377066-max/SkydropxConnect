@@ -276,7 +276,9 @@ export class SkydropxService {
       if (result.data && result.data.attributes) {
         const attrs = result.data.attributes;
         const packageData = result.included?.find((item: any) => item.type === 'package');
-        const trackingNumber = packageData?.attributes?.tracking_number || null;
+        const trackingNumber = packageData?.attributes?.tracking_number 
+          || attrs.master_tracking_number 
+          || null;
         const labelUrl = packageData?.attributes?.label_url || null;
         
         shipmentData = {
@@ -473,9 +475,11 @@ export class SkydropxService {
         // Formato JSON:API de Skydropx PRO
         const attrs = result.data.attributes;
         
-        // Extraer tracking_number de included[0].attributes si existe
+        // Extraer tracking_number de included[0].attributes o de master_tracking_number
         const packageData = result.included?.find((item: any) => item.type === 'package');
-        const trackingNumber = packageData?.attributes?.tracking_number || null;
+        const trackingNumber = packageData?.attributes?.tracking_number 
+          || attrs.master_tracking_number 
+          || null;
         const labelUrl = packageData?.attributes?.label_url || null;
         
         shipmentData = {

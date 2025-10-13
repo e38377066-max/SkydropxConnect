@@ -771,6 +771,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         shipmentStatus = "created";
       } else if (skydropxShipment.workflow_status === "in_progress") {
         shipmentStatus = "pending";
+      } else if (skydropxShipment.workflow_status === "cancelled") {
+        shipmentStatus = "cancelled";
       }
 
       // Create shipment with userId
@@ -935,6 +937,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         newStatus = "created";
       } else if (skydropxData.workflow_status === "in_progress") {
         newStatus = "pending";
+      } else if (skydropxData.workflow_status === "cancelled") {
+        newStatus = "cancelled";
       }
 
       // Actualizar envío en DB
