@@ -110,7 +110,36 @@ export default function ShipmentForm() {
         setQuoteId(data.data.quoteId);
         if (data.data.rates && data.data.rates.length > 0) {
           setAllRates(data.data.rates);
-          setStep(2);
+          
+          // Si venía de cotización, intentar auto-seleccionar la misma paquetería
+          if (fromQuote && selectedRate) {
+            const matchingRate = data.data.rates.find(
+              (rate: QuoteRate) => rate.provider === selectedRate.provider
+            );
+            if (matchingRate) {
+              setSelectedRate(matchingRate);
+              // Si encontramos la misma paquetería, crear el envío automáticamente
+              toast({
+                title: "Cotización actualizada",
+                description: `${matchingRate.provider} confirmada. Creando envío...`,
+              });
+              // Crear envío después de un pequeño delay para que se vea el toast
+              setTimeout(() => {
+                shipmentMutation.mutate();
+              }, 500);
+            } else {
+              // Si no encontramos la paquetería, ir al paso 2 para seleccionar
+              setFromQuote(false);
+              setStep(2);
+              toast({
+                title: "Paquetería no disponible",
+                description: "La paquetería seleccionada ya no está disponible. Por favor, selecciona otra.",
+                variant: "destructive",
+              });
+            }
+          } else {
+            setStep(2);
+          }
         } else {
           toast({
             title: "No hay cotizaciones disponibles",
@@ -202,13 +231,8 @@ export default function ShipmentForm() {
   const handleQuoteSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Si viene desde cotización con paquetería ya seleccionada, crear envío directo
-    if (fromQuote && selectedRate) {
-      handleShipmentSubmit();
-    } else {
-      // Si no, hacer cotización normal
-      quoteMutation.mutate();
-    }
+    // Siempre re-cotizar para obtener rate_id fresco (evita errores de expiración)
+    quoteMutation.mutate();
   };
 
   const handleShipmentSubmit = () => {
@@ -453,14 +477,14 @@ export default function ShipmentForm() {
                 {quoteMutation.isPending || shipmentMutation.isPending ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    {quoteMutation.isPending ? 'Obteniendo Cotizaciones...' : 'Creando Envío...'}
+                    {shipmentMutation.isPending ? 'Creando Envío...' : 'Verificando tarifa...'}
                   </>
                 ) : (
                   <>
                     {fromQuote && selectedRate ? (
                       <>
                         <Check className="w-4 h-4 mr-2" />
-                        Crear Envío
+                        Crear Envío con {selectedRate.provider}
                       </>
                     ) : (
                       <>
