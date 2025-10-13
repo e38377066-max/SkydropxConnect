@@ -51,7 +51,11 @@ The backend is an Express.js application with TypeScript, following a RESTful AP
 
 -   **Authentication & Authorization**: Hybrid system supporting local email/password and Google OAuth via Passport.js. Features include bcrypt password hashing, robust password validation, session management with PostgreSQL storage, and secure cookie handling. Users can manage multiple authentication methods and profile details on a dedicated `/perfil` page, including contact, billing, and security settings. Admin roles have access to system settings.
 -   **Skydropx PRO Integration (OAuth)**: ✅ Fully functional integration with Skydropx PRO API using OAuth Bearer token authentication. Features auto-refresh token system (renews 5 min before expiration), support for 10+ shipping carriers (DHL, FedEx, Estafeta, UPS, etc.), and real-time quote comparison. Endpoint: `https://pro.skydropx.com/api/v1/quotations`.
--   **Shipping & Tracking**: Public API endpoints for quoting shipping rates (`/api/quotes`), creating shipments (`/api/shipments`), and tracking packages (`/api/tracking/:trackingNumber`). Quote endpoint returns 10+ valid rates per request with pricing and delivery estimates.
+-   **Shipping & Tracking**: 
+    - Quoting: `/api/quotes` returns 10+ valid rates per request with pricing and delivery estimates
+    - Creation: `/api/shipments` creates shipments with automatic wallet deduction
+    - Tracking: `/api/tracking/:trackingNumber` uses Skydropx endpoint `/api/v1/shipments/tracking?tracking_number={tracking_number}&carrier_name={carrier_name}` for real-time package tracking. Handles cancelled shipments gracefully without attempting Skydropx lookup.
+    - Cancellation: `/api/shipments/:id/cancel` cancels shipments via Skydropx `/api/v1/shipments/{shipment_id}/cancellations` endpoint with automatic refund to user wallet, transaction recording, and tracking event creation. UI includes confirmation dialog showing refund amount.
 -   **User Management**: Endpoints for user registration, login, logout, and authenticated user data retrieval (`/api/auth/user`). Protected routes for updating user contact, billing, and password information.
 -   **Wallet System**: Protected endpoints for retrieving wallet balance, transaction history, and managing recharge requests (`/api/wallet/*`). Admin users can approve or reject recharge requests.
 -   **Saved Data**: Protected endpoints for managing user's saved addresses, package presets, and billing profiles (`/api/addresses`, `/api/packages`, `/api/billing-profiles`).
@@ -87,7 +91,12 @@ The application uses PostgreSQL, accessed via the Neon serverless driver, and `D
     - **Credentials**: Stored in `SKYDROPX_API_KEY` (client_id) and `SKYDROPX_API_SECRET` (client_secret)
     - **Token**: Bearer token with 2-hour expiration, auto-refreshes 5 minutes before expiry
     - **Scope**: `default orders.create`
-    - **Endpoints**: `/quotations`, `/shipments`, `/trackings/{tracking_number}`
+    - **Endpoints**: 
+        - `/quotations` - Get shipping quotes
+        - `/shipments` - Create shipments
+        - `/shipments/{shipment_id}` - Get shipment status
+        - `/shipments/tracking?tracking_number={tracking_number}&carrier_name={carrier_name}` - Track packages
+        - `/shipments/{shipment_id}/cancellations` - Cancel shipments (POST with reason)
     - **Fallback**: Mock data mode when credentials are not configured
     - **Status**: OAuth endpoint correcto identificado, error 401 "invalid_client" pendiente de resolver con soporte (ver SKYDROPX_CONFIG.md)
 -   **Google OAuth 2.0 API**: Integrated for secure user authentication via Google accounts.

@@ -1072,7 +1072,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           amount: refundAmount,
           newBalance: newBalance,
         },
-        message: `Envío cancelado exitosamente. Se reembolsaron $${refundAmount.toFixed(2)} MXN a tu billetera. Saldo actual: $${newBalance.toFixed(2)} MXN`,
+        message: `Envío cancelado exitosamente. Se reembolsaron $${refundAmount.toFixed(2)} MXN a tu billetera. Saldo actual: $${newBalance} MXN`,
       });
     } catch (error: any) {
       console.error("Error cancelling shipment:", error);
