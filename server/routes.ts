@@ -800,26 +800,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         type: "withdrawal",
         amount: `-${actualAmount.toFixed(2)}`,
         balanceAfter: newBalance,
-        description: `Envío ${validatedData.carrier} - ${shipment.trackingNumber}`,
+        description: `Envío ${validatedData.carrier} - ${shipment.trackingNumber || 'Procesando'}`,
         referenceId: shipment.id,
         referenceType: "shipment",
         status: "completed",
         metadata: {
-          trackingNumber: shipment.trackingNumber,
+          trackingNumber: shipment.trackingNumber || null,
           carrier: validatedData.carrier,
           senderZipCode: validatedData.senderZipCode,
           receiverZipCode: validatedData.receiverZipCode,
         } as any,
       });
 
-      await storage.createTrackingEvent({
-        shipmentId: shipment.id,
-        trackingNumber: shipment.trackingNumber,
-        status: "created",
-        description: "Guía de envío creada",
-        location: "Sistema",
-        eventDate: new Date(),
-      });
+      // Only create tracking event if we have a tracking number
+      if (shipment.trackingNumber) {
+        await storage.createTrackingEvent({
+          shipmentId: shipment.id,
+          trackingNumber: shipment.trackingNumber,
+          status: "created",
+          description: "Guía de envío creada",
+          location: "Sistema",
+          eventDate: new Date(),
+        });
+      }
 
       res.json({
         success: true,

@@ -54,7 +54,7 @@ export type User = typeof users.$inferSelect;
 export const shipments = pgTable("shipments", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").references(() => users.id), // Owner of the shipment
-  trackingNumber: text("tracking_number").notNull().unique(),
+  trackingNumber: text("tracking_number").unique(), // Nullable porque Skydropx lo da después
   carrier: text("carrier").notNull(),
   
   senderName: text("sender_name").notNull(),
