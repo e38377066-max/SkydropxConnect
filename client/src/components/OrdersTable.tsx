@@ -2,7 +2,17 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Eye, Download, Search, Package, Loader2, RefreshCcw } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Eye, Download, Search, Package, Loader2, RefreshCcw, XCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -34,6 +44,8 @@ const statusConfig: Record<string, { label: string; variant: "default" | "second
 export default function OrdersTable() {
   const [searchTerm, setSearchTerm] = useState("");
   const [syncingId, setSyncingId] = useState<string | null>(null);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [orderToCancel, setOrderToCancel] = useState<Order | null>(null);
   const { toast } = useToast();
 
   const { data, isLoading, isError } = useQuery<{ success: boolean; data: Order[] }>({
@@ -66,6 +78,45 @@ export default function OrdersTable() {
   const handleSync = (shipmentId: string) => {
     setSyncingId(shipmentId);
     syncMutation.mutate(shipmentId);
+  };
+
+  const cancelMutation = useMutation({
+    mutationFn: async (shipmentId: string) => {
+      const response = await apiRequest("POST", `/api/shipments/${shipmentId}/cancel`, {
+        reason: "Ya no es necesario",
+      });
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/shipments'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/wallet/balance'] });
+      toast({
+        title: "Envío cancelado",
+        description: data.message || "El envío fue cancelado y se reembolsó el monto a tu billetera",
+      });
+      setCancellingId(null);
+      setOrderToCancel(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error al cancelar",
+        description: error.message || "No se pudo cancelar el envío",
+        variant: "destructive",
+      });
+      setCancellingId(null);
+      setOrderToCancel(null);
+    },
+  });
+
+  const handleCancelClick = (order: Order) => {
+    setOrderToCancel(order);
+  };
+
+  const handleConfirmCancel = () => {
+    if (orderToCancel) {
+      setCancellingId(orderToCancel.id);
+      cancelMutation.mutate(orderToCancel.id);
+    }
   };
 
   useEffect(() => {
@@ -192,6 +243,19 @@ export default function OrdersTable() {
                           <RefreshCcw className={`w-4 h-4 ${syncingId === order.id ? 'animate-spin' : ''}`} />
                         </Button>
                       )}
+                      {order.status !== "cancelled" && order.status !== "delivered" && (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => handleCancelClick(order)}
+                          disabled={cancellingId === order.id}
+                          data-testid={`button-cancel-${order.id}`}
+                          title="Cancelar envío"
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <XCircle className="w-4 h-4" />
+                        </Button>
+                      )}
                       <Button
                         size="icon"
                         variant="ghost"
@@ -226,6 +290,41 @@ export default function OrdersTable() {
           )}
         </div>
       )}
+
+      <AlertDialog open={!!orderToCancel} onOpenChange={(open) => !open && setOrderToCancel(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Cancelar este envío?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción cancelará el envío y se reembolsará el monto de <strong>${orderToCancel ? parseFloat(orderToCancel.amount).toFixed(2) : '0.00'} MXN</strong> a tu billetera.
+              {orderToCancel?.trackingNumber && (
+                <span className="block mt-2 font-mono text-sm">
+                  Guía: {orderToCancel.trackingNumber}
+                </span>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={cancellingId === orderToCancel?.id}>
+              No, mantener envío
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmCancel}
+              disabled={cancellingId === orderToCancel?.id}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {cancellingId === orderToCancel?.id ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Cancelando...
+                </>
+              ) : (
+                'Sí, cancelar envío'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

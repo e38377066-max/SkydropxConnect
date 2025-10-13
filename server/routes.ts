@@ -1032,7 +1032,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const refundAmount = parseFloat(shipment.amount);
-      const newBalance = parseFloat(user.balance) + refundAmount;
+      const newBalance = (parseFloat(user.balance) + refundAmount).toFixed(2);
 
       await storage.updateUserBalance(userId, newBalance);
 
