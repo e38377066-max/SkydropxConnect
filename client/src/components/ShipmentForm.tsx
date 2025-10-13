@@ -28,7 +28,8 @@ export default function ShipmentForm() {
   const [createdShipment, setCreatedShipment] = useState<any>(null);
   const [selectedRate, setSelectedRate] = useState<QuoteRate | null>(null);
   const [quoteId, setQuoteId] = useState<string>("");
-  const [preselectedProvider, setPreselectedProvider] = useState<string | null>(null);
+  const [allRates, setAllRates] = useState<QuoteRate[]>([]);
+  const [fromQuote, setFromQuote] = useState<boolean>(false);
   
   const [formData, setFormData] = useState({
     senderName: "",
@@ -71,13 +72,17 @@ export default function ShipmentForm() {
           height: data.height || "10",
         }));
         
-        // Si hay una cotización seleccionada, guardar el provider para auto-seleccionarlo después de cotizar
-        if (data.selectedRate) {
-          setPreselectedProvider(data.selectedRate.provider);
+        // Si hay cotización completa (quoteId + rates + selectedRate), ir directo al paso 2
+        if (data.quoteId && data.allRates && data.selectedRate) {
+          setQuoteId(data.quoteId);
+          setAllRates(data.allRates);
+          setSelectedRate(data.selectedRate);
+          setFromQuote(true);
+          setStep(2);
           
           toast({
-            title: "Datos cargados",
-            description: `${data.selectedRate.provider} será cotizada nuevamente con tus datos.`,
+            title: "Cotización cargada",
+            description: `${data.selectedRate.provider} seleccionada. Completa los datos del envío.`,
           });
         }
         
@@ -106,20 +111,7 @@ export default function ShipmentForm() {
       if (data.success && data.data) {
         setQuoteId(data.data.quoteId);
         if (data.data.rates && data.data.rates.length > 0) {
-          // Si había un proveedor pre-seleccionado, intentar auto-seleccionarlo
-          if (preselectedProvider) {
-            const matchingRate = data.data.rates.find(
-              (rate: QuoteRate) => rate.provider === preselectedProvider
-            );
-            if (matchingRate) {
-              setSelectedRate(matchingRate);
-              toast({
-                title: "Cotización actualizada",
-                description: `${matchingRate.provider} seleccionado automáticamente con tarifa actualizada.`,
-              });
-            }
-            setPreselectedProvider(null); // Limpiar después de usar
-          }
+          setAllRates(data.data.rates);
           setStep(2);
         } else {
           toast({
@@ -177,37 +169,35 @@ export default function ShipmentForm() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     
-    // Si modifica datos del paquete (peso/dimensiones/códigos postales), limpiar cotización
+    // Si modifica datos del paquete y venía de cotización, resetear y volver al paso 1
     const packageFields = ['weight', 'length', 'width', 'height', 'senderZipCode', 'receiverZipCode'];
-    if (packageFields.includes(e.target.name)) {
-      if (selectedRate) {
-        setSelectedRate(null);
-      }
-      if (preselectedProvider) {
-        setPreselectedProvider(null);
-        toast({
-          title: "Datos modificados",
-          description: "Al cotizar, deberás seleccionar la paquetería nuevamente.",
-        });
-      }
+    if (packageFields.includes(e.target.name) && fromQuote) {
+      setSelectedRate(null);
+      setAllRates([]);
+      setQuoteId("");
+      setFromQuote(false);
+      setStep(1);
+      toast({
+        title: "Datos modificados",
+        description: "Deberás cotizar nuevamente con los nuevos datos.",
+      });
     }
   };
 
   const handleZipCodeChange = (field: string, value: string) => {
     setFormData({ ...formData, [field]: value });
     
-    // Si modifica códigos postales, limpiar cotización
-    if (field === 'senderZipCode' || field === 'receiverZipCode') {
-      if (selectedRate) {
-        setSelectedRate(null);
-      }
-      if (preselectedProvider) {
-        setPreselectedProvider(null);
-        toast({
-          title: "Datos modificados",
-          description: "Al cotizar, deberás seleccionar la paquetería nuevamente.",
-        });
-      }
+    // Si modifica códigos postales y venía de cotización, resetear y volver al paso 1
+    if ((field === 'senderZipCode' || field === 'receiverZipCode') && fromQuote) {
+      setSelectedRate(null);
+      setAllRates([]);
+      setQuoteId("");
+      setFromQuote(false);
+      setStep(1);
+      toast({
+        title: "Datos modificados",
+        description: "Deberás cotizar nuevamente con los nuevos datos.",
+      });
     }
   };
 
@@ -301,12 +291,6 @@ export default function ShipmentForm() {
                 <h2 className="text-2xl font-bold text-foreground">Crear Envío</h2>
                 <p className="text-sm text-muted-foreground">Completa los datos para generar tu etiqueta</p>
               </div>
-              {preselectedProvider && (
-                <Badge variant="secondary" className="gap-2">
-                  <Package className="w-4 h-4" />
-                  {preselectedProvider} (se cotizará)
-                </Badge>
-              )}
             </div>
 
             <form onSubmit={handleQuoteSubmit} className="space-y-8">
@@ -474,7 +458,7 @@ export default function ShipmentForm() {
         )}
 
         {/* PASO 2: Selección de paquetería */}
-        {step === 2 && quoteMutation.data?.data?.rates && (
+        {step === 2 && allRates.length > 0 && (
           <div className="space-y-6">
             <div className="flex items-center justify-between mb-6">
               <div>
@@ -488,7 +472,7 @@ export default function ShipmentForm() {
             </div>
 
             <div className="space-y-3">
-              {quoteMutation.data.data.rates.map((rate: QuoteRate) => {
+              {allRates.map((rate: QuoteRate) => {
                 const logo = getCarrierLogo(rate.provider);
                 const isSelected = selectedRate?.id === rate.id;
                 const hasEnoughBalance = userBalance >= rate.total_pricing;

@@ -25,6 +25,7 @@ export default function QuoteForm() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [rates, setRates] = useState<Rate[]>([]);
+  const [quoteId, setQuoteId] = useState<string>("");
   const [formData, setFormData] = useState({
     fromZipCode: "",
     toZipCode: "",
@@ -42,6 +43,7 @@ export default function QuoteForm() {
     onSuccess: (data: any) => {
       if (data.success && data.data.rates) {
         setRates(data.data.rates);
+        setQuoteId(data.data.quoteId || "");
         toast({
           title: "Cotización generada",
           description: `Se encontraron ${data.data.rates.length} opciones de envío disponibles`,
@@ -67,7 +69,7 @@ export default function QuoteForm() {
   };
 
   const handleSelectRate = (rate: Rate) => {
-    // Guardar datos de cotización en localStorage para pre-llenar el formulario de envío
+    // Guardar datos de cotización completos en localStorage para saltar al paso 2
     const quoteData = {
       fromZipCode: formData.fromZipCode,
       toZipCode: formData.toZipCode,
@@ -75,6 +77,8 @@ export default function QuoteForm() {
       length: formData.length,
       width: formData.width,
       height: formData.height,
+      quoteId: quoteId,
+      allRates: rates,
       selectedRate: {
         id: rate.id,
         provider: rate.provider,
