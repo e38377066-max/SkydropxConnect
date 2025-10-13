@@ -82,7 +82,7 @@ interface SkydropxTokenResponse {
 export class SkydropxService {
   private clientId: string | undefined;
   private clientSecret: string | undefined;
-  private baseUrl = "https://app.skydropx.com/v1";
+  private baseUrl = "https://pro.skydropx.com/v1";
   private bearerToken: string | null = null;
   private tokenExpiresAt: number | null = null;
 
