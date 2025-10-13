@@ -137,6 +137,13 @@ interface SkydropxTokenResponse {
   expires_in: number;
 }
 
+interface SkydropxCancelResponse {
+  id: string;
+  status: string;
+  refund_amount?: number;
+  message?: string;
+}
+
 export class SkydropxService {
   private clientId: string | undefined;
   private clientSecret: string | undefined;
@@ -242,6 +249,57 @@ export class SkydropxService {
       throw new Error("Credenciales de Skydropx no configuradas");
     }
     return this.trackRealShipment(trackingNumber, carrierName);
+  }
+
+  async cancelShipment(shipmentId: string, reason: string = "Ya no es necesario"): Promise<SkydropxCancelResponse> {
+    if (!this.clientId || !this.clientSecret) {
+      throw new Error("Credenciales de Skydropx no configuradas");
+    }
+    
+    try {
+      const token = await this.getBearerToken();
+      
+      console.log(`📤 Cancelling shipment in Skydropx: ${shipmentId}`);
+      const response = await fetch(`${this.baseUrl}/shipments/${shipmentId}/cancellations`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          reason,
+          shipment_id: shipmentId,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("❌ Skydropx cancel error:", errorText);
+        
+        let errorMessage = `Error al cancelar envío: ${response.status}`;
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        } catch (e) {
+          errorMessage = errorText.substring(0, 200);
+        }
+        
+        throw new Error(errorMessage);
+      }
+
+      const result = await response.json();
+      console.log("✅ Skydropx cancellation response:", JSON.stringify(result, null, 2));
+      
+      return {
+        id: shipmentId,
+        status: 'cancelled',
+        message: result.message || 'Envío cancelado exitosamente',
+        refund_amount: result.refund_amount,
+      };
+    } catch (error: any) {
+      console.error("❌ Error cancelling shipment in Skydropx:", error);
+      throw new Error(`Error al cancelar envío: ${error.message}`);
+    }
   }
 
   async getShipmentStatus(shipmentId: string): Promise<SkydropxShipmentResponse> {
