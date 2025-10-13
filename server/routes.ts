@@ -562,19 +562,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Apply profit margin to all rates
       const ratesWithMargin = Array.isArray(rates) ? rates.map((rate: any) => {
-        const baseAmount = parseFloat(rate.amount_local);
         const basePricing = parseFloat(rate.total_pricing);
         
-        // Validate that amounts are valid numbers
-        if (isNaN(baseAmount) || isNaN(basePricing)) {
-          console.error('Invalid rate amounts:', rate);
+        // Validate that amount is a valid number
+        if (isNaN(basePricing)) {
+          console.error('Invalid rate pricing:', rate);
           return rate; // Return original rate if invalid
         }
         
+        const finalPrice = basePricing * (1 + profitMarginPercentage / 100);
+        
         return {
           ...rate,
-          amount_local: baseAmount * (1 + profitMarginPercentage / 100),
-          total_pricing: basePricing * (1 + profitMarginPercentage / 100),
+          total_pricing: finalPrice,
+          // Round to 2 decimal places
+          total_pricing_display: Math.round(finalPrice * 100) / 100,
         };
       }) : rates;
 

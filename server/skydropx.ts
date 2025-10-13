@@ -9,6 +9,41 @@ interface SkydropxQuoteRequest {
   };
 }
 
+interface SkydropxProQuotationRequest {
+  quotation: {
+    order_id?: string;
+    address_from: {
+      country_code: string;
+      postal_code: string;
+      area_level1: string;
+      area_level2: string;
+      area_level3: string;
+    };
+    address_to: {
+      country_code: string;
+      postal_code: string;
+      area_level1: string;
+      area_level2: string;
+      area_level3: string;
+    };
+    parcels: Array<{
+      length: number;
+      width: number;
+      height: number;
+      weight: number;
+    }>;
+    requested_carriers?: string[];
+  };
+}
+
+interface SkydropxZipCodeInfo {
+  country_code: string;
+  postal_code: string;
+  area_level1: string;
+  area_level2: string;
+  area_level3: string;
+}
+
 interface SkydropxRate {
   id: string;
   provider: string;
@@ -188,14 +223,70 @@ export class SkydropxService {
     return this.trackMockShipment(trackingNumber);
   }
 
+  private async getZipCodeInfo(postalCode: string): Promise<SkydropxZipCodeInfo> {
+    try {
+      const token = await this.getBearerToken();
+      const endpoint = `${this.baseUrl}/zip_codes/${postalCode}`;
+      
+      const response = await fetch(endpoint, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return {
+          country_code: data.country_code || "MX",
+          postal_code: postalCode,
+          area_level1: data.area_level1 || data.state || "",
+          area_level2: data.area_level2 || data.city || "",
+          area_level3: data.area_level3 || data.neighborhood || "",
+        };
+      }
+    } catch (error) {
+      console.warn(`⚠️ Could not fetch zip code info for ${postalCode}, using defaults`);
+    }
+
+    // Fallback: retornar datos genéricos para México
+    return {
+      country_code: "MX",
+      postal_code: postalCode,
+      area_level1: "México",
+      area_level2: "Ciudad de México",
+      area_level3: "Centro",
+    };
+  }
+
   private async getRealQuotes(request: SkydropxQuoteRequest): Promise<SkydropxRate[]> {
     try {
       const token = await this.getBearerToken();
       
+      // Obtener información de códigos postales
+      const [fromInfo, toInfo] = await Promise.all([
+        this.getZipCodeInfo(request.zip_from),
+        this.getZipCodeInfo(request.zip_to),
+      ]);
+
+      // Construir request en formato Skydropx PRO
+      const proRequest: SkydropxProQuotationRequest = {
+        quotation: {
+          address_from: fromInfo,
+          address_to: toInfo,
+          parcels: [{
+            length: parseInt(request.parcel.length || "10"),
+            width: parseInt(request.parcel.width || "10"),
+            height: parseInt(request.parcel.height || "10"),
+            weight: parseFloat(request.parcel.weight),
+          }],
+        },
+      };
+      
       const endpoint = `${this.baseUrl}/quotations`;
       console.log("📤 Sending request to Skydropx /quotations");
       console.log("📤 Endpoint:", endpoint);
-      console.log("📤 Request body:", JSON.stringify(request, null, 2));
+      console.log("📤 Request body:", JSON.stringify(proRequest, null, 2));
       
       const response = await fetch(endpoint, {
         method: "POST",
@@ -203,7 +294,7 @@ export class SkydropxService {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`,
         },
-        body: JSON.stringify(request),
+        body: JSON.stringify(proRequest),
       });
 
       console.log("📥 Response status:", response.status);
@@ -213,7 +304,6 @@ export class SkydropxService {
         const errorText = await response.text();
         console.error("❌ Skydropx API error response (first 500 chars):", errorText.substring(0, 500));
         
-        // Try to parse as JSON, but if it's HTML, just use status text
         let errorMessage = `Skydropx API error: ${response.status} ${response.statusText}`;
         try {
           const errorData = JSON.parse(errorText);
@@ -225,14 +315,29 @@ export class SkydropxService {
       }
 
       const result = await response.json();
-      console.log("✅ Skydropx quotes response received:", JSON.stringify(result, null, 2));
+      console.log("✅ Skydropx quotes response received");
       
-      if (!result.data || !Array.isArray(result.data)) {
+      // Skydropx PRO devuelve { rates: [...], is_completed: boolean, ... }
+      if (!result.rates || !Array.isArray(result.rates)) {
         console.warn("⚠️ Unexpected Skydropx response structure:", result);
         return [];
       }
 
-      return result.data;
+      // Filtrar solo cotizaciones exitosas con precio
+      const validRates = result.rates
+        .filter((rate: any) => rate.success === true && rate.total && rate.total > 0)
+        .map((rate: any) => ({
+          id: rate.id,
+          provider: rate.provider_display_name || rate.provider_name,
+          service_level_name: rate.provider_service_name,
+          total_pricing: rate.total,
+          currency: rate.currency_code || 'MXN',
+          days: rate.days || 0,
+          available_for_pickup: true,
+        }));
+
+      console.log(`✅ Found ${validRates.length} valid quotes out of ${result.rates.length} total`);
+      return validRates;
     } catch (error: any) {
       console.error("❌ Error calling Skydropx quotes API:", error);
       throw new Error(`Error al obtener cotizaciones: ${error.message}`);

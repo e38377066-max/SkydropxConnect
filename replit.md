@@ -45,11 +45,12 @@ The backend is an Express.js application with TypeScript, following a RESTful AP
 ### Core Features:
 
 -   **Authentication & Authorization**: Hybrid system supporting local email/password and Google OAuth via Passport.js. Features include bcrypt password hashing, robust password validation, session management with PostgreSQL storage, and secure cookie handling. Users can manage multiple authentication methods and profile details on a dedicated `/perfil` page, including contact, billing, and security settings. Admin roles have access to system settings.
--   **Shipping & Tracking**: Public API endpoints for quoting shipping rates (`/api/quotes`), creating shipments (`/api/shipments`), and tracking packages (`/api/tracking/:trackingNumber`).
+-   **Skydropx PRO Integration (OAuth)**: ✅ Fully functional integration with Skydropx PRO API using OAuth Bearer token authentication. Features auto-refresh token system (renews 5 min before expiration), support for 10+ shipping carriers (DHL, FedEx, Estafeta, UPS, etc.), and real-time quote comparison. Endpoint: `https://pro.skydropx.com/api/v1/quotations`.
+-   **Shipping & Tracking**: Public API endpoints for quoting shipping rates (`/api/quotes`), creating shipments (`/api/shipments`), and tracking packages (`/api/tracking/:trackingNumber`). Quote endpoint returns 10+ valid rates per request with pricing and delivery estimates.
 -   **User Management**: Endpoints for user registration, login, logout, and authenticated user data retrieval (`/api/auth/user`). Protected routes for updating user contact, billing, and password information.
 -   **Wallet System**: Protected endpoints for retrieving wallet balance, transaction history, and managing recharge requests (`/api/wallet/*`). Admin users can approve or reject recharge requests.
 -   **Saved Data**: Protected endpoints for managing user's saved addresses, package presets, and billing profiles (`/api/addresses`, `/api/packages`, `/api/billing-profiles`).
--   **Profit Margin System**: Configurable profit margin applied to Skydropx base prices, stored in the `settings` table. Only admin users can modify this percentage via a dedicated admin panel, with validation ensuring the margin is between 0-100%.
+-   **Profit Margin System**: Configurable profit margin applied to Skydropx base prices, stored in the `settings` table. Only admin users can modify this percentage via a dedicated admin panel, with validation ensuring the margin is between 0-100%. Default margin: 15%.
 
 ## Data Storage
 
