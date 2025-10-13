@@ -521,7 +521,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Search Mexican zip codes (SEPOMEX)
+  // Search Mexican zip codes (SEPOMEX) from local database
   app.get("/api/zipcodes/search", async (req, res) => {
     try {
       const { q } = req.query;
@@ -530,25 +530,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json({ success: true, data: [] });
       }
 
-      // Use public SEPOMEX API
-      const response = await fetch(`https://api.copomex.com/query/info_cp/${q}?type=simplified&token=pruebas`);
-      
-      if (!response.ok) {
-        console.warn(`Zipcode API error: ${response.status}`);
-        return res.json({ success: true, data: [] });
-      }
+      // Search in local database
+      const results = await db.execute(
+        sql`
+          SELECT DISTINCT ON (codigo_postal, colonia)
+            codigo_postal, 
+            colonia, 
+            municipio, 
+            estado,
+            ciudad
+          FROM zip_codes
+          WHERE codigo_postal LIKE ${q + '%'}
+          ORDER BY codigo_postal, colonia
+          LIMIT 20
+        `
+      );
 
-      const data = await response.json();
-      
-      // Transform response to our format
-      const results = data.response?.map((item: any) => ({
-        codigo_postal: item.cp,
-        colonia: item.asentamiento,
-        municipio: item.municipio,
-        estado: item.estado,
-      })) || [];
+      // Transform to expected format
+      const formattedResults = results.rows.map((row: any) => ({
+        codigo_postal: row.codigo_postal,
+        colonia: row.colonia,
+        municipio: row.municipio,
+        estado: row.estado,
+      }));
 
-      res.json({ success: true, data: results });
+      res.json({ success: true, data: formattedResults });
     } catch (error) {
       console.error("Error searching zipcodes:", error);
       res.json({ success: true, data: [] });

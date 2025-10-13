@@ -127,6 +127,20 @@ export const settings = pgTable("settings", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+// Mexican zip codes (SEPOMEX) table
+export const zipCodes = pgTable("zip_codes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  codigoPostal: varchar("codigo_postal", { length: 5 }).notNull(),
+  colonia: text("colonia").notNull(),
+  tipoAsentamiento: varchar("tipo_asentamiento"),
+  municipio: text("municipio").notNull(),
+  estado: text("estado").notNull(),
+  ciudad: text("ciudad"),
+}, (table) => [
+  index("idx_codigo_postal").on(table.codigoPostal),
+  index("idx_estado").on(table.estado),
+]);
+
 // Transactions table for wallet operations
 export const transactions = pgTable("transactions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
