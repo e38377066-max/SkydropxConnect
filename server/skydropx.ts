@@ -131,6 +131,8 @@ export class SkydropxService {
           grant_type: "client_credentials",
           client_id: this.clientId,
           client_secret: this.clientSecret,
+          redirect_uri: "urn:ietf:wg:oauth:2.0:oob",
+          scope: "default orders.create",
         }).toString(),
       });
 
