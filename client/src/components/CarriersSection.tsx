@@ -1,13 +1,14 @@
 import { Card } from "@/components/ui/card";
-import { Truck, Package, Plane, Ship } from "lucide-react";
+import { Truck } from "lucide-react";
+import { getCarrierLogo } from "@/lib/carrierLogos";
 
 const carriers = [
-  { name: "DHL", icon: Truck },
-  { name: "FedEx", icon: Plane },
-  { name: "Estafeta", icon: Package },
-  { name: "UPS", icon: Ship },
-  { name: "Redpack", icon: Truck },
-  { name: "99 Minutos", icon: Package },
+  { name: "DHL" },
+  { name: "FedEx" },
+  { name: "Estafeta" },
+  { name: "UPS" },
+  { name: "Redpack" },
+  { name: "99 Minutos" },
 ];
 
 export default function CarriersSection() {
@@ -24,16 +25,30 @@ export default function CarriersSection() {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
-          {carriers.map((carrier, index) => (
-            <Card 
-              key={index} 
-              className="p-6 flex flex-col items-center justify-center gap-3 hover-elevate active-elevate-2 transition-all"
-              data-testid={`card-carrier-${carrier.name.toLowerCase().replace(' ', '-')}`}
-            >
-              <carrier.icon className="w-10 h-10 text-primary" />
-              <span className="font-semibold text-foreground text-center">{carrier.name}</span>
-            </Card>
-          ))}
+          {carriers.map((carrier, index) => {
+            const logo = getCarrierLogo(carrier.name);
+            
+            return (
+              <Card 
+                key={index} 
+                className="p-6 flex flex-col items-center justify-center gap-3 hover-elevate active-elevate-2 transition-all bg-white dark:bg-card"
+                data-testid={`card-carrier-${carrier.name.toLowerCase().replace(' ', '-')}`}
+              >
+                <div className="w-20 h-20 flex items-center justify-center">
+                  {logo ? (
+                    <img 
+                      src={logo} 
+                      alt={`${carrier.name} logo`}
+                      className="w-full h-full object-contain"
+                    />
+                  ) : (
+                    <Truck className="w-10 h-10 text-primary" />
+                  )}
+                </div>
+                <span className="font-semibold text-foreground text-center">{carrier.name}</span>
+              </Card>
+            );
+          })}
         </div>
       </div>
     </section>
