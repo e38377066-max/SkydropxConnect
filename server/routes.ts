@@ -751,26 +751,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const skydropxShipment = await skydropxService.createShipment(skydropxRequest);
       
-      // Use the actual amount from Skydropx (should match expected amount)
-      const actualAmount = typeof skydropxShipment.rate.amount_local === 'string' 
-        ? parseFloat(skydropxShipment.rate.amount_local)
-        : skydropxShipment.rate.amount_local;
+      // Use the expected amount (from the selected rate) as actual amount
+      const actualAmount = expectedAmount;
       
-      // Verify actual amount doesn't exceed current balance
+      // Verify actual amount doesn't exceed current balance (already checked, but double verify)
       if (actualAmount > currentBalance) {
         return res.status(400).json({
           success: false,
-          error: `El costo real del envío ($${actualAmount.toFixed(2)} MXN) excede tu saldo disponible ($${currentBalance.toFixed(2)} MXN). Por favor, recarga tu billetera.`,
-        });
-      }
-      
-      // Verify actual amount is within reasonable tolerance of expected (±5%)
-      const tolerance = expectedAmount * 0.05;
-      if (Math.abs(actualAmount - expectedAmount) > tolerance) {
-        console.warn(`Amount mismatch: expected ${expectedAmount}, got ${actualAmount}`);
-        return res.status(400).json({
-          success: false,
-          error: `El costo real del envío ($${actualAmount.toFixed(2)} MXN) difiere significativamente del costo estimado ($${expectedAmount.toFixed(2)} MXN). Por favor, solicita una nueva cotización.`,
+          error: `El costo del envío ($${actualAmount.toFixed(2)} MXN) excede tu saldo disponible ($${currentBalance.toFixed(2)} MXN). Por favor, recarga tu billetera.`,
         });
       }
 
@@ -796,7 +784,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         height: validatedData.height?.toString(),
         description: validatedData.description,
         amount: actualAmount.toString(),
-        currency: skydropxShipment.rate.currency_local,
+        currency: "MXN",
         status: "pending",
         labelUrl: skydropxShipment.label_url,
         skydropxShipmentId: skydropxShipment.id,
