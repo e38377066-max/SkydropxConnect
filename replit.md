@@ -19,12 +19,17 @@ The application implements a dual-navigation system:
 - **Available to:** Authenticated users only
 - **Layout:** Sidebar + Content area (no header/footer)
 - **Sidebar Navigation:**
-  - Principal: Inicio (returns to /), Dashboard, Cotizar Envío, Crear Guía, Mis Envíos, Rastrear, Billetera
+  - Principal: Inicio (returns to /), Dashboard, Cotizar Envío, Crear Envío, Mis Envíos, Rastrear, Billetera
   - Configuración: Direcciones, Paquetes
   - Mi Cuenta: Mi Perfil
   - Admin: Usuarios, Recargas (admin-only)
 - **Logo:** Clickeable link to homepage (/)
 - **Protected Routes:** /dashboard, /cotizar, /crear-guia, /rastrear, /envios, /perfil, /billetera, /configuracion/*, /admin/*
+
+## Important Terminology
+
+- **Crear Envío** (Create Shipment): The correct term for the process of creating a new shipment, which then generates a shipping label/guide. This is NOT "crear guía" or "regenerar guía" - it's creating a brand new shipment.
+- **Guía/Etiqueta de Envío** (Shipping Label): The physical or digital label/guide that is generated as a result of creating a shipment.
 
 # User Preferences
 

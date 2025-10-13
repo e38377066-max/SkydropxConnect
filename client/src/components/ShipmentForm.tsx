@@ -216,7 +216,7 @@ export default function ShipmentForm() {
                 <FileText className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-foreground">Crear Guía de Envío</h2>
+                <h2 className="text-2xl font-bold text-foreground">Crear Envío</h2>
                 <p className="text-sm text-muted-foreground">Completa los datos para generar tu etiqueta</p>
               </div>
             </div>
@@ -470,7 +470,7 @@ export default function ShipmentForm() {
                 ) : (
                   <>
                     <FileText className="w-4 h-4 mr-2" />
-                    Crear Guía
+                    Crear Envío
                   </>
                 )}
               </Button>

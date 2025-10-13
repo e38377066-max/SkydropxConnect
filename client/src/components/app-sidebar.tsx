@@ -32,7 +32,7 @@ const menuItems = [
     icon: BarChart3,
   },
   {
-    title: "Crear Guía",
+    title: "Crear Envío",
     url: "/crear-guia",
     icon: Package,
   },

@@ -43,7 +43,7 @@ export default function CTASection() {
                   className="text-lg h-12 px-8 bg-white/10 backdrop-blur-md border-white/30 text-white hover:bg-white/20"
                   data-testid="button-cta-create-shipment"
                 >
-                  Crear Guía de Envío
+                  Crear Envío
                 </Button>
               </Link>
             </>

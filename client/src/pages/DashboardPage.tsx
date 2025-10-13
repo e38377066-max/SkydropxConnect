@@ -118,7 +118,7 @@ export default function DashboardPage() {
             <Link href="/crear-guia">
               <Button className="w-full justify-start" variant="outline" data-testid="button-quick-create">
                 <Package className="mr-2 h-4 w-4" />
-                Crear Guía de Envío
+                Crear Envío
               </Button>
             </Link>
             <Link href="/rastrear">
