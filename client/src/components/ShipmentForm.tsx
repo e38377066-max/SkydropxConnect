@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,6 +28,7 @@ export default function ShipmentForm() {
   const [createdShipment, setCreatedShipment] = useState<any>(null);
   const [selectedRate, setSelectedRate] = useState<QuoteRate | null>(null);
   const [quoteId, setQuoteId] = useState<string>("");
+  const [preselectedProvider, setPreselectedProvider] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
     senderName: "",
@@ -52,6 +53,42 @@ export default function ShipmentForm() {
 
   const userBalance = userData?.balance ? parseFloat(userData.balance) : 0;
 
+  // Cargar datos pre-llenados desde cotización (si existen)
+  useEffect(() => {
+    const prefilledData = localStorage.getItem('prefilledQuoteData');
+    if (prefilledData) {
+      try {
+        const data = JSON.parse(prefilledData);
+        
+        // Pre-llenar datos del paquete
+        setFormData(prev => ({
+          ...prev,
+          senderZipCode: data.fromZipCode || "",
+          receiverZipCode: data.toZipCode || "",
+          weight: data.weight || "1",
+          length: data.length || "10",
+          width: data.width || "10",
+          height: data.height || "10",
+        }));
+        
+        // Si hay una cotización seleccionada, guardar el provider para auto-seleccionarlo después de cotizar
+        if (data.selectedRate) {
+          setPreselectedProvider(data.selectedRate.provider);
+          
+          toast({
+            title: "Datos cargados",
+            description: `${data.selectedRate.provider} será cotizada nuevamente con tus datos.`,
+          });
+        }
+        
+        // Limpiar localStorage después de cargar
+        localStorage.removeItem('prefilledQuoteData');
+      } catch (error) {
+        console.error('Error loading prefilled data:', error);
+      }
+    }
+  }, []);
+
   // Mutación para cotizar
   const quoteMutation = useMutation({
     mutationFn: async () => {
@@ -69,6 +106,20 @@ export default function ShipmentForm() {
       if (data.success && data.data) {
         setQuoteId(data.data.quoteId);
         if (data.data.rates && data.data.rates.length > 0) {
+          // Si había un proveedor pre-seleccionado, intentar auto-seleccionarlo
+          if (preselectedProvider) {
+            const matchingRate = data.data.rates.find(
+              (rate: QuoteRate) => rate.provider === preselectedProvider
+            );
+            if (matchingRate) {
+              setSelectedRate(matchingRate);
+              toast({
+                title: "Cotización actualizada",
+                description: `${matchingRate.provider} seleccionado automáticamente con tarifa actualizada.`,
+              });
+            }
+            setPreselectedProvider(null); // Limpiar después de usar
+          }
           setStep(2);
         } else {
           toast({
@@ -125,14 +176,45 @@ export default function ShipmentForm() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    
+    // Si modifica datos del paquete (peso/dimensiones/códigos postales), limpiar cotización
+    const packageFields = ['weight', 'length', 'width', 'height', 'senderZipCode', 'receiverZipCode'];
+    if (packageFields.includes(e.target.name)) {
+      if (selectedRate) {
+        setSelectedRate(null);
+      }
+      if (preselectedProvider) {
+        setPreselectedProvider(null);
+        toast({
+          title: "Datos modificados",
+          description: "Al cotizar, deberás seleccionar la paquetería nuevamente.",
+        });
+      }
+    }
   };
 
   const handleZipCodeChange = (field: string, value: string) => {
     setFormData({ ...formData, [field]: value });
+    
+    // Si modifica códigos postales, limpiar cotización
+    if (field === 'senderZipCode' || field === 'receiverZipCode') {
+      if (selectedRate) {
+        setSelectedRate(null);
+      }
+      if (preselectedProvider) {
+        setPreselectedProvider(null);
+        toast({
+          title: "Datos modificados",
+          description: "Al cotizar, deberás seleccionar la paquetería nuevamente.",
+        });
+      }
+    }
   };
 
   const handleQuoteSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Siempre hacer cotización para obtener tarifas actualizadas
     quoteMutation.mutate();
   };
 
@@ -215,10 +297,16 @@ export default function ShipmentForm() {
               <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
                 <FileText className="w-6 h-6 text-primary" />
               </div>
-              <div>
+              <div className="flex-1">
                 <h2 className="text-2xl font-bold text-foreground">Crear Envío</h2>
                 <p className="text-sm text-muted-foreground">Completa los datos para generar tu etiqueta</p>
               </div>
+              {preselectedProvider && (
+                <Badge variant="secondary" className="gap-2">
+                  <Package className="w-4 h-4" />
+                  {preselectedProvider} (se cotizará)
+                </Badge>
+              )}
             </div>
 
             <form onSubmit={handleQuoteSubmit} className="space-y-8">
@@ -368,11 +456,11 @@ export default function ShipmentForm() {
             </div>
           </div>
 
-              <Button type="submit" className="w-full" disabled={quoteMutation.isPending} data-testid="button-get-quotes">
-                {quoteMutation.isPending ? (
+              <Button type="submit" className="w-full" disabled={quoteMutation.isPending || shipmentMutation.isPending} data-testid="button-get-quotes">
+                {quoteMutation.isPending || shipmentMutation.isPending ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Obteniendo Cotizaciones...
+                    {quoteMutation.isPending ? 'Obteniendo Cotizaciones...' : 'Procesando...'}
                   </>
                 ) : (
                   <>
