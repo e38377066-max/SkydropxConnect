@@ -82,7 +82,7 @@ interface SkydropxTokenResponse {
 export class SkydropxService {
   private clientId: string | undefined;
   private clientSecret: string | undefined;
-  private baseUrl = "https://api.skydropx.com/v1";
+  private baseUrl = "https://app.skydropx.com/v1";
   private bearerToken: string | null = null;
   private tokenExpiresAt: number | null = null;
 
@@ -114,7 +114,7 @@ export class SkydropxService {
     try {
       console.log("🔄 Generating new Skydropx Bearer token...");
       
-      const endpoint = "https://api.skydropx.com/api/v1/oauth/token";
+      const endpoint = "https://app.skydropx.com/api/v1/oauth/token";
       
       console.log("📡 Request details:", {
         endpoint,
