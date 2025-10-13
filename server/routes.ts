@@ -975,6 +975,114 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Cancelar envío con reembolso automático
+  app.post("/api/shipments/:id/cancel", isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { reason = "Ya no es necesario" } = req.body;
+      const userId = req.user!.isLocal || req.user!.isGoogle ? req.user!.id : req.user!.claims.sub;
+      
+      const shipment = await storage.getShipment(id);
+
+      if (!shipment) {
+        return res.status(404).json({
+          success: false,
+          error: "Envío no encontrado",
+        });
+      }
+
+      // Verificar que el usuario sea dueño del envío
+      if (shipment.userId !== userId) {
+        return res.status(403).json({
+          success: false,
+          error: "No tienes permiso para cancelar este envío",
+        });
+      }
+
+      // Verificar que el envío no esté ya cancelado
+      if (shipment.status === 'cancelled') {
+        return res.status(400).json({
+          success: false,
+          error: "Este envío ya está cancelado",
+        });
+      }
+
+      if (!shipment.skydropxShipmentId) {
+        return res.status(400).json({
+          success: false,
+          error: "Este envío no tiene ID de Skydropx y no puede ser cancelado",
+        });
+      }
+
+      // Cancelar en Skydropx
+      const cancelResult = await skydropxService.cancelShipment(shipment.skydropxShipmentId, reason);
+      
+      // Actualizar envío en DB
+      const updatedShipment = await storage.updateShipment(id, {
+        status: "cancelled",
+      });
+
+      // Reembolsar el monto a la billetera del usuario
+      const user = await storage.getUserById(userId);
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          error: "Usuario no encontrado",
+        });
+      }
+
+      const refundAmount = parseFloat(shipment.amount);
+      const newBalance = parseFloat(user.balance) + refundAmount;
+
+      await storage.updateUserBalance(userId, newBalance);
+
+      // Crear transacción de reembolso
+      await storage.createTransaction({
+        userId: userId,
+        type: "deposit",
+        amount: refundAmount.toFixed(2),
+        balanceAfter: newBalance,
+        description: `Reembolso por cancelación de envío ${shipment.trackingNumber || shipment.id.substring(0, 8)}`,
+        referenceId: shipment.id,
+        referenceType: "shipment_refund",
+        status: "completed",
+        metadata: {
+          originalAmount: shipment.amount,
+          carrier: shipment.carrier,
+          cancelReason: reason,
+        } as any,
+      });
+
+      // Crear evento de tracking de cancelación si hay tracking number
+      if (shipment.trackingNumber) {
+        await storage.createTrackingEvent({
+          shipmentId: shipment.id,
+          trackingNumber: shipment.trackingNumber,
+          status: "cancelled",
+          description: `Envío cancelado: ${reason}`,
+          location: "Sistema",
+          eventDate: new Date(),
+        });
+      }
+
+      res.json({
+        success: true,
+        data: updatedShipment,
+        refund: {
+          amount: refundAmount,
+          newBalance: newBalance,
+        },
+        message: `Envío cancelado exitosamente. Se reembolsaron $${refundAmount.toFixed(2)} MXN a tu billetera. Saldo actual: $${newBalance.toFixed(2)} MXN`,
+      });
+    } catch (error: any) {
+      console.error("Error cancelling shipment:", error);
+      res.status(500).json({
+        success: false,
+        error: error.message || "Error al cancelar el envío",
+      });
+    }
+  });
+
   app.get("/api/tracking/:trackingNumber", async (req, res) => {
     try {
       const { trackingNumber } = req.params;
