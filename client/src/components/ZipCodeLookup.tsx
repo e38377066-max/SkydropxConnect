@@ -127,8 +127,8 @@ export default function ZipCodeLookup({
   };
 
   return (
-    <div className="space-y-3">
-      <div className="space-y-2">
+    <div className="space-y-4">
+      <div className="space-y-3">
         <Label htmlFor={testId} className="text-base">{label}</Label>
         <div className="grid grid-cols-1 sm:grid-cols-[2fr_auto] gap-2">
           <Input
@@ -165,7 +165,7 @@ export default function ZipCodeLookup({
       </div>
 
       {colonias.length > 1 && (
-        <div className="space-y-2">
+        <div className="space-y-3">
           <Label htmlFor={`${testId}-colonia`} className="text-base">Colonia</Label>
           <Select value={coloniaValue} onValueChange={handleColoniaSelect} required={required}>
             <SelectTrigger id={`${testId}-colonia`} data-testid={`${testId}-colonia-select`} className="h-12 text-base">

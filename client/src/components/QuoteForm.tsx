@@ -125,7 +125,7 @@ export default function QuoteForm() {
 
   return (
     <div className="space-y-6 sm:space-y-8">
-      <Card className="p-4 sm:p-6 lg:p-8">
+      <Card className="p-6 sm:p-8 lg:p-12">
         <div className="flex items-center gap-3 mb-6">
           <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
             <Calculator className="w-6 h-6 text-primary" />
@@ -136,8 +136,8 @@ export default function QuoteForm() {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <form onSubmit={handleSubmit} className="space-y-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <ZipCodeInput
               label="Código Postal Origen"
               zipCodeValue={formData.fromZipCode}
@@ -172,7 +172,7 @@ export default function QuoteForm() {
           </div>
 
           {packages.length > 0 && (
-            <div className="space-y-2">
+            <div className="space-y-3">
               <Label htmlFor="saved-package">Usar Paquete Guardado (Opcional)</Label>
               <Select onValueChange={handlePackageSelect}>
                 <SelectTrigger data-testid="select-saved-package">
@@ -189,7 +189,7 @@ export default function QuoteForm() {
             </div>
           )}
 
-          <div className="space-y-2">
+          <div className="space-y-3">
             <Label htmlFor="packaging-type">Tipo de empaque</Label>
             <Select
               value={formData.packagingType}
@@ -216,7 +216,7 @@ export default function QuoteForm() {
             )}
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-3">
             <Label htmlFor="weight" className="flex items-center gap-2">
               <Package className="w-4 h-4 text-primary" />
               Peso
@@ -235,7 +235,7 @@ export default function QuoteForm() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
+            <div className="space-y-3">
               <Label htmlFor="length">Largo (cm)</Label>
               <Input
                 id="length"
@@ -248,7 +248,7 @@ export default function QuoteForm() {
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-3">
               <Label htmlFor="width">Ancho (cm)</Label>
               <Input
                 id="width"
@@ -261,7 +261,7 @@ export default function QuoteForm() {
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-3">
               <Label htmlFor="height">Alto (cm)</Label>
               <Input
                 id="height"

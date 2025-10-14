@@ -331,7 +331,7 @@ export default function ShipmentForm() {
   };
 
   return (
-    <Card className="p-4 sm:p-6 lg:p-8">
+    <Card className="p-6 sm:p-8 lg:p-12">
       {/* PASO 1: Datos del origen y destino */}
       {step === 1 && (
         <>
@@ -345,17 +345,17 @@ export default function ShipmentForm() {
             </div>
           </div>
 
-          <form onSubmit={handleStep1Submit} className="space-y-8">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <form onSubmit={handleStep1Submit} className="space-y-10">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
               {/* DATOS DEL ORIGEN */}
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
                   <User className="w-5 h-5 text-primary" />
                   Datos del origen del envío
                 </h3>
 
                 {addresses.length > 0 && (
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <Label>Direcciones de origen</Label>
                     <Select onValueChange={(value) => handleAddressSelect(value, 'sender')}>
                       <SelectTrigger data-testid="select-sender-address">
@@ -372,12 +372,12 @@ export default function ShipmentForm() {
                   </div>
                 )}
 
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <Label className="text-muted-foreground font-normal">Datos origen</Label>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                  <div className="space-y-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                  <div className="space-y-3">
                     <Label>Nombre</Label>
                     <Input
                       name="senderName"
@@ -388,7 +388,7 @@ export default function ShipmentForm() {
                       data-testid="input-sender-name"
                     />
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <Label>Empresa</Label>
                     <Input
                       name="senderCompany"
@@ -400,8 +400,8 @@ export default function ShipmentForm() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                  <div className="space-y-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                  <div className="space-y-3">
                     <Label>Correo</Label>
                     <Input
                       type="email"
@@ -412,7 +412,7 @@ export default function ShipmentForm() {
                       data-testid="input-sender-email"
                     />
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <Label>Teléfono</Label>
                     <Input
                       name="senderPhone"
@@ -425,7 +425,7 @@ export default function ShipmentForm() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <Label>Calle</Label>
                   <Input
                     name="senderStreet"
@@ -436,8 +436,8 @@ export default function ShipmentForm() {
                   />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                  <div className="space-y-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                  <div className="space-y-3">
                     <Label>No. Exterior</Label>
                     <Input
                       name="senderExteriorNumber"
@@ -447,7 +447,7 @@ export default function ShipmentForm() {
                       data-testid="input-sender-exterior"
                     />
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <Label>No. Interior</Label>
                     <Input
                       name="senderInteriorNumber"
@@ -459,8 +459,8 @@ export default function ShipmentForm() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                  <div className="space-y-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                  <div className="space-y-3">
                     <Label>Referencias / Entre calles</Label>
                     <Input
                       name="senderReferences"
@@ -470,7 +470,7 @@ export default function ShipmentForm() {
                       data-testid="input-sender-references"
                     />
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <ZipCodeLookup
                       label="Código postal"
                       zipCodeValue={formData.senderZipCode}
@@ -492,8 +492,8 @@ export default function ShipmentForm() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                  <div className="space-y-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                  <div className="space-y-3">
                     <Label>Municipio</Label>
                     <Input
                       value={senderMetadata.municipio}
@@ -502,7 +502,7 @@ export default function ShipmentForm() {
                       data-testid="input-sender-municipality"
                     />
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <Label>Estado</Label>
                     <Input
                       value={senderMetadata.estado}
@@ -529,14 +529,14 @@ export default function ShipmentForm() {
               </div>
 
               {/* DATOS DEL DESTINO */}
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
                   <MapPin className="w-5 h-5 text-primary" />
                   Datos del destino del envío
                 </h3>
 
                 {addresses.length > 0 && (
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <Label>Direcciones de destino</Label>
                     <Select onValueChange={(value) => handleAddressSelect(value, 'receiver')}>
                       <SelectTrigger data-testid="select-receiver-address">
@@ -553,12 +553,12 @@ export default function ShipmentForm() {
                   </div>
                 )}
 
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <Label className="text-muted-foreground font-normal">Datos destinatario</Label>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                  <div className="space-y-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                  <div className="space-y-3">
                     <Label>Nombre</Label>
                     <Input
                       name="receiverName"
@@ -569,7 +569,7 @@ export default function ShipmentForm() {
                       data-testid="input-receiver-name"
                     />
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <Label>Empresa</Label>
                     <Input
                       name="receiverCompany"
@@ -581,8 +581,8 @@ export default function ShipmentForm() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                  <div className="space-y-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                  <div className="space-y-3">
                     <Label>Correo</Label>
                     <Input
                       type="email"
@@ -593,7 +593,7 @@ export default function ShipmentForm() {
                       data-testid="input-receiver-email"
                     />
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <Label>Teléfono</Label>
                     <Input
                       name="receiverPhone"
@@ -606,7 +606,7 @@ export default function ShipmentForm() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <Label>Calle</Label>
                   <Input
                     name="receiverStreet"
@@ -617,8 +617,8 @@ export default function ShipmentForm() {
                   />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                  <div className="space-y-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                  <div className="space-y-3">
                     <Label>No. Exterior</Label>
                     <Input
                       name="receiverExteriorNumber"
@@ -628,7 +628,7 @@ export default function ShipmentForm() {
                       data-testid="input-receiver-exterior"
                     />
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <Label>No. Interior</Label>
                     <Input
                       name="receiverInteriorNumber"
@@ -640,8 +640,8 @@ export default function ShipmentForm() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                  <div className="space-y-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                  <div className="space-y-3">
                     <Label>Referencias / Entre calles</Label>
                     <Input
                       name="receiverReferences"
@@ -651,7 +651,7 @@ export default function ShipmentForm() {
                       data-testid="input-receiver-references"
                     />
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <ZipCodeLookup
                       label="Código postal"
                       zipCodeValue={formData.receiverZipCode}
@@ -673,8 +673,8 @@ export default function ShipmentForm() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                  <div className="space-y-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                  <div className="space-y-3">
                     <Label>Municipio</Label>
                     <Input
                       value={receiverMetadata.municipio}
@@ -683,7 +683,7 @@ export default function ShipmentForm() {
                       data-testid="input-receiver-municipality"
                     />
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <Label>Estado</Label>
                     <Input
                       value={receiverMetadata.estado}
@@ -803,7 +803,7 @@ export default function ShipmentForm() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <Label>Peso</Label>
                   <div className="flex gap-2">
                     <Input
@@ -820,7 +820,7 @@ export default function ShipmentForm() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <Label>Contenido del envío</Label>
                   <Input
                     name="description"
@@ -855,7 +855,7 @@ export default function ShipmentForm() {
                 Declara el valor real en pesos mexicanos de lo que estás enviando. Esto servirá para proteger tu envío y solicitar un seguro si lo necesitas.
               </p>
 
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <Label>Valor declarado</Label>
                 <div className="flex gap-2">
                   <span className="flex items-center px-3 border rounded-md bg-muted">$</span>
@@ -876,7 +876,7 @@ export default function ShipmentForm() {
             {formData.saveDimensions && (
               <>
                 <Separator />
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <Label>Alias o nombre de las dimensiones</Label>
                   <Input
                     name="packageAlias"
@@ -897,8 +897,8 @@ export default function ShipmentForm() {
                 Descripción de lo que estás enviando según los requisitos de la autoridad SAT.
               </p>
 
-              <div className="space-y-4">
-                <div className="space-y-2">
+              <div className="space-y-6">
+                <div className="space-y-3">
                   <Label>Como clasificas el producto que envías</Label>
                   <Input
                     name="productClassification"
@@ -909,7 +909,7 @@ export default function ShipmentForm() {
                   />
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <Label>Tipo de embalaje</Label>
                   <Select
                     value={formData.packagingType}
@@ -946,7 +946,7 @@ export default function ShipmentForm() {
 
               {formData.addRFC && (
                 <div className="grid grid-cols-2 gap-4 mt-4">
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <Label>RFC Remitente</Label>
                     <Input
                       name="senderRFC"
@@ -956,7 +956,7 @@ export default function ShipmentForm() {
                       data-testid="input-sender-rfc"
                     />
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <Label>RFC Destinatario</Label>
                     <Input
                       name="receiverRFC"
@@ -1158,7 +1158,7 @@ export default function ShipmentForm() {
           </div>
 
           <Card className="p-6">
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div>
                 <Label className="text-sm text-muted-foreground">Número de Rastreo</Label>
                 <p className="text-xl font-mono font-semibold text-foreground">
