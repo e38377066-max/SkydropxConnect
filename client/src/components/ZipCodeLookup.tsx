@@ -129,8 +129,8 @@ export default function ZipCodeLookup({
   return (
     <div className="space-y-3">
       <div className="space-y-2">
-        <Label htmlFor={testId}>{label}</Label>
-        <div className="grid grid-cols-[1fr_auto] gap-2">
+        <Label htmlFor={testId} className="text-base">{label}</Label>
+        <div className="flex flex-col sm:flex-row gap-2">
           <Input
             id={testId}
             type="text"
@@ -140,23 +140,23 @@ export default function ZipCodeLookup({
             required={required}
             data-testid={testId}
             maxLength={5}
-            className="text-base"
+            className="text-lg h-12 flex-1 min-w-0"
           />
           <Button
             type="button"
             onClick={handleSearch}
             disabled={isSearching || zipCodeValue.length !== 5}
             data-testid={`${testId}-search-button`}
-            className="min-w-[100px]"
+            className="h-12 w-full sm:w-auto sm:min-w-[120px] text-base"
           >
             {isSearching ? (
               <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                 Buscando
               </>
             ) : (
               <>
-                <Search className="w-4 h-4 mr-2" />
+                <Search className="w-5 h-5 mr-2" />
                 Buscar
               </>
             )}
@@ -166,9 +166,9 @@ export default function ZipCodeLookup({
 
       {colonias.length > 1 && (
         <div className="space-y-2">
-          <Label htmlFor={`${testId}-colonia`}>Colonia</Label>
+          <Label htmlFor={`${testId}-colonia`} className="text-base">Colonia</Label>
           <Select value={coloniaValue} onValueChange={handleColoniaSelect} required={required}>
-            <SelectTrigger id={`${testId}-colonia`} data-testid={`${testId}-colonia-select`}>
+            <SelectTrigger id={`${testId}-colonia`} data-testid={`${testId}-colonia-select`} className="h-12 text-base">
               <SelectValue placeholder="Selecciona una colonia" />
             </SelectTrigger>
             <SelectContent>
@@ -177,6 +177,7 @@ export default function ZipCodeLookup({
                   key={`${colonia.codigo_postal}-${colonia.colonia}-${index}`} 
                   value={colonia.colonia}
                   data-testid={`${testId}-colonia-option-${index}`}
+                  className="text-base"
                 >
                   {colonia.colonia}
                 </SelectItem>

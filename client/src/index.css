@@ -353,3 +353,20 @@
     inset: -1px;
   }
 }
+
+/* Responsive improvements for better mobile UX */
+input:not([type="checkbox"]):not([type="radio"]),
+textarea,
+select,
+button[type="submit"],
+button[type="button"] {
+  font-size: 1rem;
+}
+
+@media (max-width: 640px) {
+  input:not([type="checkbox"]):not([type="radio"]),
+  textarea,
+  select {
+    font-size: 16px !important; /* Prevents zoom on iOS */
+  }
+}

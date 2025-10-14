@@ -124,8 +124,8 @@ export default function QuoteForm() {
   };
 
   return (
-    <div className="space-y-8">
-      <Card className="p-8">
+    <div className="space-y-6 sm:space-y-8">
+      <Card className="p-4 sm:p-6 lg:p-8">
         <div className="flex items-center gap-3 mb-6">
           <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
             <Calculator className="w-6 h-6 text-primary" />
@@ -137,7 +137,7 @@ export default function QuoteForm() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <ZipCodeInput
               label="Código Postal Origen"
               zipCodeValue={formData.fromZipCode}
@@ -234,7 +234,7 @@ export default function QuoteForm() {
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="length">Largo (cm)</Label>
               <Input

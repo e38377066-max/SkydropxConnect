@@ -331,7 +331,7 @@ export default function ShipmentForm() {
   };
 
   return (
-    <Card className="p-8">
+    <Card className="p-4 sm:p-6 lg:p-8">
       {/* PASO 1: Datos del origen y destino */}
       {step === 1 && (
         <>
@@ -376,7 +376,7 @@ export default function ShipmentForm() {
                   <Label className="text-muted-foreground font-normal">Datos origen</Label>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div className="space-y-2">
                     <Label>Nombre</Label>
                     <Input
@@ -400,7 +400,7 @@ export default function ShipmentForm() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div className="space-y-2">
                     <Label>Correo</Label>
                     <Input
@@ -436,7 +436,7 @@ export default function ShipmentForm() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div className="space-y-2">
                     <Label>No. Exterior</Label>
                     <Input
@@ -459,7 +459,7 @@ export default function ShipmentForm() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div className="space-y-2">
                     <Label>Referencias / Entre calles</Label>
                     <Input
@@ -492,7 +492,7 @@ export default function ShipmentForm() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div className="space-y-2">
                     <Label>Municipio</Label>
                     <Input
@@ -557,7 +557,7 @@ export default function ShipmentForm() {
                   <Label className="text-muted-foreground font-normal">Datos destinatario</Label>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div className="space-y-2">
                     <Label>Nombre</Label>
                     <Input
@@ -581,7 +581,7 @@ export default function ShipmentForm() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div className="space-y-2">
                     <Label>Correo</Label>
                     <Input
@@ -617,7 +617,7 @@ export default function ShipmentForm() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div className="space-y-2">
                     <Label>No. Exterior</Label>
                     <Input
@@ -640,7 +640,7 @@ export default function ShipmentForm() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div className="space-y-2">
                     <Label>Referencias / Entre calles</Label>
                     <Input
@@ -673,7 +673,7 @@ export default function ShipmentForm() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div className="space-y-2">
                     <Label>Municipio</Label>
                     <Input
@@ -802,7 +802,7 @@ export default function ShipmentForm() {
                 </Select>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Peso</Label>
                   <div className="flex gap-2">
@@ -1166,7 +1166,7 @@ export default function ShipmentForm() {
                 </p>
               </div>
               <Separator />
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label className="text-sm text-muted-foreground">Paquetería</Label>
                   <p className="font-semibold">{createdShipment.carrier}</p>
