@@ -172,6 +172,13 @@ export default function ZipCodeInput({
     if (selectedInfo) {
       setSelectedInfo(null);
       onColoniaChange("");
+    }
+    
+    // If the value looks like a zip code (5 digits), update it immediately
+    const trimmed = value.trim();
+    if (/^\d{5}$/.test(trimmed)) {
+      onZipCodeChange(trimmed);
+    } else {
       onZipCodeChange("");
     }
   };
