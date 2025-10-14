@@ -151,7 +151,7 @@ export default function ZipCodeLookup({
           <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
           
           {showDropdown && suggestions.length > 0 && (
-            <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-lg shadow-lg max-h-[300px] overflow-y-auto">
+            <div className="absolute z-50 left-0 right-0 sm:left-auto sm:right-auto sm:min-w-[500px] mt-1 bg-popover border border-border rounded-lg shadow-lg max-h-[300px] overflow-y-auto">
               {suggestions.map((suggestion, index) => (
                 <button
                   key={`${suggestion.codigo_postal}-${suggestion.colonia}-${index}`}
