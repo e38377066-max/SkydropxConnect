@@ -35,6 +35,33 @@ The application implements a dual-navigation system:
 
 Preferred communication style: Simple, everyday language.
 
+# Development Notes
+
+## Vite WebSocket Behavior in Replit
+
+**Status**: Normal behavior, no action required ✅
+
+During development, you may see WebSocket disconnection messages in the browser console every ~30 seconds:
+```
+[vite] server connection lost. Polling for restart...
+[vite] connecting...
+[vite] connected.
+```
+
+**This is expected behavior** and does NOT indicate a problem:
+- Replit's infrastructure has a 30-second idle timeout for WebSocket connections
+- Vite automatically reconnects immediately
+- HMR (Hot Module Replacement) continues to work correctly
+- The application does not reload
+- No functionality is affected
+
+**Root cause**: Known Vite issue ([#4259](https://github.com/vitejs/vite/issues/4259)) in proxy environments. The WebSocket timeout is infrastructure-level and cannot be prevented without degrading other features.
+
+**Configuration**: 
+- `server/vite.ts`: Minimal HMR config with `{ server }` only
+- `vite.config.ts`: Simplified server config without custom HMR settings
+- Custom HMR configurations (clientPort, protocol, timeout) cause more disconnections
+
 # System Architecture
 
 ## UI/UX Decisions
