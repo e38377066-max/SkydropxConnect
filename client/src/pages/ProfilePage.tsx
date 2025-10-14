@@ -431,6 +431,7 @@ export default function ProfilePage() {
                         <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <Input
                           id="firstName"
+                          placeholder="Juan"
                           {...contactForm.register("firstName")}
                           className="pl-10"
                           data-testid="input-firstname"
@@ -449,6 +450,7 @@ export default function ProfilePage() {
                         <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <Input
                           id="lastName"
+                          placeholder="Pérez"
                           {...contactForm.register("lastName")}
                           className="pl-10"
                           data-testid="input-lastname"
@@ -700,6 +702,7 @@ export default function ProfilePage() {
                         <Input
                           id="currentPassword"
                           type="password"
+                          placeholder="••••••••"
                           {...passwordForm.register("currentPassword")}
                           className="pl-10"
                           data-testid="input-current-password"
@@ -721,6 +724,7 @@ export default function ProfilePage() {
                       <Input
                         id="newPassword"
                         type="password"
+                        placeholder="Mínimo 6 caracteres"
                         {...passwordForm.register("newPassword")}
                         className="pl-10"
                         data-testid="input-new-password"
@@ -743,6 +747,7 @@ export default function ProfilePage() {
                       <Input
                         id="confirmPassword"
                         type="password"
+                        placeholder="Repite tu nueva contraseña"
                         {...passwordForm.register("confirmPassword")}
                         className="pl-10"
                         data-testid="input-confirm-password"
