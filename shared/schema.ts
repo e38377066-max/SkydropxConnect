@@ -393,16 +393,6 @@ export const quoteRequestSchema = z.object({
   length: z.number().positive().optional(),
   width: z.number().positive().optional(),
   height: z.number().positive().optional(),
-  packagingType: z.string().optional(),
-}).refine((data) => {
-  // Validar que los sobres deben pesar menos de 1 kg
-  if (data.packagingType === "Sobre" && data.weight >= 1) {
-    return false;
-  }
-  return true;
-}, {
-  message: "Los sobres deben pesar menos de 1 kg",
-  path: ["weight"],
 });
 
 export const shipmentRequestSchema = z.object({
@@ -460,15 +450,6 @@ export const shipmentRequestSchema = z.object({
   carrier: z.string().min(1, "Selecciona una paquetería"),
   rateId: z.string().optional(),
   expectedAmount: z.number().positive("Monto esperado requerido"),
-}).refine((data) => {
-  // Validar que los sobres deben pesar menos de 1 kg
-  if (data.packagingType === "Sobre" && data.weight >= 1) {
-    return false;
-  }
-  return true;
-}, {
-  message: "Los sobres deben pesar menos de 1 kg",
-  path: ["weight"],
 });
 
 export type QuoteRequest = z.infer<typeof quoteRequestSchema>;

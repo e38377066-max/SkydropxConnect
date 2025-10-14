@@ -15,32 +15,13 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-interface QuoteRateExtraFee {
-  type: string;
-  amount: number;
-  description?: string;
-}
-
 interface QuoteRate {
   id: string;
   provider: string;
   service_level_name: string;
   total_pricing: number;
-  amount_local: number;
   currency: string;
   days: number;
-  // Campos adicionales de Skydropx PRO
-  extra_fees?: QuoteRateExtraFee[];
-  out_of_area_service?: boolean;
-  out_of_area_pricing?: number;
-  // Características/Features
-  has_tracking?: boolean;
-  thermal_printing?: boolean;
-  multi_package?: boolean;
-  club_points?: boolean;
-  // Información de recolección
-  pickup_available?: boolean;
-  is_ocurre?: boolean;
 }
 
 interface ZipCodeMetadata {
@@ -212,7 +193,6 @@ export default function ShipmentForm() {
         length: parseFloat(formData.length),
         width: parseFloat(formData.width),
         height: parseFloat(formData.height),
-        packagingType: formData.packagingType,
       });
       return await response.json();
     },
@@ -806,30 +786,20 @@ export default function ShipmentForm() {
               )}
 
               <div className="space-y-2 mb-4">
-                <Label>Tipo de empaque o paquete guardado</Label>
+                <Label>Ingresa las dimensiones del envío</Label>
                 <Select
-                  value={formData.packagingType}
-                  onValueChange={(value) => setFormData({ ...formData, packagingType: value })}
+                  value={formData.shipmentType}
+                  onValueChange={(value) => setFormData({ ...formData, shipmentType: value })}
                 >
-                  <SelectTrigger data-testid="select-packaging-type">
-                    <SelectValue placeholder="-- Selecciona el tipo de empaque --" />
+                  <SelectTrigger data-testid="select-shipment-type">
+                    <SelectValue placeholder="-- Selecciona el tipo de envío --" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="XBX-Caja">Caja de cartón</SelectItem>
-                    <SelectItem value="Tarima">Tarima</SelectItem>
-                    <SelectItem value="Sobre">Sobre</SelectItem>
-                    <SelectItem value="Otros">Otros empaques</SelectItem>
-                    <SelectItem value="Saco-Plastico">Saco (bolsa) de película de plástico</SelectItem>
-                    <SelectItem value="Saco-Papel">Saco (bolsa) de papel de varias hojas</SelectItem>
-                    <SelectItem value="Bulto-Plastico">Bulto de plástico</SelectItem>
+                    <SelectItem value="paquete">Paquete</SelectItem>
+                    <SelectItem value="sobre">Sobre</SelectItem>
+                    <SelectItem value="caja">Caja</SelectItem>
                   </SelectContent>
                 </Select>
-                {formData.packagingType === "Sobre" && parseFloat(formData.weight) >= 1 && (
-                  <p className="text-sm text-destructive flex items-center gap-1">
-                    <AlertTriangle className="w-4 h-4" />
-                    El sobre debe pesar menos de 1 kg
-                  </p>
-                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -1106,79 +1076,37 @@ export default function ShipmentForm() {
                       onClick={() => hasEnoughBalance && setSelectedRate(rate)}
                       data-testid={`card-rate-${rate.id}`}
                     >
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between gap-4">
-                          <div className="flex items-center gap-4 flex-1">
-                            <div className="w-16 h-16 flex items-center justify-center bg-white dark:bg-card rounded-lg border p-2">
-                              {logo ? (
-                                <img src={logo} alt={rate.provider} className="w-full h-full object-contain" />
-                              ) : (
-                                <Package className="w-8 h-8 text-muted-foreground" />
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-4 flex-1">
+                          <div className="w-16 h-16 flex items-center justify-center bg-white dark:bg-card rounded-lg border p-2">
+                            {logo ? (
+                              <img src={logo} alt={rate.provider} className="w-full h-full object-contain" />
+                            ) : (
+                              <Package className="w-8 h-8 text-muted-foreground" />
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-semibold text-foreground">{rate.provider}</h3>
+                              {isBestPrice && (
+                                <Badge variant="default" className="text-xs">
+                                  Mejor Precio
+                                </Badge>
                               )}
                             </div>
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2">
-                                <h3 className="font-semibold text-foreground">{rate.provider}</h3>
-                                {isBestPrice && (
-                                  <Badge variant="default" className="text-xs">
-                                    Mejor Precio
-                                  </Badge>
-                                )}
-                              </div>
-                              <p className="text-sm text-muted-foreground">{rate.service_level_name}</p>
-                              <div className="flex items-center gap-2 mt-1">
-                                <p className="text-sm text-muted-foreground">
-                                  {rate.is_ocurre ? "Llevar a sucursal" : "Recolección disponible"}
-                                </p>
-                                {rate.pickup_available && (
-                                  <Badge variant="outline" className="text-xs">Recolección</Badge>
-                                )}
-                              </div>
-                              <p className="text-sm text-muted-foreground">Entrega: {rate.days} días hábiles</p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-2xl font-bold text-foreground">
-                              ${rate.total_pricing.toFixed(2)}
-                            </p>
-                            <p className="text-sm text-muted-foreground">{rate.currency}</p>
-                            {rate.amount_local && rate.amount_local !== rate.total_pricing && (
-                              <p className="text-xs text-muted-foreground">Base: ${rate.amount_local.toFixed(2)}</p>
-                            )}
-                            {!hasEnoughBalance && (
-                              <p className="text-xs text-destructive mt-1">Saldo insuficiente</p>
-                            )}
+                            <p className="text-sm text-muted-foreground">{rate.service_level_name}</p>
+                            <p className="text-sm text-muted-foreground">Entrega: {rate.days} días hábiles</p>
                           </div>
                         </div>
-                        
-                        {/* Características/Features */}
-                        {(rate.has_tracking || rate.thermal_printing || rate.multi_package || rate.club_points) && (
-                          <div className="flex flex-wrap gap-1">
-                            {rate.has_tracking && <Badge variant="secondary" className="text-xs">Rastreo</Badge>}
-                            {rate.thermal_printing && <Badge variant="secondary" className="text-xs">Impresión térmica</Badge>}
-                            {rate.multi_package && <Badge variant="secondary" className="text-xs">Multipaquete</Badge>}
-                            {rate.club_points && <Badge variant="secondary" className="text-xs">Puntos Club Skydropx</Badge>}
-                          </div>
-                        )}
-                        
-                        {/* Cargos extra */}
-                        {rate.extra_fees && rate.extra_fees.length > 0 && (
-                          <div className="text-xs space-y-1 text-muted-foreground bg-amber-50 dark:bg-amber-900/10 p-2 rounded border border-amber-200 dark:border-amber-800">
-                            <p className="font-semibold text-amber-700 dark:text-amber-400">Cargos extra:</p>
-                            {rate.extra_fees.map((fee, idx) => (
-                              <p key={idx} className="text-amber-700 dark:text-amber-400">
-                                • {fee.description || fee.type}: ${fee.amount.toFixed(2)}
-                              </p>
-                            ))}
-                          </div>
-                        )}
-                        
-                        {/* Zona extendida */}
-                        {rate.out_of_area_service && rate.out_of_area_pricing && rate.out_of_area_pricing > 0 && (
-                          <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/10 p-2 rounded">
-                            Cargo extra: Zona extendida - ${rate.out_of_area_pricing.toFixed(2)}
+                        <div className="text-right">
+                          <p className="text-2xl font-bold text-foreground">
+                            ${rate.total_pricing.toFixed(2)}
                           </p>
-                        )}
+                          <p className="text-sm text-muted-foreground">{rate.currency}</p>
+                          {!hasEnoughBalance && (
+                            <p className="text-xs text-destructive mt-1">Saldo insuficiente</p>
+                          )}
+                        </div>
                       </div>
                     </Card>
                   );

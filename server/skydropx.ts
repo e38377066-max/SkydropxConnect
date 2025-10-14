@@ -44,33 +44,14 @@ interface SkydropxZipCodeInfo {
   area_level3: string;
 }
 
-interface SkydropxRateExtraFee {
-  type: string;
-  amount: number;
-  description?: string;
-}
-
 interface SkydropxRate {
   id: string;
   provider: string;
   service_level_name: string;
   total_pricing: number;
-  amount_local: number;
   currency: string;
   days: number;
   available_for_pickup: boolean;
-  // Campos adicionales de Skydropx PRO
-  extra_fees?: SkydropxRateExtraFee[];
-  out_of_area_service?: boolean;
-  out_of_area_pricing?: number;
-  // Características/Features
-  has_tracking?: boolean;
-  thermal_printing?: boolean;
-  multi_package?: boolean;
-  club_points?: boolean;
-  // Información de recolección
-  pickup_available?: boolean;
-  is_ocurre?: boolean;
 }
 
 interface SkydropxShipmentRequest {
@@ -491,44 +472,15 @@ export class SkydropxService {
       // Filtrar solo cotizaciones exitosas con precio
       const validRates = result.rates
         .filter((rate: any) => rate.success === true && rate.total && rate.total > 0)
-        .map((rate: any) => {
-          // Procesar extra_fees si existen
-          const extraFees: SkydropxRateExtraFee[] = [];
-          if (rate.extra_fees && Array.isArray(rate.extra_fees)) {
-            rate.extra_fees.forEach((fee: any) => {
-              if (fee.amount && fee.amount > 0) {
-                extraFees.push({
-                  type: fee.type || fee.name || 'extra_fee',
-                  amount: fee.amount,
-                  description: fee.description || fee.name || fee.type
-                });
-              }
-            });
-          }
-          
-          return {
-            id: rate.id,
-            provider: rate.provider_display_name || rate.provider_name,
-            service_level_name: rate.provider_service_name,
-            total_pricing: rate.total,
-            amount_local: rate.amount || rate.cost || rate.total,
-            currency: rate.currency_code || 'MXN',
-            days: rate.days || 0,
-            available_for_pickup: true,
-            // Campos adicionales
-            extra_fees: extraFees.length > 0 ? extraFees : undefined,
-            out_of_area_service: rate.out_of_area_service || false,
-            out_of_area_pricing: rate.out_of_area_pricing || 0,
-            // Características (inferidas de los campos de Skydropx)
-            has_tracking: true, // La mayoría de paqueterías tienen rastreo
-            thermal_printing: rate.thermal_printing || false,
-            multi_package: rate.multi_package || false,
-            club_points: rate.club_points || false,
-            // Recolección
-            pickup_available: rate.pickup_available || false,
-            is_ocurre: rate.is_ocurre || false,
-          };
-        });
+        .map((rate: any) => ({
+          id: rate.id,
+          provider: rate.provider_display_name || rate.provider_name,
+          service_level_name: rate.provider_service_name,
+          total_pricing: rate.total,
+          currency: rate.currency_code || 'MXN',
+          days: rate.days || 0,
+          available_for_pickup: true,
+        }));
 
       console.log(`✅ Found ${validRates.length} valid quotes out of ${result.rates.length} total`);
       return validRates;
