@@ -484,7 +484,7 @@ export default function ShipmentForm() {
                 </div>
               )}
               <div className="space-y-2">
-                <Label htmlFor="weight">Peso (kg)</Label>
+                <Label htmlFor="weight">Peso</Label>
                 <Input
                   id="weight"
                   name="weight"
@@ -540,97 +540,113 @@ export default function ShipmentForm() {
         )}
 
         {/* PASO 2: Selección de paquetería */}
-        {step === 2 && allRates.length > 0 && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-2xl font-bold text-foreground">Selecciona tu Paquetería</h2>
-                <p className="text-sm text-muted-foreground">Elige la mejor opción para tu envío</p>
-              </div>
-              <Badge variant="outline" className="gap-2">
-                <DollarSign className="w-4 h-4" />
-                Saldo: ${userBalance.toFixed(2)} MXN
-              </Badge>
-            </div>
+        {step === 2 && allRates.length > 0 && (() => {
+          // Ordenar rates por precio (más barato primero)
+          const sortedRates = [...allRates].sort((a, b) => a.total_pricing - b.total_pricing);
+          const lowestPrice = sortedRates[0]?.total_pricing;
 
-            <div className="space-y-3">
-              {allRates.map((rate: QuoteRate) => {
-                const logo = getCarrierLogo(rate.provider);
-                const isSelected = selectedRate?.id === rate.id;
-                const hasEnoughBalance = userBalance >= rate.total_pricing;
+          return (
+            <>
+              <div className="space-y-6">
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h2 className="text-2xl font-bold text-foreground">Selecciona tu Paquetería</h2>
+                    <p className="text-sm text-muted-foreground">Elige la mejor opción para tu envío</p>
+                  </div>
+                  <Badge variant="outline" className="gap-2">
+                    <DollarSign className="w-4 h-4" />
+                    Saldo: ${userBalance.toFixed(2)} MXN
+                  </Badge>
+                </div>
 
-                return (
-                  <Card
-                    key={rate.id}
-                    className={`p-4 cursor-pointer transition-all ${
-                      isSelected ? 'border-primary bg-primary/5' : 'hover:border-primary/50'
-                    } ${!hasEnoughBalance ? 'opacity-50' : ''}`}
-                    onClick={() => hasEnoughBalance && setSelectedRate(rate)}
-                    data-testid={`card-rate-${rate.id}`}
-                  >
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="flex items-center gap-4 flex-1">
-                        <div className="w-16 h-16 flex items-center justify-center bg-white dark:bg-card rounded-lg border p-2">
-                          {logo ? (
-                            <img src={logo} alt={rate.provider} className="w-full h-full object-contain" />
-                          ) : (
-                            <Package className="w-8 h-8 text-muted-foreground" />
+                <div className="space-y-3">
+                {sortedRates.map((rate: QuoteRate) => {
+                  const logo = getCarrierLogo(rate.provider);
+                  const isSelected = selectedRate?.id === rate.id;
+                  const hasEnoughBalance = userBalance >= rate.total_pricing;
+                  const isBestPrice = rate.total_pricing === lowestPrice;
+
+                  return (
+                    <Card
+                      key={rate.id}
+                      className={`p-4 cursor-pointer transition-all ${
+                        isSelected ? 'border-primary bg-primary/5' : 'hover:border-primary/50'
+                      } ${!hasEnoughBalance ? 'opacity-50' : ''}`}
+                      onClick={() => hasEnoughBalance && setSelectedRate(rate)}
+                      data-testid={`card-rate-${rate.id}`}
+                    >
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-4 flex-1">
+                          <div className="w-16 h-16 flex items-center justify-center bg-white dark:bg-card rounded-lg border p-2">
+                            {logo ? (
+                              <img src={logo} alt={rate.provider} className="w-full h-full object-contain" />
+                            ) : (
+                              <Package className="w-8 h-8 text-muted-foreground" />
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-semibold text-foreground">{rate.provider}</h3>
+                              {isBestPrice && (
+                                <Badge variant="default" className="text-xs">
+                                  Mejor Precio
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-sm text-muted-foreground">{rate.service_level_name}</p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Entrega: {rate.days} {rate.days === 1 ? 'día' : 'días'}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-2xl font-bold text-foreground">
+                            ${rate.total_pricing.toFixed(2)}
+                          </p>
+                          <p className="text-xs text-muted-foreground">{rate.currency}</p>
+                          {!hasEnoughBalance && (
+                            <p className="text-xs text-destructive mt-1">Saldo insuficiente</p>
                           )}
                         </div>
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-foreground">{rate.provider}</h3>
-                          <p className="text-sm text-muted-foreground">{rate.service_level_name}</p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Entrega: {rate.days} {rate.days === 1 ? 'día' : 'días'}
-                          </p>
-                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-2xl font-bold text-foreground">
-                          ${rate.total_pricing.toFixed(2)}
-                        </p>
-                        <p className="text-xs text-muted-foreground">{rate.currency}</p>
-                        {!hasEnoughBalance && (
-                          <p className="text-xs text-destructive mt-1">Saldo insuficiente</p>
-                        )}
-                      </div>
-                    </div>
-                  </Card>
-                );
-              })}
-            </div>
+                    </Card>
+                  );
+                })}
+              </div>
 
-            <div className="flex gap-3">
-              <Button
-                variant="outline"
-                onClick={() => setStep(1)}
-                className="flex-1"
-                data-testid="button-back-to-form"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Regresar
-              </Button>
-              <Button
-                onClick={handleShipmentSubmit}
-                disabled={!selectedRate || shipmentMutation.isPending}
-                className="flex-1"
-                data-testid="button-create-shipment"
-              >
-                {shipmentMutation.isPending ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Creando Guía...
-                  </>
-                ) : (
-                  <>
-                    <FileText className="w-4 h-4 mr-2" />
-                    Crear Envío
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
-        )}
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setStep(1)}
+                  className="flex-1"
+                  data-testid="button-back-to-form"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Regresar
+                </Button>
+                <Button
+                  onClick={handleShipmentSubmit}
+                  disabled={!selectedRate || shipmentMutation.isPending}
+                  className="flex-1"
+                  data-testid="button-create-shipment"
+                >
+                  {shipmentMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Creando Guía...
+                    </>
+                  ) : (
+                    <>
+                      <FileText className="w-4 h-4 mr-2" />
+                      Crear Envío
+                    </>
+                  )}
+                </Button>
+              </div>
+              </div>
+            </>
+          );
+        })()}
 
         {/* PASO 3: Guía creada */}
         {step === 3 && createdShipment && (

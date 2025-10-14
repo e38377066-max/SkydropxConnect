@@ -24,6 +24,12 @@ export default function QuoteResults({ rates, onSelectRate }: QuoteResultsProps)
     return null;
   }
 
+  // Ordenar rates por precio (más barato primero)
+  const sortedRates = [...rates].sort((a, b) => a.total_pricing - b.total_pricing);
+  
+  // Encontrar el precio más bajo para marcar como "Mejor Precio"
+  const lowestPrice = sortedRates[0]?.total_pricing;
+
   return (
     <div className="space-y-4">
       <h3 className="text-xl font-semibold text-foreground">
@@ -31,7 +37,7 @@ export default function QuoteResults({ rates, onSelectRate }: QuoteResultsProps)
       </h3>
 
       <div className="space-y-3">
-        {rates.map((rate, index) => (
+        {sortedRates.map((rate, index) => (
           <Card
             key={rate.id}
             className="p-6 hover-elevate active-elevate-2 transition-all"
@@ -59,7 +65,7 @@ export default function QuoteResults({ rates, onSelectRate }: QuoteResultsProps)
                       {rate.service_level_name}
                     </p>
                   </div>
-                  {index === 0 && (
+                  {rate.total_pricing === lowestPrice && (
                     <Badge variant="default" className="ml-2" data-testid={`badge-best-rate`}>
                       Mejor Precio
                     </Badge>

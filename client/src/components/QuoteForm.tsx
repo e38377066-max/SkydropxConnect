@@ -178,7 +178,7 @@ export default function QuoteForm() {
           <div className="space-y-2">
             <Label htmlFor="weight" className="flex items-center gap-2">
               <Package className="w-4 h-4 text-primary" />
-              Peso (kg)
+              Peso
             </Label>
             <Input
               id="weight"
