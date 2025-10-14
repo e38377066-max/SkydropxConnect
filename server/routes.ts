@@ -691,21 +691,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user!.isLocal || req.user!.isGoogle ? req.user!.id : req.user!.claims.sub;
       
       const validatedData = shipmentRequestSchema.parse({
+        // Sender details
         senderName: req.body.senderName,
+        senderCompany: req.body.senderCompany,
+        senderEmail: req.body.senderEmail,
         senderPhone: req.body.senderPhone,
+        senderStreet: req.body.senderStreet,
+        senderExteriorNumber: req.body.senderExteriorNumber,
+        senderInteriorNumber: req.body.senderInteriorNumber,
+        senderReferences: req.body.senderReferences,
         senderAddress: req.body.senderAddress,
         senderZipCode: req.body.senderZipCode,
         senderColonia: req.body.senderColonia,
+        senderMunicipality: req.body.senderMunicipality,
+        senderCity: req.body.senderCity,
+        senderState: req.body.senderState,
+        senderRFC: req.body.senderRFC,
+        
+        // Receiver details
         receiverName: req.body.receiverName,
+        receiverCompany: req.body.receiverCompany,
+        receiverEmail: req.body.receiverEmail,
         receiverPhone: req.body.receiverPhone,
+        receiverStreet: req.body.receiverStreet,
+        receiverExteriorNumber: req.body.receiverExteriorNumber,
+        receiverInteriorNumber: req.body.receiverInteriorNumber,
+        receiverReferences: req.body.receiverReferences,
         receiverAddress: req.body.receiverAddress,
         receiverZipCode: req.body.receiverZipCode,
         receiverColonia: req.body.receiverColonia,
+        receiverMunicipality: req.body.receiverMunicipality,
+        receiverCity: req.body.receiverCity,
+        receiverState: req.body.receiverState,
+        receiverRFC: req.body.receiverRFC,
+        
+        // Package details
+        shipmentType: req.body.shipmentType,
         weight: parseFloat(req.body.weight),
         length: req.body.length ? parseFloat(req.body.length) : undefined,
         width: req.body.width ? parseFloat(req.body.width) : undefined,
         height: req.body.height ? parseFloat(req.body.height) : undefined,
+        packageAlias: req.body.packageAlias,
         description: req.body.description,
+        declaredValue: req.body.declaredValue ? parseFloat(req.body.declaredValue) : undefined,
+        productClassification: req.body.productClassification,
+        packagingType: req.body.packagingType,
+        
+        // Options
+        generateAsOcurre: req.body.generateAsOcurre,
+        sendEmailNotification: req.body.sendEmailNotification,
+        
+        // Payment
         carrier: req.body.carrier,
         rateId: req.body.rateId,
         expectedAmount: parseFloat(req.body.expectedAmount),
@@ -739,25 +775,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // Build complete address strings with all granular fields
+      const buildAddressStreet1 = (data: any) => {
+        const parts = [];
+        if (data.street) parts.push(data.street);
+        if (data.exteriorNumber) parts.push(`#${data.exteriorNumber}`);
+        if (data.interiorNumber) parts.push(`Int. ${data.interiorNumber}`);
+        if (data.colonia) parts.push(data.colonia);
+        return parts.length > 0 ? parts.join(', ') : data.address;
+      };
+
+      const buildReferences = (data: any) => {
+        const parts = [];
+        if (data.references) parts.push(data.references);
+        if (data.municipality) parts.push(data.municipality);
+        if (data.state) parts.push(data.state);
+        return parts.join(', ') || data.zipCode;
+      };
+
       const skydropxRequest = {
         shipment: {
           rate_id: validatedData.rateId as string,
-          printing_format: "thermal", // Formato térmico para impresoras de etiquetas
+          printing_format: "thermal",
           address_from: {
-            street1: `${validatedData.senderAddress}${validatedData.senderColonia ? `, ${validatedData.senderColonia}` : ''}`,
+            street1: buildAddressStreet1({
+              street: validatedData.senderStreet,
+              exteriorNumber: validatedData.senderExteriorNumber,
+              interiorNumber: validatedData.senderInteriorNumber,
+              colonia: validatedData.senderColonia,
+              address: validatedData.senderAddress
+            }),
             name: validatedData.senderName,
-            company: user.razonSocial || "Particular",
+            company: validatedData.senderCompany || user.razonSocial || "Particular",
             phone: validatedData.senderPhone,
-            email: user.email,
-            reference: validatedData.senderZipCode,
+            email: validatedData.senderEmail || user.email,
+            reference: buildReferences({
+              references: validatedData.senderReferences,
+              municipality: validatedData.senderMunicipality,
+              state: validatedData.senderState,
+              zipCode: validatedData.senderZipCode
+            }),
           },
           address_to: {
-            street1: `${validatedData.receiverAddress}${validatedData.receiverColonia ? `, ${validatedData.receiverColonia}` : ''}`,
+            street1: buildAddressStreet1({
+              street: validatedData.receiverStreet,
+              exteriorNumber: validatedData.receiverExteriorNumber,
+              interiorNumber: validatedData.receiverInteriorNumber,
+              colonia: validatedData.receiverColonia,
+              address: validatedData.receiverAddress
+            }),
             name: validatedData.receiverName,
-            company: "Destinatario",
+            company: validatedData.receiverCompany || "Destinatario",
             phone: validatedData.receiverPhone,
-            email: user.email, // Usamos el email del usuario como respaldo
-            reference: validatedData.receiverZipCode,
+            email: validatedData.receiverEmail || user.email,
+            reference: buildReferences({
+              references: validatedData.receiverReferences,
+              municipality: validatedData.receiverMunicipality,
+              state: validatedData.receiverState,
+              zipCode: validatedData.receiverZipCode
+            }),
           },
           packages: [{
             package_number: "1",
@@ -811,28 +887,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
         shipmentStatus = "cancelled";
       }
 
-      // Create shipment with userId
+      // Create shipment with userId and all fields
       const shipment = await storage.createShipment({
         userId: userId,
         trackingNumber: skydropxShipment.tracking_number,
         carrier: validatedData.carrier,
+        
+        // Sender details
         senderName: validatedData.senderName,
+        senderCompany: validatedData.senderCompany,
+        senderEmail: validatedData.senderEmail,
         senderPhone: validatedData.senderPhone,
+        senderStreet: validatedData.senderStreet,
+        senderExteriorNumber: validatedData.senderExteriorNumber,
+        senderInteriorNumber: validatedData.senderInteriorNumber,
+        senderReferences: validatedData.senderReferences,
         senderAddress: validatedData.senderAddress,
         senderZipCode: validatedData.senderZipCode,
         senderColonia: validatedData.senderColonia,
+        senderMunicipality: validatedData.senderMunicipality,
+        senderCity: validatedData.senderCity,
+        senderState: validatedData.senderState,
+        senderRFC: validatedData.senderRFC,
+        
+        // Receiver details
         receiverName: validatedData.receiverName,
+        receiverCompany: validatedData.receiverCompany,
+        receiverEmail: validatedData.receiverEmail,
         receiverPhone: validatedData.receiverPhone,
+        receiverStreet: validatedData.receiverStreet,
+        receiverExteriorNumber: validatedData.receiverExteriorNumber,
+        receiverInteriorNumber: validatedData.receiverInteriorNumber,
+        receiverReferences: validatedData.receiverReferences,
         receiverAddress: validatedData.receiverAddress,
         receiverZipCode: validatedData.receiverZipCode,
         receiverColonia: validatedData.receiverColonia,
+        receiverMunicipality: validatedData.receiverMunicipality,
+        receiverCity: validatedData.receiverCity,
+        receiverState: validatedData.receiverState,
+        receiverRFC: validatedData.receiverRFC,
+        
+        // Package details
+        shipmentType: validatedData.shipmentType,
         weight: validatedData.weight.toString(),
         length: validatedData.length?.toString(),
         width: validatedData.width?.toString(),
         height: validatedData.height?.toString(),
+        packageAlias: validatedData.packageAlias,
         description: validatedData.description,
+        declaredValue: validatedData.declaredValue?.toString(),
+        productClassification: validatedData.productClassification,
+        packagingType: validatedData.packagingType,
+        
+        // Options
+        generateAsOcurre: validatedData.generateAsOcurre ? "true" : "false",
+        sendEmailNotification: validatedData.sendEmailNotification ? "true" : "false",
+        
+        // Payment
         amount: actualAmount.toString(),
         currency: "MXN",
+        
+        // Status
         status: shipmentStatus,
         labelUrl: skydropxShipment.label_url,
         skydropxShipmentId: skydropxShipment.id,

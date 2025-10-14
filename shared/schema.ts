@@ -399,7 +399,7 @@ export const shipmentRequestSchema = z.object({
   // Sender details
   senderName: z.string().min(1, "Nombre requerido"),
   senderCompany: z.string().optional(),
-  senderEmail: z.string().email("Email inválido").optional(),
+  senderEmail: z.string().email("Email inválido").optional().or(z.literal("")),
   senderPhone: z.string().min(10, "Teléfono inválido"),
   senderStreet: z.string().optional(),
   senderExteriorNumber: z.string().optional(),
@@ -409,12 +409,14 @@ export const shipmentRequestSchema = z.object({
   senderZipCode: z.string().min(5, "Código postal inválido"),
   senderColonia: z.string().min(1, "Colonia requerida"),
   senderMunicipality: z.string().optional(),
+  senderCity: z.string().optional(),
+  senderState: z.string().optional(),
   senderRFC: z.string().optional(),
   
   // Receiver details
   receiverName: z.string().min(1, "Nombre requerido"),
   receiverCompany: z.string().optional(),
-  receiverEmail: z.string().email("Email inválido").optional(),
+  receiverEmail: z.string().email("Email inválido").optional().or(z.literal("")),
   receiverPhone: z.string().min(10, "Teléfono inválido"),
   receiverStreet: z.string().optional(),
   receiverExteriorNumber: z.string().optional(),
@@ -424,6 +426,8 @@ export const shipmentRequestSchema = z.object({
   receiverZipCode: z.string().min(5, "Código postal inválido"),
   receiverColonia: z.string().min(1, "Colonia requerida"),
   receiverMunicipality: z.string().optional(),
+  receiverCity: z.string().optional(),
+  receiverState: z.string().optional(),
   receiverRFC: z.string().optional(),
   
   // Package details

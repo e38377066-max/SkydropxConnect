@@ -53,6 +53,9 @@ export default function ShipmentForm() {
     senderAddress: "",
     senderZipCode: "",
     senderColonia: "",
+    senderMunicipality: "",
+    senderCity: "",
+    senderState: "",
     senderRFC: "",
     
     // Receiver details
@@ -67,6 +70,9 @@ export default function ShipmentForm() {
     receiverAddress: "",
     receiverZipCode: "",
     receiverColonia: "",
+    receiverMunicipality: "",
+    receiverCity: "",
+    receiverState: "",
     receiverRFC: "",
     
     // Package details
@@ -138,6 +144,9 @@ export default function ShipmentForm() {
           senderAddress: selectedAddress.address || "",
           senderZipCode: selectedAddress.zipCode || "",
           senderColonia: selectedAddress.colonia || "",
+          senderMunicipality: selectedAddress.municipality || "",
+          senderCity: selectedAddress.city || selectedAddress.municipality || "",
+          senderState: selectedAddress.state || "",
         });
         if (selectedAddress.municipality && selectedAddress.state) {
           setSenderMetadata({ 
@@ -159,6 +168,9 @@ export default function ShipmentForm() {
           receiverAddress: selectedAddress.address || "",
           receiverZipCode: selectedAddress.zipCode || "",
           receiverColonia: selectedAddress.colonia || "",
+          receiverMunicipality: selectedAddress.municipality || "",
+          receiverCity: selectedAddress.city || selectedAddress.municipality || "",
+          receiverState: selectedAddress.state || "",
         });
         if (selectedAddress.municipality && selectedAddress.state) {
           setReceiverMetadata({ 
@@ -210,8 +222,6 @@ export default function ShipmentForm() {
 
       const response = await apiRequest("POST", "/api/shipments", {
         ...formData,
-        senderMunicipality: senderMetadata.municipio,
-        receiverMunicipality: receiverMetadata.municipio,
         weight: parseFloat(formData.weight),
         length: parseFloat(formData.length || "0"),
         width: parseFloat(formData.width || "0"),
@@ -220,8 +230,6 @@ export default function ShipmentForm() {
         carrier: selectedRate.provider,
         rateId: selectedRate.id,
         expectedAmount: selectedRate.total_pricing,
-        generateAsOcurre: formData.generateAsOcurre,
-        sendEmailNotification: formData.sendEmailNotification,
       });
       return await response.json();
     },
@@ -282,6 +290,9 @@ export default function ShipmentForm() {
       senderAddress: "",
       senderZipCode: "",
       senderColonia: "",
+      senderMunicipality: "",
+      senderCity: "",
+      senderState: "",
       senderRFC: "",
       receiverName: "",
       receiverCompany: "",
@@ -294,6 +305,9 @@ export default function ShipmentForm() {
       receiverAddress: "",
       receiverZipCode: "",
       receiverColonia: "",
+      receiverMunicipality: "",
+      receiverCity: "",
+      receiverState: "",
       receiverRFC: "",
       shipmentType: "",
       weight: "1",
@@ -463,7 +477,15 @@ export default function ShipmentForm() {
                       coloniaValue={formData.senderColonia}
                       onZipCodeChange={(value) => setFormData({ ...formData, senderZipCode: value })}
                       onColoniaChange={(value) => setFormData({ ...formData, senderColonia: value })}
-                      onMetadataChange={(metadata) => setSenderMetadata(metadata)}
+                      onMetadataChange={(metadata) => {
+                        setSenderMetadata(metadata);
+                        setFormData({
+                          ...formData,
+                          senderMunicipality: metadata.municipio,
+                          senderCity: metadata.municipio,
+                          senderState: metadata.estado,
+                        });
+                      }}
                       required
                       testId="input-sender-zipcode"
                     />
@@ -636,7 +658,15 @@ export default function ShipmentForm() {
                       coloniaValue={formData.receiverColonia}
                       onZipCodeChange={(value) => setFormData({ ...formData, receiverZipCode: value })}
                       onColoniaChange={(value) => setFormData({ ...formData, receiverColonia: value })}
-                      onMetadataChange={(metadata) => setReceiverMetadata(metadata)}
+                      onMetadataChange={(metadata) => {
+                        setReceiverMetadata(metadata);
+                        setFormData({
+                          ...formData,
+                          receiverMunicipality: metadata.municipio,
+                          receiverCity: metadata.municipio,
+                          receiverState: metadata.estado,
+                        });
+                      }}
                       required
                       testId="input-receiver-zipcode"
                     />
