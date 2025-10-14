@@ -52,13 +52,8 @@ The backend is an Express.js application with TypeScript, following a RESTful AP
 -   **Authentication & Authorization**: Hybrid system supporting local email/password and Google OAuth via Passport.js. Features include bcrypt password hashing, robust password validation, session management with PostgreSQL storage, and secure cookie handling. Users can manage multiple authentication methods and profile details on a dedicated `/perfil` page, including contact, billing, and security settings. Admin roles have access to system settings.
 -   **Skydropx PRO Integration (OAuth)**: ✅ Fully functional integration with Skydropx PRO API using OAuth Bearer token authentication. Features auto-refresh token system (renews 5 min before expiration), support for 10+ shipping carriers (DHL, FedEx, Estafeta, UPS, etc.), and real-time quote comparison. Endpoint: `https://pro.skydropx.com/api/v1/quotations`.
 -   **Shipping & Tracking**: 
-    - Quoting: `/api/quotes` returns 10+ valid rates per request with pricing and delivery estimates (sorted by price, cheapest first)
-    - Creation: `/api/shipments` creates shipments with automatic wallet deduction. Full Skydropx-style 4-step flow implemented:
-      - **Step 1**: Origin/destination details (addresses guardadas dropdown, granular fields: company, email, street, ext/int numbers, references, municipality, state, RFC)
-      - **Step 2**: Package information (dimensions, weight, declared value, Carta Porte, packaging type, RFC options, prohibited items warning)
-      - **Step 3**: Carrier selection (sorted by price with "Mejor Precio" badge on cheapest option)
-      - **Step 4**: Shipment confirmation & label download
-    - Address Building: Skydropx receives fully detailed addresses via helper functions `buildAddressStreet1()` (street, #ext, Int. int, colonia) and `buildReferences()` (references, municipality, state)
+    - Quoting: `/api/quotes` returns 10+ valid rates per request with pricing and delivery estimates
+    - Creation: `/api/shipments` creates shipments with automatic wallet deduction
     - Tracking: `/api/tracking/:trackingNumber` uses Skydropx endpoint `/api/v1/shipments/tracking?tracking_number={tracking_number}&carrier_name={carrier_name}` for real-time package tracking. Handles cancelled shipments gracefully without attempting Skydropx lookup.
     - Cancellation: `/api/shipments/:id/cancel` cancels shipments via Skydropx `/api/v1/shipments/{shipment_id}/cancellations` endpoint with automatic refund to user wallet, transaction recording, and tracking event creation. UI includes confirmation dialog showing refund amount.
 -   **User Management**: Endpoints for user registration, login, logout, and authenticated user data retrieval (`/api/auth/user`). Protected routes for updating user contact, billing, and password information.
@@ -89,12 +84,10 @@ The backend is an Express.js application with TypeScript, following a RESTful AP
 The application uses PostgreSQL, accessed via the Neon serverless driver, and `Drizzle ORM` for type-safe operations. Key tables include:
 -   `users`: Stores user profiles, authentication details (hashed passwords, OAuth IDs), roles, and wallet balances.
 -   `sessions`: For session management.
--   `shipments`: Complete shipment records with 50+ fields including granular address details (company, email, street, exteriorNumber, interiorNumber, references, municipality, city, state, RFC) for both sender and receiver, package details (shipmentType, packageAlias, declaredValue, productClassification, packagingType), and options (generateAsOcurre, sendEmailNotification).
--   `quotes`, `trackingEvents`: Core shipping data.
+-   `shipments`, `quotes`, `trackingEvents`: Core shipping data.
 -   `settings`: Stores system configurations like profit margin.
 -   `transactions`, `recharge_requests`: For the wallet system.
--   `saved_addresses`: Enhanced with granular fields (company, email, street, exteriorNumber, interiorNumber, references, colonia, municipality) matching shipment address structure for seamless autocomplete.
--   `saved_packages`, `billing_profiles`: For user-saved preferences.
+-   `saved_addresses`, `saved_packages`, `billing_profiles`: For user-saved preferences.
 -   `zip_codes`: Contains 157,127 Mexican postal codes from SEPOMEX with indexed columns (codigo_postal, estado) for fast autocomplete queries. Covers all 32 states of Mexico.
 
 ## System Design Choices
