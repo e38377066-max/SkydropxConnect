@@ -16,6 +16,7 @@ interface ZipCodeInputProps {
   coloniaValue: string;
   onZipCodeChange: (value: string) => void;
   onColoniaChange: (value: string) => void;
+  onMetadataChange?: (metadata: { municipio: string; estado: string }) => void;
   required?: boolean;
   testId?: string;
 }
@@ -26,6 +27,7 @@ export default function ZipCodeInput({
   coloniaValue,
   onZipCodeChange, 
   onColoniaChange,
+  onMetadataChange,
   required = false,
   testId = "input-zipcode"
 }: ZipCodeInputProps) {
@@ -157,10 +159,16 @@ export default function ZipCodeInput({
 
   const handleSelect = (suggestion: ZipCodeSuggestion) => {
     setSelectedInfo(suggestion);
-    lastValidSelection.current = suggestion; // Save for later sync
+    lastValidSelection.current = suggestion;
     setDisplayValue(`${suggestion.codigo_postal} - ${suggestion.colonia}`);
     onZipCodeChange(suggestion.codigo_postal);
     onColoniaChange(suggestion.colonia);
+    if (onMetadataChange) {
+      onMetadataChange({
+        municipio: suggestion.municipio,
+        estado: suggestion.estado
+      });
+    }
     setShowSuggestions(false);
     setSuggestions([]);
   };

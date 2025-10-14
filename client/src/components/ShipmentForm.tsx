@@ -4,7 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { FileText, User, MapPin, Package, Loader2, Download, ArrowLeft, ArrowRight, Check, DollarSign } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { FileText, User, MapPin, Package, Loader2, Download, ArrowLeft, ArrowRight, Check, DollarSign, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -23,6 +24,11 @@ interface QuoteRate {
   days: number;
 }
 
+interface ZipCodeMetadata {
+  municipio: string;
+  estado: string;
+}
+
 export default function ShipmentForm() {
   const { toast } = useToast();
   const [step, setStep] = useState(1);
@@ -30,39 +36,77 @@ export default function ShipmentForm() {
   const [selectedRate, setSelectedRate] = useState<QuoteRate | null>(null);
   const [quoteId, setQuoteId] = useState<string>("");
   const [allRates, setAllRates] = useState<QuoteRate[]>([]);
-  const [fromQuote, setFromQuote] = useState<boolean>(false);
+  
+  const [senderMetadata, setSenderMetadata] = useState<ZipCodeMetadata>({ municipio: "", estado: "" });
+  const [receiverMetadata, setReceiverMetadata] = useState<ZipCodeMetadata>({ municipio: "", estado: "" });
   
   const [formData, setFormData] = useState({
+    // Sender details
     senderName: "",
+    senderCompany: "",
+    senderEmail: "",
     senderPhone: "",
+    senderStreet: "",
+    senderExteriorNumber: "",
+    senderInteriorNumber: "",
+    senderReferences: "",
     senderAddress: "",
     senderZipCode: "",
     senderColonia: "",
+    senderRFC: "",
+    
+    // Receiver details
     receiverName: "",
+    receiverCompany: "",
+    receiverEmail: "",
     receiverPhone: "",
+    receiverStreet: "",
+    receiverExteriorNumber: "",
+    receiverInteriorNumber: "",
+    receiverReferences: "",
     receiverAddress: "",
     receiverZipCode: "",
     receiverColonia: "",
+    receiverRFC: "",
+    
+    // Package details
+    shipmentType: "",
     weight: "1",
     length: "10",
     width: "10",
     height: "10",
+    packageAlias: "",
     description: "",
+    declaredValue: "",
+    productClassification: "",
+    packagingType: "XBX-Caja",
+    
+    // Options
+    generateAsOcurre: false,
+    sendEmailNotification: false,
+    saveOriginAddress: false,
+    saveDestinationAddress: false,
+    saveDimensions: false,
+    addRFC: false,
   });
 
-  // Obtener saldo del usuario
   const { data: userData } = useQuery<any>({
     queryKey: ['/api/auth/user'],
   });
 
   const userBalance = userData?.balance ? parseFloat(userData.balance) : 0;
 
-  // Obtener paquetes guardados
   const { data: packagesData } = useQuery<{ data: any[] }>({
     queryKey: ["/api/packages"],
   });
 
   const packages = packagesData?.data ?? [];
+
+  const { data: addressesData } = useQuery<{ data: any[] }>({
+    queryKey: ["/api/addresses"],
+  });
+
+  const addresses = addressesData?.data ?? [];
 
   const handlePackageSelect = (packageId: string) => {
     const selectedPackage = packages.find(pkg => pkg.id === packageId);
@@ -77,50 +121,62 @@ export default function ShipmentForm() {
     }
   };
 
-  // Cargar datos pre-llenados desde cotización (si existen)
-  useEffect(() => {
-    const prefilledData = localStorage.getItem('prefilledQuoteData');
-    if (prefilledData) {
-      try {
-        const data = JSON.parse(prefilledData);
-        
-        // Pre-llenar datos del paquete
-        setFormData(prev => ({
-          ...prev,
-          senderZipCode: data.fromZipCode || "",
-          receiverZipCode: data.toZipCode || "",
-          weight: data.weight || "1",
-          length: data.length || "10",
-          width: data.width || "10",
-          height: data.height || "10",
-        }));
-        
-        // Si hay cotización completa (quoteId + selectedRate), quedarse en paso 1 pero marcar como fromQuote
-        if (data.quoteId && data.selectedRate) {
-          setQuoteId(data.quoteId);
-          setSelectedRate(data.selectedRate);
-          setFromQuote(true);
-          
-          toast({
-            title: "Cotización cargada",
-            description: `${data.selectedRate.provider} seleccionada. Completa los datos del envío.`,
+  const handleAddressSelect = (addressId: string, type: 'sender' | 'receiver') => {
+    const selectedAddress = addresses.find(addr => addr.id === addressId);
+    if (selectedAddress) {
+      if (type === 'sender') {
+        setFormData({
+          ...formData,
+          senderName: selectedAddress.contactName || "",
+          senderCompany: selectedAddress.company || "",
+          senderEmail: selectedAddress.email || "",
+          senderPhone: selectedAddress.phone || "",
+          senderStreet: selectedAddress.street || "",
+          senderExteriorNumber: selectedAddress.exteriorNumber || "",
+          senderInteriorNumber: selectedAddress.interiorNumber || "",
+          senderReferences: selectedAddress.references || "",
+          senderAddress: selectedAddress.address || "",
+          senderZipCode: selectedAddress.zipCode || "",
+          senderColonia: selectedAddress.colonia || "",
+        });
+        if (selectedAddress.municipality && selectedAddress.state) {
+          setSenderMetadata({ 
+            municipio: selectedAddress.municipality, 
+            estado: selectedAddress.state 
           });
         }
-        
-        // Limpiar localStorage después de cargar
-        localStorage.removeItem('prefilledQuoteData');
-      } catch (error) {
-        console.error('Error loading prefilled data:', error);
+      } else {
+        setFormData({
+          ...formData,
+          receiverName: selectedAddress.contactName || "",
+          receiverCompany: selectedAddress.company || "",
+          receiverEmail: selectedAddress.email || "",
+          receiverPhone: selectedAddress.phone || "",
+          receiverStreet: selectedAddress.street || "",
+          receiverExteriorNumber: selectedAddress.exteriorNumber || "",
+          receiverInteriorNumber: selectedAddress.interiorNumber || "",
+          receiverReferences: selectedAddress.references || "",
+          receiverAddress: selectedAddress.address || "",
+          receiverZipCode: selectedAddress.zipCode || "",
+          receiverColonia: selectedAddress.colonia || "",
+        });
+        if (selectedAddress.municipality && selectedAddress.state) {
+          setReceiverMetadata({ 
+            municipio: selectedAddress.municipality, 
+            estado: selectedAddress.state 
+          });
+        }
       }
     }
-  }, []);
+  };
 
-  // Mutación para cotizar
   const quoteMutation = useMutation({
     mutationFn: async () => {
       const response = await apiRequest("POST", "/api/quotes", {
         fromZipCode: formData.senderZipCode,
+        fromColonia: formData.senderColonia,
         toZipCode: formData.receiverZipCode,
+        toColonia: formData.receiverColonia,
         weight: parseFloat(formData.weight),
         length: parseFloat(formData.length),
         width: parseFloat(formData.width),
@@ -129,90 +185,62 @@ export default function ShipmentForm() {
       return await response.json();
     },
     onSuccess: (data: any) => {
-      if (data.success && data.data) {
-        setQuoteId(data.data.quoteId);
-        if (data.data.rates && data.data.rates.length > 0) {
-          setAllRates(data.data.rates);
-          
-          // Si venía de cotización, intentar auto-seleccionar la misma paquetería
-          if (fromQuote && selectedRate) {
-            const matchingRate = data.data.rates.find(
-              (rate: QuoteRate) => rate.provider === selectedRate.provider
-            );
-            if (matchingRate) {
-              setSelectedRate(matchingRate);
-              // Si encontramos la misma paquetería, crear el envío automáticamente
-              toast({
-                title: "Cotización actualizada",
-                description: `${matchingRate.provider} confirmada. Creando envío...`,
-              });
-              // Crear envío después de un pequeño delay para que se vea el toast
-              setTimeout(() => {
-                shipmentMutation.mutate();
-              }, 500);
-            } else {
-              // Si no encontramos la paquetería, ir al paso 2 para seleccionar
-              setFromQuote(false);
-              setStep(2);
-              toast({
-                title: "Paquetería no disponible",
-                description: "La paquetería seleccionada ya no está disponible. Por favor, selecciona otra.",
-                variant: "destructive",
-              });
-            }
-          } else {
-            setStep(2);
-          }
-        } else {
-          toast({
-            title: "No hay cotizaciones disponibles",
-            description: "No se encontraron opciones para esta ruta",
-            variant: "destructive",
-          });
-        }
-      }
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error al cotizar",
-        description: error.message || "No se pudo obtener cotizaciones",
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Mutación para crear envío
-  const shipmentMutation = useMutation({
-    mutationFn: async () => {
-      if (!selectedRate) throw new Error("No hay cotización seleccionada");
-      
-      const response = await apiRequest("POST", "/api/shipments", {
-        ...formData,
-        carrier: selectedRate.provider,
-        rateId: selectedRate.id,
-        expectedAmount: selectedRate.total_pricing,
-      });
-      return await response.json();
-    },
-    onSuccess: (data: any) => {
-      if (data.success && data.data) {
-        setCreatedShipment(data.data);
-        queryClient.invalidateQueries({ queryKey: ['/api/shipments'] });
-        queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
-        queryClient.invalidateQueries({ queryKey: ['/api/wallet/balance'] });
+      if (data.success && data.data.rates) {
+        setAllRates(data.data.rates);
+        setQuoteId(data.data.quoteId || "");
         setStep(3);
         toast({
-          title: "¡Guía creada exitosamente!",
-          description: data.data.trackingNumber 
-            ? `Número de rastreo: ${data.data.trackingNumber}` 
-            : "Tu envío está siendo procesado por la paquetería",
+          title: "Cotización generada",
+          description: `Se encontraron ${data.data.rates.length} opciones de envío disponibles`,
         });
       }
     },
     onError: (error: any) => {
       toast({
-        title: "Error al crear la guía",
-        description: error.message || "No se pudo crear la guía de envío",
+        title: "Error al cotizar",
+        description: error.message || "No se pudieron obtener las cotizaciones",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const shipmentMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedRate) throw new Error("No se ha seleccionado una tarifa");
+
+      const response = await apiRequest("POST", "/api/shipments", {
+        ...formData,
+        senderMunicipality: senderMetadata.municipio,
+        receiverMunicipality: receiverMetadata.municipio,
+        weight: parseFloat(formData.weight),
+        length: parseFloat(formData.length || "0"),
+        width: parseFloat(formData.width || "0"),
+        height: parseFloat(formData.height || "0"),
+        declaredValue: formData.declaredValue ? parseFloat(formData.declaredValue) : undefined,
+        carrier: selectedRate.provider,
+        rateId: selectedRate.id,
+        expectedAmount: selectedRate.total_pricing,
+        generateAsOcurre: formData.generateAsOcurre,
+        sendEmailNotification: formData.sendEmailNotification,
+      });
+      return await response.json();
+    },
+    onSuccess: (data: any) => {
+      if (data.success) {
+        setCreatedShipment(data.data.shipment);
+        setStep(4);
+        queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/shipments'] });
+        toast({
+          title: "Envío creado exitosamente",
+          description: `Tu envío ha sido registrado correctamente`,
+        });
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error al crear envío",
+        description: error.message || "No se pudo crear el envío",
         variant: "destructive",
       });
     },
@@ -220,262 +248,505 @@ export default function ShipmentForm() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
-    
-    // Si modifica datos del paquete y venía de cotización, resetear y volver al paso 1
-    const packageFields = ['weight', 'length', 'width', 'height', 'senderZipCode', 'receiverZipCode'];
-    if (packageFields.includes(e.target.name) && fromQuote) {
-      setSelectedRate(null);
-      setAllRates([]);
-      setQuoteId("");
-      setFromQuote(false);
-      setStep(1);
-      toast({
-        title: "Datos modificados",
-        description: "Deberás cotizar nuevamente con los nuevos datos.",
-      });
-    }
   };
 
-  const handleZipCodeChange = (field: string, value: string) => {
-    setFormData({ ...formData, [field]: value });
-    
-    // Si modifica códigos postales y venía de cotización, resetear y volver al paso 1
-    if ((field === 'senderZipCode' || field === 'receiverZipCode') && fromQuote) {
-      setSelectedRate(null);
-      setAllRates([]);
-      setQuoteId("");
-      setFromQuote(false);
-      setStep(1);
-      toast({
-        title: "Datos modificados",
-        description: "Deberás cotizar nuevamente con los nuevos datos.",
-      });
-    }
-  };
-
-  const handleQuoteSubmit = (e: React.FormEvent) => {
+  const handleStep1Submit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Siempre re-cotizar para obtener rate_id fresco (evita errores de expiración)
+    setStep(2);
+  };
+
+  const handleStep2Submit = (e: React.FormEvent) => {
+    e.preventDefault();
     quoteMutation.mutate();
   };
 
   const handleShipmentSubmit = () => {
-    if (!selectedRate) {
-      toast({
-        title: "Selecciona una paquetería",
-        description: "Debes seleccionar una opción para continuar",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Verificar saldo
-    if (userBalance < selectedRate.total_pricing) {
-      toast({
-        title: "Saldo insuficiente",
-        description: `Necesitas $${selectedRate.total_pricing.toFixed(2)} MXN pero solo tienes $${userBalance.toFixed(2)} MXN`,
-        variant: "destructive",
-      });
-      return;
-    }
-
     shipmentMutation.mutate();
   };
 
   const resetForm = () => {
     setStep(1);
+    setCreatedShipment(null);
     setSelectedRate(null);
     setQuoteId("");
-    setCreatedShipment(null);
+    setAllRates([]);
     setFormData({
       senderName: "",
+      senderCompany: "",
+      senderEmail: "",
       senderPhone: "",
+      senderStreet: "",
+      senderExteriorNumber: "",
+      senderInteriorNumber: "",
+      senderReferences: "",
       senderAddress: "",
       senderZipCode: "",
       senderColonia: "",
+      senderRFC: "",
       receiverName: "",
+      receiverCompany: "",
+      receiverEmail: "",
       receiverPhone: "",
+      receiverStreet: "",
+      receiverExteriorNumber: "",
+      receiverInteriorNumber: "",
+      receiverReferences: "",
       receiverAddress: "",
       receiverZipCode: "",
       receiverColonia: "",
+      receiverRFC: "",
+      shipmentType: "",
       weight: "1",
       length: "10",
       width: "10",
       height: "10",
+      packageAlias: "",
       description: "",
+      declaredValue: "",
+      productClassification: "",
+      packagingType: "XBX-Caja",
+      generateAsOcurre: false,
+      sendEmailNotification: false,
+      saveOriginAddress: false,
+      saveDestinationAddress: false,
+      saveDimensions: false,
+      addRFC: false,
     });
+    setSenderMetadata({ municipio: "", estado: "" });
+    setReceiverMetadata({ municipio: "", estado: "" });
   };
 
   return (
-    <div className="space-y-6">
-      {/* Step Indicator */}
-      <div className="flex items-center justify-center gap-4">
-        <div className={`flex items-center gap-2 ${step >= 1 ? 'text-primary' : 'text-muted-foreground'}`}>
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step >= 1 ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
-            {step > 1 ? <Check className="w-4 h-4" /> : '1'}
-          </div>
-          <span className="text-sm font-medium">Datos</span>
-        </div>
-        <div className="w-16 h-px bg-border" />
-        <div className={`flex items-center gap-2 ${step >= 2 ? 'text-primary' : 'text-muted-foreground'}`}>
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step >= 2 ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
-            {step > 2 ? <Check className="w-4 h-4" /> : '2'}
-          </div>
-          <span className="text-sm font-medium">Cotizaciones</span>
-        </div>
-        <div className="w-16 h-px bg-border" />
-        <div className={`flex items-center gap-2 ${step >= 3 ? 'text-primary' : 'text-muted-foreground'}`}>
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step >= 3 ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
-            {step === 3 ? <Check className="w-4 h-4" /> : '3'}
-          </div>
-          <span className="text-sm font-medium">Guía Creada</span>
-        </div>
-      </div>
-
-      <Card className="p-8">
-        {/* PASO 1: Formulario de datos */}
-        {step === 1 && (
-          <>
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                <FileText className="w-6 h-6 text-primary" />
-              </div>
-              <div className="flex-1">
-                <h2 className="text-2xl font-bold text-foreground">Crear Envío</h2>
-                <p className="text-sm text-muted-foreground">Completa los datos para generar tu etiqueta</p>
-              </div>
-              {fromQuote && selectedRate && (
-                <Badge variant="default" className="gap-2">
-                  <Check className="w-4 h-4" />
-                  {selectedRate.provider} - ${selectedRate.total_pricing.toFixed(2)}
-                </Badge>
-              )}
+    <Card className="p-8">
+      {/* PASO 1: Datos del origen y destino */}
+      {step === 1 && (
+        <>
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+              <FileText className="w-6 h-6 text-primary" />
             </div>
-
-            <form onSubmit={handleQuoteSubmit} className="space-y-8">
-          <div>
-            <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-              <User className="w-5 h-5 text-primary" />
-              Datos del Remitente
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="senderName">Nombre Completo</Label>
-                <Input
-                  id="senderName"
-                  name="senderName"
-                  value={formData.senderName}
-                  onChange={handleInputChange}
-                  required
-                  data-testid="input-sender-name"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="senderPhone">Teléfono</Label>
-                <Input
-                  id="senderPhone"
-                  name="senderPhone"
-                  value={formData.senderPhone}
-                  onChange={handleInputChange}
-                  required
-                  data-testid="input-sender-phone"
-                />
-              </div>
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="senderAddress">Dirección Completa</Label>
-                <Input
-                  id="senderAddress"
-                  name="senderAddress"
-                  value={formData.senderAddress}
-                  onChange={handleInputChange}
-                  required
-                  data-testid="input-sender-address"
-                />
-              </div>
-              <div className="md:col-span-2">
-                <ZipCodeInput
-                  label="Código Postal de Origen"
-                  zipCodeValue={formData.senderZipCode}
-                  coloniaValue={formData.senderColonia}
-                  onZipCodeChange={(value) => handleZipCodeChange('senderZipCode', value)}
-                  onColoniaChange={(value) => setFormData({ ...formData, senderColonia: value })}
-                  required
-                  testId="input-sender-zipcode"
-                />
-              </div>
+            <div>
+              <h2 className="text-2xl font-bold text-foreground">Nueva Cotización</h2>
+              <p className="text-sm text-muted-foreground">Datos del origen y destino del envío</p>
             </div>
           </div>
 
-          <div>
-            <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-              <MapPin className="w-5 h-5 text-primary" />
-              Datos del Destinatario
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="receiverName">Nombre Completo</Label>
-                <Input
-                  id="receiverName"
-                  name="receiverName"
-                  value={formData.receiverName}
-                  onChange={handleInputChange}
-                  required
-                  data-testid="input-receiver-name"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="receiverPhone">Teléfono</Label>
-                <Input
-                  id="receiverPhone"
-                  name="receiverPhone"
-                  value={formData.receiverPhone}
-                  onChange={handleInputChange}
-                  required
-                  data-testid="input-receiver-phone"
-                />
-              </div>
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="receiverAddress">Dirección Completa</Label>
-                <Input
-                  id="receiverAddress"
-                  name="receiverAddress"
-                  value={formData.receiverAddress}
-                  onChange={handleInputChange}
-                  required
-                  data-testid="input-receiver-address"
-                />
-              </div>
-              <div className="md:col-span-2">
-                <ZipCodeInput
-                  label="Código Postal de Destino"
-                  zipCodeValue={formData.receiverZipCode}
-                  coloniaValue={formData.receiverColonia}
-                  onZipCodeChange={(value) => handleZipCodeChange('receiverZipCode', value)}
-                  onColoniaChange={(value) => setFormData({ ...formData, receiverColonia: value })}
-                  required
-                  testId="input-receiver-zipcode"
-                />
-              </div>
-            </div>
-          </div>
+          <form onSubmit={handleStep1Submit} className="space-y-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* DATOS DEL ORIGEN */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                  <User className="w-5 h-5 text-primary" />
+                  Datos del origen del envío
+                </h3>
 
-          <div>
-            <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-              <Package className="w-5 h-5 text-primary" />
-              Datos del Paquete
-            </h3>
-            <div className="grid grid-cols-1 gap-4">
-              {packages.length > 0 && (
+                {addresses.length > 0 && (
+                  <div className="space-y-2">
+                    <Label>Direcciones de origen</Label>
+                    <Select onValueChange={(value) => handleAddressSelect(value, 'sender')}>
+                      <SelectTrigger data-testid="select-sender-address">
+                        <SelectValue placeholder="-- Direcciones guardadas --" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {addresses.map((addr: any) => (
+                          <SelectItem key={addr.id} value={addr.id}>
+                            {addr.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
                 <div className="space-y-2">
-                  <Label htmlFor="saved-package">Usar Paquete Guardado (Opcional)</Label>
+                  <Label className="text-muted-foreground font-normal">Datos origen</Label>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Nombre</Label>
+                    <Input
+                      name="senderName"
+                      value={formData.senderName}
+                      onChange={handleInputChange}
+                      required
+                      placeholder="Nombre completo"
+                      data-testid="input-sender-name"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Empresa</Label>
+                    <Input
+                      name="senderCompany"
+                      value={formData.senderCompany}
+                      onChange={handleInputChange}
+                      placeholder="Nombre de la empresa"
+                      data-testid="input-sender-company"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Correo</Label>
+                    <Input
+                      type="email"
+                      name="senderEmail"
+                      value={formData.senderEmail}
+                      onChange={handleInputChange}
+                      placeholder="correo@ejemplo.com"
+                      data-testid="input-sender-email"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Teléfono</Label>
+                    <Input
+                      name="senderPhone"
+                      value={formData.senderPhone}
+                      onChange={handleInputChange}
+                      required
+                      placeholder="10 dígitos"
+                      data-testid="input-sender-phone"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Calle</Label>
+                  <Input
+                    name="senderStreet"
+                    value={formData.senderStreet}
+                    onChange={handleInputChange}
+                    placeholder="Nombre de la calle"
+                    data-testid="input-sender-street"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>No. Exterior</Label>
+                    <Input
+                      name="senderExteriorNumber"
+                      value={formData.senderExteriorNumber}
+                      onChange={handleInputChange}
+                      placeholder="Número exterior"
+                      data-testid="input-sender-exterior"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>No. Interior</Label>
+                    <Input
+                      name="senderInteriorNumber"
+                      value={formData.senderInteriorNumber}
+                      onChange={handleInputChange}
+                      placeholder="Número interior"
+                      data-testid="input-sender-interior"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Referencias / Entre calles</Label>
+                    <Input
+                      name="senderReferences"
+                      value={formData.senderReferences}
+                      onChange={handleInputChange}
+                      placeholder="Referencias de ubicación"
+                      data-testid="input-sender-references"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Código postal</Label>
+                    <ZipCodeInput
+                      zipCodeValue={formData.senderZipCode}
+                      coloniaValue={formData.senderColonia}
+                      onZipCodeChange={(value) => setFormData({ ...formData, senderZipCode: value })}
+                      onColoniaChange={(value) => setFormData({ ...formData, senderColonia: value })}
+                      onMetadataChange={(metadata) => setSenderMetadata(metadata)}
+                      required
+                      testId="input-sender-zipcode"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Municipio</Label>
+                    <Input
+                      value={senderMetadata.municipio}
+                      disabled
+                      className="bg-muted"
+                      data-testid="input-sender-municipality"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Estado</Label>
+                    <Input
+                      value={senderMetadata.estado}
+                      disabled
+                      className="bg-muted"
+                      data-testid="input-sender-state"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="saveOriginAddress"
+                    checked={formData.saveOriginAddress}
+                    onCheckedChange={(checked) =>
+                      setFormData({ ...formData, saveOriginAddress: !!checked })
+                    }
+                    data-testid="checkbox-save-origin"
+                  />
+                  <label htmlFor="saveOriginAddress" className="text-sm">
+                    Guardar en mi lista de direcciones
+                  </label>
+                </div>
+              </div>
+
+              {/* DATOS DEL DESTINO */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                  <MapPin className="w-5 h-5 text-primary" />
+                  Datos del destino del envío
+                </h3>
+
+                {addresses.length > 0 && (
+                  <div className="space-y-2">
+                    <Label>Direcciones de destino</Label>
+                    <Select onValueChange={(value) => handleAddressSelect(value, 'receiver')}>
+                      <SelectTrigger data-testid="select-receiver-address">
+                        <SelectValue placeholder="-- Direcciones guardadas --" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {addresses.map((addr: any) => (
+                          <SelectItem key={addr.id} value={addr.id}>
+                            {addr.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <Label className="text-muted-foreground font-normal">Datos destinatario</Label>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Nombre</Label>
+                    <Input
+                      name="receiverName"
+                      value={formData.receiverName}
+                      onChange={handleInputChange}
+                      required
+                      placeholder="Nombre completo"
+                      data-testid="input-receiver-name"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Empresa</Label>
+                    <Input
+                      name="receiverCompany"
+                      value={formData.receiverCompany}
+                      onChange={handleInputChange}
+                      placeholder="Nombre de la empresa"
+                      data-testid="input-receiver-company"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Correo</Label>
+                    <Input
+                      type="email"
+                      name="receiverEmail"
+                      value={formData.receiverEmail}
+                      onChange={handleInputChange}
+                      placeholder="correo@ejemplo.com"
+                      data-testid="input-receiver-email"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Teléfono</Label>
+                    <Input
+                      name="receiverPhone"
+                      value={formData.receiverPhone}
+                      onChange={handleInputChange}
+                      required
+                      placeholder="10 dígitos"
+                      data-testid="input-receiver-phone"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Calle</Label>
+                  <Input
+                    name="receiverStreet"
+                    value={formData.receiverStreet}
+                    onChange={handleInputChange}
+                    placeholder="Nombre de la calle"
+                    data-testid="input-receiver-street"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>No. Exterior</Label>
+                    <Input
+                      name="receiverExteriorNumber"
+                      value={formData.receiverExteriorNumber}
+                      onChange={handleInputChange}
+                      placeholder="Número exterior"
+                      data-testid="input-receiver-exterior"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>No. Interior</Label>
+                    <Input
+                      name="receiverInteriorNumber"
+                      value={formData.receiverInteriorNumber}
+                      onChange={handleInputChange}
+                      placeholder="Número interior"
+                      data-testid="input-receiver-interior"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Referencias / Entre calles</Label>
+                    <Input
+                      name="receiverReferences"
+                      value={formData.receiverReferences}
+                      onChange={handleInputChange}
+                      placeholder="Referencias de ubicación"
+                      data-testid="input-receiver-references"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Código postal</Label>
+                    <ZipCodeInput
+                      zipCodeValue={formData.receiverZipCode}
+                      coloniaValue={formData.receiverColonia}
+                      onZipCodeChange={(value) => setFormData({ ...formData, receiverZipCode: value })}
+                      onColoniaChange={(value) => setFormData({ ...formData, receiverColonia: value })}
+                      onMetadataChange={(metadata) => setReceiverMetadata(metadata)}
+                      required
+                      testId="input-receiver-zipcode"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Municipio</Label>
+                    <Input
+                      value={receiverMetadata.municipio}
+                      disabled
+                      className="bg-muted"
+                      data-testid="input-receiver-municipality"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Estado</Label>
+                    <Input
+                      value={receiverMetadata.estado}
+                      disabled
+                      className="bg-muted"
+                      data-testid="input-receiver-state"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="generateAsOcurre"
+                      checked={formData.generateAsOcurre}
+                      onCheckedChange={(checked) =>
+                        setFormData({ ...formData, generateAsOcurre: !!checked })
+                      }
+                      data-testid="checkbox-ocurre"
+                    />
+                    <label htmlFor="generateAsOcurre" className="text-sm">
+                      Generar guía como Ocurre?
+                    </label>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="sendEmailNotification"
+                      checked={formData.sendEmailNotification}
+                      onCheckedChange={(checked) =>
+                        setFormData({ ...formData, sendEmailNotification: !!checked })
+                      }
+                      data-testid="checkbox-notification"
+                    />
+                    <label htmlFor="sendEmailNotification" className="text-sm">
+                      Notificación usuario? <span className="text-muted-foreground">(Notifica al destinatario del envío por correo)</span>
+                    </label>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="saveDestinationAddress"
+                      checked={formData.saveDestinationAddress}
+                      onCheckedChange={(checked) =>
+                        setFormData({ ...formData, saveDestinationAddress: !!checked })
+                      }
+                      data-testid="checkbox-save-destination"
+                    />
+                    <label htmlFor="saveDestinationAddress" className="text-sm">
+                      Guardar en mi lista de direcciones
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end">
+              <Button type="submit" size="lg" data-testid="button-next-step1">
+                Siguiente
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </div>
+          </form>
+        </>
+      )}
+
+      {/* PASO 2: Información del paquete */}
+      {step === 2 && (
+        <>
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Package className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-foreground">Información del paquete</h2>
+              <p className="text-sm text-muted-foreground">Dimensiones, peso y valor del envío</p>
+            </div>
+          </div>
+
+          <form onSubmit={handleStep2Submit} className="space-y-6">
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Dimensiones y peso del envío</h3>
+
+              {packages.length > 0 && (
+                <div className="space-y-2 mb-4">
+                  <Label>Selecciona un paquete guardado</Label>
                   <Select onValueChange={handlePackageSelect}>
-                    <SelectTrigger data-testid="select-saved-package-shipment">
-                      <SelectValue placeholder="Selecciona un paquete guardado" />
+                    <SelectTrigger data-testid="select-saved-package">
+                      <SelectValue placeholder="-- Directorio de paquetes guardados --" />
                     </SelectTrigger>
                     <SelectContent>
                       {packages.map((pkg: any) => (
-                        <SelectItem key={pkg.id} value={pkg.id} data-testid={`package-option-${pkg.id}`}>
+                        <SelectItem key={pkg.id} value={pkg.id}>
                           {pkg.alias}
                         </SelectItem>
                       ))}
@@ -483,83 +754,283 @@ export default function ShipmentForm() {
                   </Select>
                 </div>
               )}
-              <div className="space-y-2">
-                <Label htmlFor="weight">Peso</Label>
-                <Input
-                  id="weight"
-                  name="weight"
-                  type="number"
-                  step="0.1"
-                  value={formData.weight}
-                  onChange={handleInputChange}
-                  placeholder="Peso del paquete en kilogramos"
-                  required
-                  data-testid="input-shipment-weight"
-                />
+
+              <div className="space-y-2 mb-4">
+                <Label>Ingresa las dimensiones del envío</Label>
+                <Select
+                  value={formData.shipmentType}
+                  onValueChange={(value) => setFormData({ ...formData, shipmentType: value })}
+                >
+                  <SelectTrigger data-testid="select-shipment-type">
+                    <SelectValue placeholder="-- Selecciona el tipo de envío --" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="paquete">Paquete</SelectItem>
+                    <SelectItem value="sobre">Sobre</SelectItem>
+                    <SelectItem value="caja">Caja</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="description">Descripción del contenido</Label>
-                <Textarea
-                  id="description"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleInputChange}
-                  placeholder="Descripción del contenido del paquete"
-                  required
-                  rows={3}
-                  data-testid="input-description"
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Peso</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      name="weight"
+                      type="number"
+                      step="0.1"
+                      value={formData.weight}
+                      onChange={handleInputChange}
+                      required
+                      placeholder="Peso del paquete"
+                      data-testid="input-weight"
+                    />
+                    <span className="flex items-center px-3 border rounded-md bg-muted">KG</span>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Contenido del envío</Label>
+                  <Input
+                    name="description"
+                    value={formData.description}
+                    onChange={handleInputChange}
+                    placeholder="Descripción del contenido"
+                    data-testid="input-description"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2 mt-3">
+                <Checkbox
+                  id="saveDimensions"
+                  checked={formData.saveDimensions}
+                  onCheckedChange={(checked) =>
+                    setFormData({ ...formData, saveDimensions: !!checked })
+                  }
+                  data-testid="checkbox-save-dimensions"
                 />
+                <label htmlFor="saveDimensions" className="text-sm">
+                  Guardar dimensiones <span className="text-primary cursor-pointer">¿Cómo funciona?</span>
+                </label>
               </div>
             </div>
-          </div>
 
-              <Button type="submit" className="w-full" disabled={quoteMutation.isPending || shipmentMutation.isPending} data-testid="button-get-quotes">
-                {quoteMutation.isPending || shipmentMutation.isPending ? (
+            <Separator />
+
+            <div>
+              <h3 className="text-lg font-semibold mb-2">Valor del paquete</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Declara el valor real en pesos mexicanos de lo que estás enviando. Esto servirá para proteger tu envío y solicitar un seguro si lo necesitas.
+              </p>
+
+              <div className="space-y-2">
+                <Label>Valor declarado</Label>
+                <div className="flex gap-2">
+                  <span className="flex items-center px-3 border rounded-md bg-muted">$</span>
+                  <Input
+                    name="declaredValue"
+                    type="number"
+                    step="0.01"
+                    value={formData.declaredValue}
+                    onChange={handleInputChange}
+                    placeholder="Valor real en pesos"
+                    data-testid="input-declared-value"
+                  />
+                  <span className="flex items-center px-3 border rounded-md bg-muted">MXN</span>
+                </div>
+              </div>
+            </div>
+
+            {formData.saveDimensions && (
+              <>
+                <Separator />
+                <div className="space-y-2">
+                  <Label>Alias o nombre de las dimensiones</Label>
+                  <Input
+                    name="packageAlias"
+                    value={formData.packageAlias}
+                    onChange={handleInputChange}
+                    placeholder="Ej: Caja blanca pastel"
+                    data-testid="input-package-alias"
+                  />
+                </div>
+              </>
+            )}
+
+            <Separator />
+
+            <div>
+              <h3 className="text-lg font-semibold mb-2">Información Carta Porte</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Descripción de lo que estás enviando según los requisitos de la autoridad SAT.
+              </p>
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Como clasificas el producto que envías</Label>
+                  <Input
+                    name="productClassification"
+                    value={formData.productClassification}
+                    onChange={handleInputChange}
+                    placeholder="Clasificación del producto"
+                    data-testid="input-product-classification"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Tipo de embalaje</Label>
+                  <Select
+                    value={formData.packagingType}
+                    onValueChange={(value) => setFormData({ ...formData, packagingType: value })}
+                  >
+                    <SelectTrigger data-testid="select-packaging-type">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="XBX-Caja">XBX-Caja</SelectItem>
+                      <SelectItem value="XSB-Sobre">XSB-Sobre</SelectItem>
+                      <SelectItem value="XPK-Paquete">XPK-Paquete</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="mt-4">
+                <h4 className="font-semibold mb-2">Opciones adicionales</h4>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="addRFC"
+                    checked={formData.addRFC}
+                    onCheckedChange={(checked) =>
+                      setFormData({ ...formData, addRFC: !!checked })
+                    }
+                    data-testid="checkbox-add-rfc"
+                  />
+                  <label htmlFor="addRFC" className="text-sm">
+                    Añadir RFC de remitente y destinatario
+                  </label>
+                </div>
+              </div>
+
+              {formData.addRFC && (
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  <div className="space-y-2">
+                    <Label>RFC Remitente</Label>
+                    <Input
+                      name="senderRFC"
+                      value={formData.senderRFC}
+                      onChange={handleInputChange}
+                      placeholder="RFC del remitente"
+                      data-testid="input-sender-rfc"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>RFC Destinatario</Label>
+                    <Input
+                      name="receiverRFC"
+                      value={formData.receiverRFC}
+                      onChange={handleInputChange}
+                      placeholder="RFC del destinatario"
+                      data-testid="input-receiver-rfc"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <Separator />
+
+            <div>
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-orange-500" />
+                Objetos prohibidos para envío
+              </h3>
+
+              <div className="grid grid-cols-4 gap-4 mb-4">
+                {[
+                  { icon: "🔫", label: "Armas" },
+                  { icon: "🔥", label: "Encendedores" },
+                  { icon: "💧", label: "Inflamables" },
+                  { icon: "☠️", label: "Materiales tóxicos" },
+                  { icon: "💨", label: "Vapes" },
+                  { icon: "💥", label: "Explosivos" },
+                  { icon: "⚗️", label: "Químicos" },
+                  { icon: "🔋", label: "Baterías" },
+                  { icon: "⛽", label: "Gasolina" },
+                  { icon: "⚔️", label: "Arma blanca" },
+                  { icon: "💊", label: "Drogas" },
+                  { icon: "🧴", label: "Gas aerosol" },
+                ].map((item, index) => (
+                  <div key={index} className="flex flex-col items-center justify-center p-3 border rounded-lg bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800">
+                    <div className="text-2xl mb-1">{item.icon}</div>
+                    <p className="text-xs text-center text-red-700 dark:text-red-400">{item.label}</p>
+                  </div>
+                ))}
+              </div>
+
+              <p className="text-sm text-muted-foreground">
+                Al dar clic en Siguiente, reconozco que mi envío no incluye objetos prohibidos.{" "}
+                <a href="#" className="text-primary underline">
+                  Ver lista de artículos prohibidos
+                </a>
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setStep(1)}
+                data-testid="button-back-step2"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Atrás
+              </Button>
+              <Button
+                type="submit"
+                className="flex-1"
+                disabled={quoteMutation.isPending}
+                data-testid="button-next-step2"
+              >
+                {quoteMutation.isPending ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    {shipmentMutation.isPending ? 'Creando Envío...' : 'Verificando tarifa...'}
+                    Cotizando...
                   </>
                 ) : (
                   <>
-                    {fromQuote && selectedRate ? (
-                      <>
-                        <Check className="w-4 h-4 mr-2" />
-                        Crear Envío con {selectedRate.provider}
-                      </>
-                    ) : (
-                      <>
-                        <ArrowRight className="w-4 h-4 mr-2" />
-                        Continuar
-                      </>
-                    )}
+                    Siguiente
+                    <ArrowRight className="w-4 h-4 ml-2" />
                   </>
                 )}
               </Button>
-            </form>
-          </>
-        )}
+            </div>
+          </form>
+        </>
+      )}
 
-        {/* PASO 2: Selección de paquetería */}
-        {step === 2 && allRates.length > 0 && (() => {
-          // Ordenar rates por precio (más barato primero)
-          const sortedRates = [...allRates].sort((a, b) => a.total_pricing - b.total_pricing);
-          const lowestPrice = sortedRates[0]?.total_pricing;
+      {/* PASO 3: Selección de paquetería */}
+      {step === 3 && allRates.length > 0 && (() => {
+        const sortedRates = [...allRates].sort((a, b) => a.total_pricing - b.total_pricing);
+        const lowestPrice = sortedRates[0]?.total_pricing;
 
-          return (
-            <>
-              <div className="space-y-6">
-                <div className="flex items-center justify-between mb-6">
-                  <div>
-                    <h2 className="text-2xl font-bold text-foreground">Selecciona tu Paquetería</h2>
-                    <p className="text-sm text-muted-foreground">Elige la mejor opción para tu envío</p>
-                  </div>
-                  <Badge variant="outline" className="gap-2">
-                    <DollarSign className="w-4 h-4" />
-                    Saldo: ${userBalance.toFixed(2)} MXN
-                  </Badge>
+        return (
+          <>
+            <div className="space-y-6">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-foreground">Selecciona tu Paquetería</h2>
+                  <p className="text-sm text-muted-foreground">Elige la mejor opción para tu envío</p>
                 </div>
+                <Badge variant="outline" className="gap-2">
+                  <DollarSign className="w-4 h-4" />
+                  Saldo: ${userBalance.toFixed(2)} MXN
+                </Badge>
+              </div>
 
-                <div className="space-y-3">
+              <div className="space-y-3">
                 {sortedRates.map((rate: QuoteRate) => {
                   const logo = getCarrierLogo(rate.provider);
                   const isSelected = selectedRate?.id === rate.id;
@@ -594,16 +1065,14 @@ export default function ShipmentForm() {
                               )}
                             </div>
                             <p className="text-sm text-muted-foreground">{rate.service_level_name}</p>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              Entrega: {rate.days} {rate.days === 1 ? 'día' : 'días'}
-                            </p>
+                            <p className="text-sm text-muted-foreground">Entrega: {rate.days} días hábiles</p>
                           </div>
                         </div>
                         <div className="text-right">
                           <p className="text-2xl font-bold text-foreground">
                             ${rate.total_pricing.toFixed(2)}
                           </p>
-                          <p className="text-xs text-muted-foreground">{rate.currency}</p>
+                          <p className="text-sm text-muted-foreground">{rate.currency}</p>
                           {!hasEnoughBalance && (
                             <p className="text-xs text-destructive mt-1">Saldo insuficiente</p>
                           )}
@@ -617,23 +1086,22 @@ export default function ShipmentForm() {
               <div className="flex gap-3">
                 <Button
                   variant="outline"
-                  onClick={() => setStep(1)}
-                  className="flex-1"
-                  data-testid="button-back-to-form"
+                  onClick={() => setStep(2)}
+                  data-testid="button-back-step3"
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
-                  Regresar
+                  Atrás
                 </Button>
                 <Button
+                  className="flex-1"
                   onClick={handleShipmentSubmit}
                   disabled={!selectedRate || shipmentMutation.isPending}
-                  className="flex-1"
                   data-testid="button-create-shipment"
                 >
                   {shipmentMutation.isPending ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Creando Guía...
+                      Creando Envío...
                     </>
                   ) : (
                     <>
@@ -643,61 +1111,60 @@ export default function ShipmentForm() {
                   )}
                 </Button>
               </div>
-              </div>
-            </>
-          );
-        })()}
-
-        {/* PASO 3: Guía creada */}
-        {step === 3 && createdShipment && (
-          <div className="space-y-6">
-            <div className="text-center py-8">
-              <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Check className="w-8 h-8 text-green-500" />
-              </div>
-              <h2 className="text-2xl font-bold text-foreground mb-2">¡Guía Creada Exitosamente!</h2>
-              <p className="text-muted-foreground">Tu guía de envío ha sido generada correctamente</p>
             </div>
+          </>
+        );
+      })()}
 
-            <Card className="p-6">
-              <div className="space-y-4">
-                <div>
-                  <Label className="text-sm text-muted-foreground">Número de Rastreo</Label>
-                  <p className="text-xl font-mono font-semibold text-foreground">
-                    {createdShipment.trackingNumber || <span className="text-muted-foreground italic">Procesando...</span>}
-                  </p>
-                </div>
-                <Separator />
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm text-muted-foreground">Paquetería</Label>
-                    <p className="font-semibold">{createdShipment.carrier}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm text-muted-foreground">Monto</Label>
-                    <p className="font-semibold">${parseFloat(createdShipment.amount).toFixed(2)} {createdShipment.currency}</p>
-                  </div>
-                </div>
-              </div>
-            </Card>
-
-            <div className="flex gap-3">
-              {createdShipment.labelUrl && (
-                <Button asChild className="flex-1" data-testid="button-download-label">
-                  <a href={createdShipment.labelUrl} target="_blank" rel="noopener noreferrer">
-                    <Download className="w-4 h-4 mr-2" />
-                    Descargar Etiqueta
-                  </a>
-                </Button>
-              )}
-              <Button variant="outline" onClick={resetForm} className="flex-1" data-testid="button-create-another">
-                <FileText className="w-4 h-4 mr-2" />
-                Crear Otra Guía
-              </Button>
+      {/* PASO 4: Guía creada */}
+      {step === 4 && createdShipment && (
+        <div className="space-y-6">
+          <div className="text-center py-8">
+            <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Check className="w-8 h-8 text-green-500" />
             </div>
+            <h2 className="text-2xl font-bold text-foreground mb-2">¡Guía Creada Exitosamente!</h2>
+            <p className="text-muted-foreground">Tu guía de envío ha sido generada correctamente</p>
           </div>
-        )}
-      </Card>
-    </div>
+
+          <Card className="p-6">
+            <div className="space-y-4">
+              <div>
+                <Label className="text-sm text-muted-foreground">Número de Rastreo</Label>
+                <p className="text-xl font-mono font-semibold text-foreground">
+                  {createdShipment.trackingNumber || <span className="text-muted-foreground italic">Procesando...</span>}
+                </p>
+              </div>
+              <Separator />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm text-muted-foreground">Paquetería</Label>
+                  <p className="font-semibold">{createdShipment.carrier}</p>
+                </div>
+                <div>
+                  <Label className="text-sm text-muted-foreground">Monto</Label>
+                  <p className="font-semibold">${parseFloat(createdShipment.amount).toFixed(2)} {createdShipment.currency}</p>
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          <div className="flex gap-3">
+            {createdShipment.labelUrl && (
+              <Button asChild className="flex-1" data-testid="button-download-label">
+                <a href={createdShipment.labelUrl} target="_blank" rel="noopener noreferrer">
+                  <Download className="w-4 h-4 mr-2" />
+                  Descargar Etiqueta
+                </a>
+              </Button>
+            )}
+            <Button variant="outline" onClick={resetForm} className="flex-1" data-testid="button-create-another">
+              <FileText className="w-4 h-4 mr-2" />
+              Crear Otra Guía
+            </Button>
+          </div>
+        </div>
+      )}
+    </Card>
   );
 }
