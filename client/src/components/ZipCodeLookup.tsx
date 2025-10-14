@@ -130,7 +130,7 @@ export default function ZipCodeLookup({
     <div className="space-y-4">
       <div className="space-y-3">
         <Label htmlFor={testId} className="text-base">{label}</Label>
-        <div className="grid grid-cols-1 sm:grid-cols-[2fr_auto] gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2">
           <Input
             id={testId}
             type="text"
@@ -147,16 +147,16 @@ export default function ZipCodeLookup({
             onClick={handleSearch}
             disabled={isSearching || zipCodeValue.length !== 5}
             data-testid={`${testId}-search-button`}
-            className="h-12 w-full sm:w-auto px-6 text-base whitespace-nowrap"
+            className="h-12 w-full sm:w-auto px-4 text-sm whitespace-nowrap"
           >
             {isSearching ? (
               <>
-                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                Buscando...
+                <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                Buscar
               </>
             ) : (
               <>
-                <Search className="w-5 h-5 mr-2" />
+                <Search className="w-4 h-4 mr-1" />
                 Buscar
               </>
             )}
