@@ -666,8 +666,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         quotesData: ratesWithMargin as any,
       });
 
-      console.log("📊 Enviando al frontend:", JSON.stringify(ratesWithMargin, null, 2));
-      
       res.json({
         success: true,
         data: {

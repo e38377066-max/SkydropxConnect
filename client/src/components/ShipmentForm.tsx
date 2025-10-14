@@ -9,7 +9,7 @@ import { FileText, User, MapPin, Package, Loader2, Download, ArrowLeft, ArrowRig
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import ZipCodeInput from "@/components/ZipCodeInput";
+import ZipCodeLookup from "@/components/ZipCodeLookup";
 import { getCarrierLogo } from "@/lib/carrierLogos";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
@@ -471,20 +471,20 @@ export default function ShipmentForm() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Código postal</Label>
-                    <ZipCodeInput
+                    <ZipCodeLookup
+                      label="Código postal"
                       zipCodeValue={formData.senderZipCode}
                       coloniaValue={formData.senderColonia}
-                      onZipCodeChange={(value) => setFormData({ ...formData, senderZipCode: value })}
-                      onColoniaChange={(value) => setFormData({ ...formData, senderColonia: value })}
+                      onZipCodeChange={(value) => setFormData(prev => ({ ...prev, senderZipCode: value }))}
+                      onColoniaChange={(value) => setFormData(prev => ({ ...prev, senderColonia: value }))}
                       onMetadataChange={(metadata) => {
                         setSenderMetadata(metadata);
-                        setFormData({
-                          ...formData,
+                        setFormData(prev => ({
+                          ...prev,
                           senderMunicipality: metadata.municipio,
                           senderCity: metadata.municipio,
                           senderState: metadata.estado,
-                        });
+                        }));
                       }}
                       required
                       testId="input-sender-zipcode"
@@ -652,20 +652,20 @@ export default function ShipmentForm() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Código postal</Label>
-                    <ZipCodeInput
+                    <ZipCodeLookup
+                      label="Código postal"
                       zipCodeValue={formData.receiverZipCode}
                       coloniaValue={formData.receiverColonia}
-                      onZipCodeChange={(value) => setFormData({ ...formData, receiverZipCode: value })}
-                      onColoniaChange={(value) => setFormData({ ...formData, receiverColonia: value })}
+                      onZipCodeChange={(value) => setFormData(prev => ({ ...prev, receiverZipCode: value }))}
+                      onColoniaChange={(value) => setFormData(prev => ({ ...prev, receiverColonia: value }))}
                       onMetadataChange={(metadata) => {
                         setReceiverMetadata(metadata);
-                        setFormData({
-                          ...formData,
+                        setFormData(prev => ({
+                          ...prev,
                           receiverMunicipality: metadata.municipio,
                           receiverCity: metadata.municipio,
                           receiverState: metadata.estado,
-                        });
+                        }));
                       }}
                       required
                       testId="input-receiver-zipcode"
