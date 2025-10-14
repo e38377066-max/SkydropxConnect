@@ -805,33 +805,6 @@ export default function ShipmentForm() {
                 </div>
               )}
 
-              <div className="space-y-2 mb-4">
-                <Label htmlFor="packaging-type">Tipo de empaque</Label>
-                <Select
-                  value={formData.packagingType}
-                  onValueChange={(value) => setFormData({ ...formData, packagingType: value })}
-                >
-                  <SelectTrigger id="packaging-type" data-testid="select-packaging-type">
-                    <SelectValue placeholder="Selecciona el tipo de empaque" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="XBX-Caja">Caja de cartón</SelectItem>
-                    <SelectItem value="Tarima">Tarima</SelectItem>
-                    <SelectItem value="Sobre">Sobre</SelectItem>
-                    <SelectItem value="Otros">Otros empaques</SelectItem>
-                    <SelectItem value="Saco-Plastico">Saco (bolsa) de película de plástico</SelectItem>
-                    <SelectItem value="Saco-Papel">Saco (bolsa) de papel de varias hojas</SelectItem>
-                    <SelectItem value="Bulto-Plastico">Bulto de plástico</SelectItem>
-                  </SelectContent>
-                </Select>
-                {formData.packagingType === "Sobre" && parseFloat(formData.weight) >= 1 && (
-                  <p className="text-sm text-destructive flex items-center gap-1">
-                    <AlertTriangle className="w-4 h-4" />
-                    El sobre debe pesar menos de 1 kg
-                  </p>
-                )}
-              </div>
-
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Peso</Label>
