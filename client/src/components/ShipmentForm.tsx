@@ -806,13 +806,13 @@ export default function ShipmentForm() {
               )}
 
               <div className="space-y-2 mb-4">
-                <Label>Tipo de empaque o paquete guardado</Label>
+                <Label htmlFor="packaging-type">Tipo de empaque</Label>
                 <Select
                   value={formData.packagingType}
                   onValueChange={(value) => setFormData({ ...formData, packagingType: value })}
                 >
-                  <SelectTrigger data-testid="select-packaging-type">
-                    <SelectValue placeholder="-- Selecciona el tipo de empaque --" />
+                  <SelectTrigger id="packaging-type" data-testid="select-packaging-type">
+                    <SelectValue placeholder="Selecciona el tipo de empaque" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="XBX-Caja">Caja de cartón</SelectItem>
