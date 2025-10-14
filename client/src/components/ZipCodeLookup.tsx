@@ -130,7 +130,7 @@ export default function ZipCodeLookup({
     <div className="space-y-3">
       <div className="space-y-2">
         <Label htmlFor={testId}>{label}</Label>
-        <div className="flex gap-2">
+        <div className="grid grid-cols-[1fr_auto] gap-2">
           <Input
             id={testId}
             type="text"
@@ -140,7 +140,7 @@ export default function ZipCodeLookup({
             required={required}
             data-testid={testId}
             maxLength={5}
-            className="flex-1"
+            className="text-base"
           />
           <Button
             type="button"
