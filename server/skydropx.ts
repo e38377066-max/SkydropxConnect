@@ -54,6 +54,16 @@ interface SkydropxRate {
   currency: string;
   days: number;
   available_for_pickup: boolean;
+  // Campos adicionales de Skydropx PRO
+  out_of_area_service?: boolean;
+  out_of_area_pricing?: number;
+  is_occure?: boolean;
+  insurable?: boolean;
+  amount_local?: number;
+  extra_fees?: Array<{
+    name: string;
+    amount: number;
+  }>;
 }
 
 interface SkydropxShipmentRequest {
@@ -477,15 +487,44 @@ export class SkydropxService {
       // Filtrar solo cotizaciones exitosas con precio
       const validRates = result.rates
         .filter((rate: any) => rate.success === true && rate.total && rate.total > 0)
-        .map((rate: any) => ({
-          id: rate.id,
-          provider: rate.provider_display_name || rate.provider_name,
-          service_level_name: rate.provider_service_name,
-          total_pricing: rate.total,
-          currency: rate.currency_code || 'MXN',
-          days: rate.days || 0,
-          available_for_pickup: true,
-        }));
+        .map((rate: any) => {
+          // Construir array de cargos extra
+          const extraFees: Array<{ name: string; amount: number }> = [];
+          
+          if (rate.out_of_area_service && rate.out_of_area_pricing > 0) {
+            extraFees.push({
+              name: 'Zona extendida',
+              amount: rate.out_of_area_pricing,
+            });
+          }
+          
+          // Agregar otros cargos extra si existen
+          if (rate.additional_fees && Array.isArray(rate.additional_fees)) {
+            rate.additional_fees.forEach((fee: any) => {
+              extraFees.push({
+                name: fee.name || fee.description || 'Cargo adicional',
+                amount: parseFloat(fee.amount || fee.price || 0),
+              });
+            });
+          }
+          
+          return {
+            id: rate.id,
+            provider: rate.provider_display_name || rate.provider_name,
+            service_level_name: rate.provider_service_name,
+            total_pricing: rate.total,
+            currency: rate.currency_code || 'MXN',
+            days: rate.days || 0,
+            available_for_pickup: rate.is_occure === true || rate.available_for_pickup === true,
+            // Campos adicionales
+            out_of_area_service: rate.out_of_area_service || false,
+            out_of_area_pricing: rate.out_of_area_pricing || 0,
+            is_occure: rate.is_occure || false,
+            insurable: rate.insurable || false,
+            amount_local: rate.amount_local || rate.total,
+            extra_fees: extraFees.length > 0 ? extraFees : undefined,
+          };
+        });
 
       console.log(`✅ Found ${validRates.length} valid quotes out of ${result.rates.length} total`);
       return validRates;

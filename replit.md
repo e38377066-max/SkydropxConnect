@@ -52,7 +52,14 @@ The backend is an Express.js application with TypeScript, following a RESTful AP
 -   **Authentication & Authorization**: Hybrid system supporting local email/password and Google OAuth via Passport.js. Features include bcrypt password hashing, robust password validation, session management with PostgreSQL storage, and secure cookie handling. Users can manage multiple authentication methods and profile details on a dedicated `/perfil` page, including contact, billing, and security settings. Admin roles have access to system settings.
 -   **Skydropx PRO Integration (OAuth)**: ✅ Fully functional integration with Skydropx PRO API using OAuth Bearer token authentication. Features auto-refresh token system (renews 5 min before expiration), support for 10+ shipping carriers (DHL, FedEx, Estafeta, UPS, etc.), and real-time quote comparison. Endpoint: `https://pro.skydropx.com/api/v1/quotations`. Uses local database (zip_codes) for complete address information (estado, municipio, colonia) instead of external API calls.
 -   **Shipping & Tracking**: 
-    - Quoting: `/api/quotes` returns 10+ valid rates per request with pricing and delivery estimates (sorted by price, cheapest first). Includes packaging type selector (Caja de cartón, Tarima, etc.) and full address details (area_level1=estado, area_level2=municipio, area_level3=colonia) from local database
+    - Quoting: `/api/quotes` returns 10+ valid rates per request with comprehensive information:
+      - Pricing and delivery estimates (sorted by price, cheapest first)
+      - Packaging type selector (Caja de cartón, Tarima, etc.)
+      - Full address details (area_level1=estado, area_level2=municipio, area_level3=colonia) from local database
+      - Extra fees breakdown (zona extendida, alta demanda, etc.) with individual amounts
+      - Delivery type indicator (entrega a paquetería vs domicilio)
+      - Insurance availability (asegurable)
+      - Pickup availability (recolección disponible)
     - Creation: `/api/shipments` creates shipments with automatic wallet deduction. Full Skydropx-style 4-step flow implemented:
       - **Step 1**: Origin/destination details (addresses guardadas dropdown, granular fields: company, email, street, ext/int numbers, references, municipality, state, RFC)
       - **Step 2**: Package information (dimensions, weight, declared value, Carta Porte, packaging type, RFC options, prohibited items warning)
