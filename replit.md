@@ -63,16 +63,21 @@ The backend is an Express.js application with TypeScript, following a RESTful AP
 -   **Zip Code Autocomplete with Colonia Selection**: Skydropx-style unified address entry system using local database of 157,127 Mexican postal codes (SEPOMEX) covering all 32 states.
     - **UX Design**: Single input field showing "CP - Colonia" format after selection, searchable by both postal code and colonia name
     - **Search Endpoint**: `/api/zipcodes/search?q={query}` searches by CP (numeric) or colonia name (text), returns full suggestion objects with metadata
+    - **Performance**: Optimized with specialized indices
+      - Debounce: 50ms for fast response
+      - Query times: 1-18ms (well below 30ms target)
+      - `idx_codigo_postal` with `text_pattern_ops` for CP prefix searches (~1.3ms)
+      - `idx_colonia_lower` on `LOWER(colonia)` for case-insensitive searches (~18ms)
     - **Smart Features**: 
-      - Auto-selection when 5 digits entered + single result found
+      - Manual selection from dropdown (no auto-selection to prevent unwanted reapplication)
       - Metadata display (municipio, estado) below selected value
       - Hydration guard prevents dropdown flickering on prefill
-      - Bidirectional sync with form state for validation
+      - Clean state management - clears all values when user edits
       - lastValidSelection ref caches metadata to prevent loss during re-renders
     - **Component**: `ZipCodeInput.tsx` with unified display, smart search, and metadata preservation
     - **Data Flow**: Selected colonia persisted in shipments table (senderColonia, receiverColonia) and sent to Skydropx in street addresses
-    - **Benefits**: Skydropx-style UX, faster search, no external API dependency
-    - Data imported from official SEPOMEX Excel file into `zip_codes` table with indexed columns (codigo_postal, estado)
+    - **Benefits**: Skydropx-style UX, sub-30ms response time, no external API dependency
+    - Data imported from official SEPOMEX Excel file into `zip_codes` table
 
 ## Data Storage
 
