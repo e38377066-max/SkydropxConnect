@@ -141,14 +141,7 @@ export default function ZipCodeInput({
         
         if (data.success && Array.isArray(data.data)) {
           setSuggestions(data.data);
-          
-          // Auto-select if exactly 5 digits and single match
-          if (/^\d{5}$/.test(trimmed) && data.data.length === 1) {
-            const suggestion = data.data[0];
-            handleSelect(suggestion);
-          } else {
-            setShowSuggestions(true);
-          }
+          setShowSuggestions(data.data.length > 0);
         }
       } catch (error) {
         console.error("Error fetching zip codes:", error);
@@ -158,7 +151,7 @@ export default function ZipCodeInput({
       }
     };
 
-    const debounceTimer = setTimeout(search, 300);
+    const debounceTimer = setTimeout(search, 50);
     return () => clearTimeout(debounceTimer);
   }, [displayValue, selectedInfo]);
 
@@ -179,12 +172,7 @@ export default function ZipCodeInput({
     if (selectedInfo) {
       setSelectedInfo(null);
       onColoniaChange("");
-    }
-    
-    // If it looks like a zip code (numeric), update the zip code value
-    const numeric = value.replace(/[^\d]/g, '');
-    if (numeric.length <= 5) {
-      onZipCodeChange(numeric);
+      onZipCodeChange("");
     }
   };
 
