@@ -60,13 +60,19 @@ The backend is an Express.js application with TypeScript, following a RESTful AP
 -   **Wallet System**: Protected endpoints for retrieving wallet balance, transaction history, and managing recharge requests (`/api/wallet/*`). Admin users can approve or reject recharge requests.
 -   **Saved Data**: Protected endpoints for managing user's saved addresses, package presets, and billing profiles (`/api/addresses`, `/api/packages`, `/api/billing-profiles`).
 -   **Profit Margin System**: Configurable profit margin applied to Skydropx base prices, stored in the `settings` table. Only admin users can modify this percentage via a dedicated admin panel, with validation ensuring the margin is between 0-100%. Default margin: 15%.
--   **Zip Code Autocomplete with Colonia Selection**: Two-step address entry system using local database of 157,127 Mexican postal codes (SEPOMEX) covering all 32 states.
-    - **Step 1**: Endpoint `/api/zipcodes/search` returns unique zip codes only (fast search, minimal results)
-    - **Step 2**: Endpoint `/api/zipcodes/:codigo_postal/colonias` returns colonias for selected zip code (filtered subcatalog)
-    - **Benefits**: Faster performance, better UX - users first select CP, then choose from relevant colonias only
-    - Data imported from official SEPOMEX Excel file into `zip_codes` table with indexed columns
-    - Colonia data persisted in shipments table (senderColonia, receiverColonia) and sent to Skydropx in street addresses
-    - No external API dependency for zip code lookups
+-   **Zip Code Autocomplete with Colonia Selection**: Skydropx-style unified address entry system using local database of 157,127 Mexican postal codes (SEPOMEX) covering all 32 states.
+    - **UX Design**: Single input field showing "CP - Colonia" format after selection, searchable by both postal code and colonia name
+    - **Search Endpoint**: `/api/zipcodes/search?q={query}` searches by CP (numeric) or colonia name (text), returns full suggestion objects with metadata
+    - **Smart Features**: 
+      - Auto-selection when 5 digits entered + single result found
+      - Metadata display (municipio, estado) below selected value
+      - Hydration guard prevents dropdown flickering on prefill
+      - Bidirectional sync with form state for validation
+      - lastValidSelection ref caches metadata to prevent loss during re-renders
+    - **Component**: `ZipCodeInput.tsx` with unified display, smart search, and metadata preservation
+    - **Data Flow**: Selected colonia persisted in shipments table (senderColonia, receiverColonia) and sent to Skydropx in street addresses
+    - **Benefits**: Skydropx-style UX, faster search, no external API dependency
+    - Data imported from official SEPOMEX Excel file into `zip_codes` table with indexed columns (codigo_postal, estado)
 
 ## Data Storage
 
