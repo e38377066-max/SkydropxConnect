@@ -130,29 +130,29 @@ export default function ZipCodeLookup({
     <div className="space-y-3">
       <div className="space-y-2">
         <Label htmlFor={testId} className="text-base">{label}</Label>
-        <div className="flex flex-col sm:flex-row gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-[2fr_auto] gap-2">
           <Input
             id={testId}
             type="text"
             value={zipCodeValue}
             onChange={(e) => handleZipCodeChange(e.target.value)}
-            placeholder="Código Postal"
+            placeholder="00000"
             required={required}
             data-testid={testId}
             maxLength={5}
-            className="text-lg h-12 flex-1 min-w-0"
+            className="text-lg h-12 w-full"
           />
           <Button
             type="button"
             onClick={handleSearch}
             disabled={isSearching || zipCodeValue.length !== 5}
             data-testid={`${testId}-search-button`}
-            className="h-12 w-full sm:w-auto sm:min-w-[120px] text-base"
+            className="h-12 w-full sm:w-auto px-6 text-base whitespace-nowrap"
           >
             {isSearching ? (
               <>
                 <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                Buscando
+                Buscando...
               </>
             ) : (
               <>
