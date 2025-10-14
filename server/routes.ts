@@ -606,6 +606,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         length: req.body.length ? parseFloat(req.body.length) : undefined,
         width: req.body.width ? parseFloat(req.body.width) : undefined,
         height: req.body.height ? parseFloat(req.body.height) : undefined,
+        packagingType: req.body.packagingType,
       }) as QuoteRequest;
 
       const skydropxRequest = {
