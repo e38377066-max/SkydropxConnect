@@ -142,8 +142,14 @@ export default function QuoteForm() {
               label="Código Postal Origen"
               zipCodeValue={formData.fromZipCode}
               coloniaValue={formData.fromColonia}
-              onZipCodeChange={(value) => setFormData({ ...formData, fromZipCode: value })}
-              onColoniaChange={(value) => setFormData({ ...formData, fromColonia: value })}
+              onZipCodeChange={(value) => {
+                console.log("🔵 Origen - CP cambiado a:", value);
+                setFormData(prev => ({ ...prev, fromZipCode: value }));
+              }}
+              onColoniaChange={(value) => {
+                console.log("🔵 Origen - Colonia cambiada a:", value);
+                setFormData(prev => ({ ...prev, fromColonia: value }));
+              }}
               required
               testId="input-from-zipcode"
             />
@@ -152,8 +158,14 @@ export default function QuoteForm() {
               label="Código Postal Destino"
               zipCodeValue={formData.toZipCode}
               coloniaValue={formData.toColonia}
-              onZipCodeChange={(value) => setFormData({ ...formData, toZipCode: value })}
-              onColoniaChange={(value) => setFormData({ ...formData, toColonia: value })}
+              onZipCodeChange={(value) => {
+                console.log("🟢 Destino - CP cambiado a:", value);
+                setFormData(prev => ({ ...prev, toZipCode: value }));
+              }}
+              onColoniaChange={(value) => {
+                console.log("🟢 Destino - Colonia cambiada a:", value);
+                setFormData(prev => ({ ...prev, toColonia: value }));
+              }}
               required
               testId="input-to-zipcode"
             />
