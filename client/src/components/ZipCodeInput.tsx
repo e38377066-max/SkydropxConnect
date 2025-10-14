@@ -1,45 +1,105 @@
 import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, MapPin } from "lucide-react";
 
 interface ZipCodeSuggestion {
   codigo_postal: string;
+  colonia: string;
   municipio: string;
   estado: string;
 }
 
 interface ZipCodeInputProps {
-  zipCodeLabel?: string;
-  coloniaLabel?: string;
+  label?: string;
   zipCodeValue: string;
   coloniaValue: string;
   onZipCodeChange: (value: string) => void;
   onColoniaChange: (value: string) => void;
   required?: boolean;
-  zipCodeTestId?: string;
-  coloniaTestId?: string;
+  testId?: string;
 }
 
 export default function ZipCodeInput({ 
-  zipCodeLabel = "Código Postal",
-  coloniaLabel = "Colonia",
+  label = "Código Postal",
   zipCodeValue, 
   coloniaValue,
   onZipCodeChange, 
   onColoniaChange,
   required = false,
-  zipCodeTestId = "input-zipcode",
-  coloniaTestId = "select-colonia"
+  testId = "input-zipcode"
 }: ZipCodeInputProps) {
+  const [displayValue, setDisplayValue] = useState("");
   const [suggestions, setSuggestions] = useState<ZipCodeSuggestion[]>([]);
-  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [colonias, setColonias] = useState<string[]>([]);
-  const [isLoadingColonias, setIsLoadingColonias] = useState(false);
-  const [selectedZipInfo, setSelectedZipInfo] = useState<ZipCodeSuggestion | null>(null);
+  const [selectedInfo, setSelectedInfo] = useState<ZipCodeSuggestion | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const lastValidSelection = useRef<ZipCodeSuggestion | null>(null);
+  const isHydrating = useRef(false);
+
+  // Sync display value with props and fetch metadata if needed
+  useEffect(() => {
+    if (zipCodeValue && coloniaValue) {
+      // Full selection from props
+      const newDisplay = `${zipCodeValue} - ${coloniaValue}`;
+      setDisplayValue(newDisplay);
+      
+      if (!selectedInfo || selectedInfo.codigo_postal !== zipCodeValue || selectedInfo.colonia !== coloniaValue) {
+        // Check if we have cached metadata
+        if (lastValidSelection.current && 
+            lastValidSelection.current.codigo_postal === zipCodeValue && 
+            lastValidSelection.current.colonia === coloniaValue) {
+          setSelectedInfo(lastValidSelection.current);
+        } else {
+          // Need to fetch metadata for this CP-Colonia combination
+          isHydrating.current = true; // Start hydration
+          const fetchMetadata = async () => {
+            try {
+              const response = await fetch(`/api/zipcodes/search?q=${encodeURIComponent(zipCodeValue)}`);
+              const data = await response.json();
+              
+              if (data.success && Array.isArray(data.data)) {
+                const match = data.data.find((s: ZipCodeSuggestion) => 
+                  s.codigo_postal === zipCodeValue && s.colonia === coloniaValue
+                );
+                
+                if (match) {
+                  setSelectedInfo(match);
+                  lastValidSelection.current = match;
+                } else {
+                  // Fallback without metadata
+                  setSelectedInfo({
+                    codigo_postal: zipCodeValue,
+                    colonia: coloniaValue,
+                    municipio: '',
+                    estado: ''
+                  });
+                }
+              }
+            } catch (error) {
+              console.error("Error fetching metadata:", error);
+            } finally {
+              isHydrating.current = false; // End hydration
+            }
+          };
+          
+          fetchMetadata();
+        }
+      }
+    } else if (zipCodeValue && !coloniaValue) {
+      // Only zip code from props
+      setDisplayValue(zipCodeValue);
+      if (selectedInfo) {
+        setSelectedInfo(null);
+      }
+    } else if (!zipCodeValue && !coloniaValue) {
+      // Reset state
+      setDisplayValue("");
+      setSelectedInfo(null);
+      lastValidSelection.current = null;
+    }
+  }, [zipCodeValue, coloniaValue]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -52,28 +112,40 @@ export default function ZipCodeInput({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Search for zip codes as user types
+  // Search as user types
   useEffect(() => {
-    const searchZipCodes = async () => {
-      if (zipCodeValue.length < 3) {
+    const search = async () => {
+      const trimmed = displayValue.trim();
+      
+      if (trimmed.length < 3) {
         setSuggestions([]);
         return;
       }
 
-      setIsLoadingSuggestions(true);
+      // Don't search while hydrating metadata
+      if (isHydrating.current) {
+        return;
+      }
+
+      // Don't search if we already have a valid selection matching the display
+      if (selectedInfo && displayValue === `${selectedInfo.codigo_postal} - ${selectedInfo.colonia}`) {
+        setShowSuggestions(false);
+        setSuggestions([]);
+        return;
+      }
+
+      setIsLoading(true);
       try {
-        const response = await fetch(`/api/zipcodes/search?q=${zipCodeValue}`);
+        const response = await fetch(`/api/zipcodes/search?q=${encodeURIComponent(trimmed)}`);
         const data = await response.json();
         
         if (data.success && Array.isArray(data.data)) {
           setSuggestions(data.data);
           
-          // If exactly 5 digits and only one match, auto-select it
-          if (zipCodeValue.length === 5 && data.data.length === 1) {
+          // Auto-select if exactly 5 digits and single match
+          if (/^\d{5}$/.test(trimmed) && data.data.length === 1) {
             const suggestion = data.data[0];
-            setSelectedZipInfo(suggestion);
-            setShowSuggestions(false);
-            loadColonias(suggestion.codigo_postal);
+            handleSelect(suggestion);
           } else {
             setShowSuggestions(true);
           }
@@ -82,139 +154,88 @@ export default function ZipCodeInput({
         console.error("Error fetching zip codes:", error);
         setSuggestions([]);
       } finally {
-        setIsLoadingSuggestions(false);
+        setIsLoading(false);
       }
     };
 
-    const debounceTimer = setTimeout(searchZipCodes, 300);
+    const debounceTimer = setTimeout(search, 300);
     return () => clearTimeout(debounceTimer);
-  }, [zipCodeValue]);
+  }, [displayValue, selectedInfo]);
 
-  // Load colonias when a zip code is selected
-  const loadColonias = async (codigoPostal: string) => {
-    setIsLoadingColonias(true);
-    try {
-      const response = await fetch(`/api/zipcodes/${codigoPostal}/colonias`);
-      const data = await response.json();
-      
-      if (data.success && Array.isArray(data.data)) {
-        setColonias(data.data);
-        // Auto-select if only one colonia
-        if (data.data.length === 1) {
-          onColoniaChange(data.data[0]);
-        }
-      }
-    } catch (error) {
-      console.error("Error fetching colonias:", error);
-      setColonias([]);
-    } finally {
-      setIsLoadingColonias(false);
-    }
-  };
-
-  const handleSelectZipCode = (suggestion: ZipCodeSuggestion) => {
+  const handleSelect = (suggestion: ZipCodeSuggestion) => {
+    setSelectedInfo(suggestion);
+    lastValidSelection.current = suggestion; // Save for later sync
+    setDisplayValue(`${suggestion.codigo_postal} - ${suggestion.colonia}`);
     onZipCodeChange(suggestion.codigo_postal);
-    setSelectedZipInfo(suggestion);
+    onColoniaChange(suggestion.colonia);
     setShowSuggestions(false);
     setSuggestions([]);
-    onColoniaChange(""); // Reset colonia when changing zip code
-    loadColonias(suggestion.codigo_postal);
   };
 
-  const handleZipCodeInputChange = (value: string) => {
-    onZipCodeChange(value);
+  const handleInputChange = (value: string) => {
+    setDisplayValue(value);
     
-    // Clear colonias if:
-    // 1. Input is not 5 digits
-    // 2. Input is 5 digits but different from the selected ZIP (user edited it)
-    if (value.length !== 5 || (selectedZipInfo && value !== selectedZipInfo.codigo_postal)) {
-      setColonias([]);
+    // If user is typing and had a selection, clear it
+    if (selectedInfo) {
+      setSelectedInfo(null);
       onColoniaChange("");
-      setSelectedZipInfo(null);
+    }
+    
+    // If it looks like a zip code (numeric), update the zip code value
+    const numeric = value.replace(/[^\d]/g, '');
+    if (numeric.length <= 5) {
+      onZipCodeChange(numeric);
     }
   };
 
   return (
-    <div className="space-y-4">
-      {/* Zip Code Input with Autocomplete */}
-      <div className="space-y-2" ref={wrapperRef}>
-        <Label htmlFor={zipCodeTestId}>{zipCodeLabel}</Label>
-        <div className="relative">
-          <Input
-            id={zipCodeTestId}
-            type="text"
-            value={zipCodeValue}
-            onChange={(e) => handleZipCodeInputChange(e.target.value)}
-            placeholder="54120"
-            required={required}
-            data-testid={zipCodeTestId}
-            maxLength={5}
-            className="pr-10"
-          />
-          {isLoadingSuggestions && (
-            <div className="absolute right-3 top-1/2 -translate-y-1/2">
-              <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-            </div>
-          )}
-          
-          {showSuggestions && suggestions.length > 0 && (
-            <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
-              {suggestions.map((suggestion, index) => (
-                <button
-                  key={`${suggestion.codigo_postal}-${index}`}
-                  type="button"
-                  onClick={() => handleSelectZipCode(suggestion)}
-                  className="w-full px-4 py-3 text-left hover:bg-muted transition-colors border-b border-border last:border-0 flex items-start gap-3"
-                  data-testid={`zipcode-suggestion-${index}`}
-                >
-                  <MapPin className="w-4 h-4 mt-0.5 text-primary flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-foreground">
-                      {suggestion.codigo_postal}
-                    </div>
-                    <div className="text-sm text-muted-foreground truncate">
-                      {suggestion.municipio}, {suggestion.estado}
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+    <div className="space-y-2" ref={wrapperRef}>
+      <Label htmlFor={testId}>{label}</Label>
+      <div className="relative">
+        <Input
+          id={testId}
+          type="text"
+          value={displayValue}
+          onChange={(e) => handleInputChange(e.target.value)}
+          required={required}
+          data-testid={testId}
+          className="pr-10"
+        />
+        {isLoading && (
+          <div className="absolute right-3 top-1/2 -translate-y-1/2">
+            <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+          </div>
+        )}
         
-        {/* Show selected zip code info */}
-        {selectedZipInfo && (
-          <p className="text-sm text-muted-foreground">
-            {selectedZipInfo.municipio}, {selectedZipInfo.estado}
-          </p>
+        {showSuggestions && suggestions.length > 0 && (
+          <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
+            {suggestions.map((suggestion, index) => (
+              <button
+                key={`${suggestion.codigo_postal}-${suggestion.colonia}-${index}`}
+                type="button"
+                onClick={() => handleSelect(suggestion)}
+                className="w-full px-4 py-3 text-left hover:bg-muted transition-colors border-b border-border last:border-0 flex items-start gap-3"
+                data-testid={`zipcode-suggestion-${index}`}
+              >
+                <MapPin className="w-4 h-4 mt-0.5 text-primary flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold text-foreground">
+                    {suggestion.codigo_postal} - {suggestion.colonia}
+                  </div>
+                  <div className="text-sm text-muted-foreground truncate">
+                    {suggestion.municipio}, {suggestion.estado}
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
         )}
       </div>
-
-      {/* Colonia Select - Only shown when zip code is selected */}
-      {zipCodeValue.length === 5 && colonias.length > 0 && (
-        <div className="space-y-2">
-          <Label htmlFor={coloniaTestId}>{coloniaLabel}</Label>
-          <Select
-            value={coloniaValue}
-            onValueChange={onColoniaChange}
-            disabled={isLoadingColonias}
-          >
-            <SelectTrigger id={coloniaTestId} data-testid={coloniaTestId}>
-              <SelectValue placeholder={isLoadingColonias ? "Cargando colonias..." : "Selecciona una colonia"} />
-            </SelectTrigger>
-            <SelectContent>
-              {colonias.map((colonia, index) => (
-                <SelectItem 
-                  key={`${colonia}-${index}`} 
-                  value={colonia}
-                  data-testid={`colonia-option-${index}`}
-                >
-                  {colonia}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+      
+      {selectedInfo && (
+        <p className="text-sm text-muted-foreground">
+          {selectedInfo.municipio}, {selectedInfo.estado}
+        </p>
       )}
     </div>
   );

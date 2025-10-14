@@ -117,27 +117,23 @@ export default function QuoteForm() {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <ZipCodeInput
-              zipCodeLabel="Código Postal Origen"
-              coloniaLabel="Colonia Origen"
+              label="Código Postal Origen"
               zipCodeValue={formData.fromZipCode}
               coloniaValue={formData.fromColonia}
               onZipCodeChange={(value) => setFormData({ ...formData, fromZipCode: value })}
               onColoniaChange={(value) => setFormData({ ...formData, fromColonia: value })}
               required
-              zipCodeTestId="input-from-zipcode"
-              coloniaTestId="select-from-colonia"
+              testId="input-from-zipcode"
             />
 
             <ZipCodeInput
-              zipCodeLabel="Código Postal Destino"
-              coloniaLabel="Colonia Destino"
+              label="Código Postal Destino"
               zipCodeValue={formData.toZipCode}
               coloniaValue={formData.toColonia}
               onZipCodeChange={(value) => setFormData({ ...formData, toZipCode: value })}
               onColoniaChange={(value) => setFormData({ ...formData, toColonia: value })}
               required
-              zipCodeTestId="input-to-zipcode"
-              coloniaTestId="select-to-colonia"
+              testId="input-to-zipcode"
             />
           </div>
 
@@ -151,7 +147,6 @@ export default function QuoteForm() {
               name="weight"
               type="number"
               step="0.1"
-              placeholder="1.5"
               value={formData.weight}
               onChange={handleInputChange}
               required
@@ -166,7 +161,6 @@ export default function QuoteForm() {
                 id="length"
                 name="length"
                 type="number"
-                placeholder="30"
                 value={formData.length}
                 onChange={handleInputChange}
                 data-testid="input-length"
@@ -179,7 +173,6 @@ export default function QuoteForm() {
                 id="width"
                 name="width"
                 type="number"
-                placeholder="20"
                 value={formData.width}
                 onChange={handleInputChange}
                 data-testid="input-width"
@@ -192,7 +185,6 @@ export default function QuoteForm() {
                 id="height"
                 name="height"
                 type="number"
-                placeholder="15"
                 value={formData.height}
                 onChange={handleInputChange}
                 data-testid="input-height"

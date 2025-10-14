@@ -344,7 +344,6 @@ export default function ShipmentForm() {
                 <Input
                   id="senderName"
                   name="senderName"
-                  placeholder="Juan Pérez"
                   value={formData.senderName}
                   onChange={handleInputChange}
                   required
@@ -356,7 +355,6 @@ export default function ShipmentForm() {
                 <Input
                   id="senderPhone"
                   name="senderPhone"
-                  placeholder="5512345678"
                   value={formData.senderPhone}
                   onChange={handleInputChange}
                   required
@@ -368,7 +366,6 @@ export default function ShipmentForm() {
                 <Input
                   id="senderAddress"
                   name="senderAddress"
-                  placeholder="Calle, Número, Colonia"
                   value={formData.senderAddress}
                   onChange={handleInputChange}
                   required
@@ -377,15 +374,13 @@ export default function ShipmentForm() {
               </div>
               <div className="md:col-span-2">
                 <ZipCodeInput
-                  zipCodeLabel="Código Postal de Origen"
-                  coloniaLabel="Colonia de Origen"
+                  label="Código Postal de Origen"
                   zipCodeValue={formData.senderZipCode}
                   coloniaValue={formData.senderColonia}
                   onZipCodeChange={(value) => handleZipCodeChange('senderZipCode', value)}
                   onColoniaChange={(value) => setFormData({ ...formData, senderColonia: value })}
                   required
-                  zipCodeTestId="input-sender-zipcode"
-                  coloniaTestId="select-sender-colonia"
+                  testId="input-sender-zipcode"
                 />
               </div>
             </div>
@@ -402,7 +397,6 @@ export default function ShipmentForm() {
                 <Input
                   id="receiverName"
                   name="receiverName"
-                  placeholder="María García"
                   value={formData.receiverName}
                   onChange={handleInputChange}
                   required
@@ -414,7 +408,6 @@ export default function ShipmentForm() {
                 <Input
                   id="receiverPhone"
                   name="receiverPhone"
-                  placeholder="8112345678"
                   value={formData.receiverPhone}
                   onChange={handleInputChange}
                   required
@@ -426,7 +419,6 @@ export default function ShipmentForm() {
                 <Input
                   id="receiverAddress"
                   name="receiverAddress"
-                  placeholder="Calle, Número, Colonia"
                   value={formData.receiverAddress}
                   onChange={handleInputChange}
                   required
@@ -435,15 +427,13 @@ export default function ShipmentForm() {
               </div>
               <div className="md:col-span-2">
                 <ZipCodeInput
-                  zipCodeLabel="Código Postal de Destino"
-                  coloniaLabel="Colonia de Destino"
+                  label="Código Postal de Destino"
                   zipCodeValue={formData.receiverZipCode}
                   coloniaValue={formData.receiverColonia}
                   onZipCodeChange={(value) => handleZipCodeChange('receiverZipCode', value)}
                   onColoniaChange={(value) => setFormData({ ...formData, receiverColonia: value })}
                   required
-                  zipCodeTestId="input-receiver-zipcode"
-                  coloniaTestId="select-receiver-colonia"
+                  testId="input-receiver-zipcode"
                 />
               </div>
             </div>
@@ -462,7 +452,6 @@ export default function ShipmentForm() {
                   name="weight"
                   type="number"
                   step="0.1"
-                  placeholder="1.5"
                   value={formData.weight}
                   onChange={handleInputChange}
                   required
@@ -474,7 +463,6 @@ export default function ShipmentForm() {
                 <Textarea
                   id="description"
                   name="description"
-                  placeholder="Describe brevemente el contenido del paquete"
                   value={formData.description}
                   onChange={handleInputChange}
                   required

@@ -523,7 +523,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Search Mexican zip codes (SEPOMEX) from local database - returns unique zip codes only
+  // Search Mexican zip codes by CP or colonia name
   app.get("/api/zipcodes/search", async (req, res) => {
     try {
       const { q } = req.query;
@@ -532,23 +532,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json({ success: true, data: [] });
       }
 
-      // Search for unique zip codes only
+      // Search by CP or colonia name
+      const isNumeric = /^\d+$/.test(q);
+      
       const results = await db.execute(
-        sql`
-          SELECT DISTINCT ON (codigo_postal)
-            codigo_postal, 
-            municipio, 
-            estado
-          FROM zip_codes
-          WHERE codigo_postal LIKE ${q + '%'}
-          ORDER BY codigo_postal
-          LIMIT 20
-        `
+        isNumeric 
+          ? sql`
+              SELECT codigo_postal, colonia, municipio, estado
+              FROM zip_codes
+              WHERE codigo_postal LIKE ${q + '%'}
+              ORDER BY codigo_postal, colonia
+              LIMIT 20
+            `
+          : sql`
+              SELECT codigo_postal, colonia, municipio, estado
+              FROM zip_codes
+              WHERE LOWER(colonia) LIKE ${q.toLowerCase() + '%'}
+              ORDER BY colonia, codigo_postal
+              LIMIT 20
+            `
       );
 
-      // Transform to expected format
       const formattedResults = results.rows.map((row: any) => ({
         codigo_postal: row.codigo_postal,
+        colonia: row.colonia,
         municipio: row.municipio,
         estado: row.estado,
       }));
