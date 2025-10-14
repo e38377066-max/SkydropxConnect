@@ -1,6 +1,8 @@
 interface SkydropxQuoteRequest {
   zip_from: string;
   zip_to: string;
+  colonia_from?: string;
+  colonia_to?: string;
   parcel: {
     weight: string;
     length?: string;
@@ -363,30 +365,33 @@ export class SkydropxService {
     }
   }
 
-  private async getZipCodeInfo(postalCode: string): Promise<SkydropxZipCodeInfo> {
+  private async getZipCodeInfo(postalCode: string, colonia?: string): Promise<SkydropxZipCodeInfo> {
     try {
-      const token = await this.getBearerToken();
-      const endpoint = `${this.baseUrl}/zip_codes/${postalCode}`;
+      const { db } = await import('./db');
+      const { sql } = await import('drizzle-orm');
       
-      const response = await fetch(endpoint, {
-        method: "GET",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
+      const query = colonia 
+        ? sql`SELECT estado, municipio, colonia FROM zip_codes 
+              WHERE codigo_postal = ${postalCode} AND colonia = ${colonia} 
+              LIMIT 1`
+        : sql`SELECT estado, municipio, colonia FROM zip_codes 
+              WHERE codigo_postal = ${postalCode} 
+              LIMIT 1`;
+      
+      const result = await db.execute(query);
+      
+      if (result.rows && result.rows.length > 0) {
+        const row = result.rows[0] as any;
         return {
-          country_code: data.country_code || "MX",
+          country_code: "MX",
           postal_code: postalCode,
-          area_level1: data.area_level1 || data.state || "",
-          area_level2: data.area_level2 || data.city || "",
-          area_level3: data.area_level3 || data.neighborhood || "",
+          area_level1: row.estado || "México",
+          area_level2: row.municipio || "Ciudad de México",
+          area_level3: colonia || row.colonia || "Centro",
         };
       }
     } catch (error) {
-      console.warn(`⚠️ Could not fetch zip code info for ${postalCode}, using defaults`);
+      console.warn(`⚠️ Could not fetch zip code info for ${postalCode} from local DB:`, error);
     }
 
     // Fallback: retornar datos genéricos para México
@@ -395,7 +400,7 @@ export class SkydropxService {
       postal_code: postalCode,
       area_level1: "México",
       area_level2: "Ciudad de México",
-      area_level3: "Centro",
+      area_level3: colonia || "Centro",
     };
   }
 
@@ -405,8 +410,8 @@ export class SkydropxService {
       
       // Obtener información de códigos postales
       const [fromInfo, toInfo] = await Promise.all([
-        this.getZipCodeInfo(request.zip_from),
-        this.getZipCodeInfo(request.zip_to),
+        this.getZipCodeInfo(request.zip_from, request.colonia_from),
+        this.getZipCodeInfo(request.zip_to, request.colonia_to),
       ]);
 
       // Construir request en formato Skydropx PRO

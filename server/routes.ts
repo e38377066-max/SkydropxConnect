@@ -612,6 +612,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const skydropxRequest = {
         zip_from: validatedData.fromZipCode,
         zip_to: validatedData.toZipCode,
+        colonia_from: validatedData.fromColonia,
+        colonia_to: validatedData.toColonia,
         parcel: {
           weight: validatedData.weight.toString(),
           length: validatedData.length?.toString(),
