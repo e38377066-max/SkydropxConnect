@@ -53,38 +53,69 @@ export type User = typeof users.$inferSelect;
 
 export const shipments = pgTable("shipments", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").references(() => users.id), // Owner of the shipment
-  trackingNumber: text("tracking_number").unique(), // Nullable porque Skydropx lo da después
+  userId: varchar("user_id").references(() => users.id),
+  trackingNumber: text("tracking_number").unique(),
   carrier: text("carrier").notNull(),
   
+  // Sender details
   senderName: text("sender_name").notNull(),
+  senderCompany: text("sender_company"),
+  senderEmail: text("sender_email"),
   senderPhone: text("sender_phone").notNull(),
+  senderStreet: text("sender_street"),
+  senderExteriorNumber: text("sender_exterior_number"),
+  senderInteriorNumber: text("sender_interior_number"),
+  senderReferences: text("sender_references"),
   senderAddress: text("sender_address").notNull(),
   senderZipCode: text("sender_zip_code").notNull(),
   senderColonia: text("sender_colonia"),
+  senderMunicipality: text("sender_municipality"),
   senderCity: text("sender_city"),
   senderState: text("sender_state"),
+  senderRFC: text("sender_rfc"),
   
+  // Receiver details
   receiverName: text("receiver_name").notNull(),
+  receiverCompany: text("receiver_company"),
+  receiverEmail: text("receiver_email"),
   receiverPhone: text("receiver_phone").notNull(),
+  receiverStreet: text("receiver_street"),
+  receiverExteriorNumber: text("receiver_exterior_number"),
+  receiverInteriorNumber: text("receiver_interior_number"),
+  receiverReferences: text("receiver_references"),
   receiverAddress: text("receiver_address").notNull(),
   receiverZipCode: text("receiver_zip_code").notNull(),
   receiverColonia: text("receiver_colonia"),
+  receiverMunicipality: text("receiver_municipality"),
   receiverCity: text("receiver_city"),
   receiverState: text("receiver_state"),
+  receiverRFC: text("receiver_rfc"),
   
+  // Package details
+  shipmentType: text("shipment_type"),
   weight: decimal("weight", { precision: 10, scale: 2 }).notNull(),
   length: decimal("length", { precision: 10, scale: 2 }),
   width: decimal("width", { precision: 10, scale: 2 }),
   height: decimal("height", { precision: 10, scale: 2 }),
+  packageAlias: text("package_alias"),
   description: text("description"),
+  declaredValue: decimal("declared_value", { precision: 10, scale: 2 }),
+  productClassification: text("product_classification"),
+  packagingType: text("packaging_type"),
   
+  // Options
+  generateAsOcurre: text("generate_as_ocurre").default("false"),
+  sendEmailNotification: text("send_email_notification").default("false"),
+  
+  // Payment
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
   currency: text("currency").notNull().default("MXN"),
   
+  // Status
   status: text("status").notNull().default("pending"),
   labelUrl: text("label_url"),
   
+  // Skydropx integration
   skydropxShipmentId: text("skydropx_shipment_id"),
   skydropxData: jsonb("skydropx_data"),
   
@@ -209,9 +240,17 @@ export const savedAddresses = pgTable("saved_addresses", {
   
   name: varchar("name").notNull(), // Alias/name for the address
   contactName: varchar("contact_name").notNull(),
+  company: varchar("company"),
+  email: varchar("email"),
   phone: varchar("phone").notNull(),
+  street: text("street"),
+  exteriorNumber: varchar("exterior_number"),
+  interiorNumber: varchar("interior_number"),
+  references: text("references"),
   address: text("address").notNull(),
   zipCode: varchar("zip_code").notNull(),
+  colonia: varchar("colonia"),
+  municipality: varchar("municipality"),
   city: varchar("city"),
   state: varchar("state"),
   
@@ -357,24 +396,57 @@ export const quoteRequestSchema = z.object({
 });
 
 export const shipmentRequestSchema = z.object({
+  // Sender details
   senderName: z.string().min(1, "Nombre requerido"),
+  senderCompany: z.string().optional(),
+  senderEmail: z.string().email("Email inválido").optional().or(z.literal("")),
   senderPhone: z.string().min(10, "Teléfono inválido"),
+  senderStreet: z.string().optional(),
+  senderExteriorNumber: z.string().optional(),
+  senderInteriorNumber: z.string().optional(),
+  senderReferences: z.string().optional(),
   senderAddress: z.string().min(1, "Dirección requerida"),
   senderZipCode: z.string().min(5, "Código postal inválido"),
   senderColonia: z.string().min(1, "Colonia requerida"),
+  senderMunicipality: z.string().optional(),
+  senderCity: z.string().optional(),
+  senderState: z.string().optional(),
+  senderRFC: z.string().optional(),
   
+  // Receiver details
   receiverName: z.string().min(1, "Nombre requerido"),
+  receiverCompany: z.string().optional(),
+  receiverEmail: z.string().email("Email inválido").optional().or(z.literal("")),
   receiverPhone: z.string().min(10, "Teléfono inválido"),
+  receiverStreet: z.string().optional(),
+  receiverExteriorNumber: z.string().optional(),
+  receiverInteriorNumber: z.string().optional(),
+  receiverReferences: z.string().optional(),
   receiverAddress: z.string().min(1, "Dirección requerida"),
   receiverZipCode: z.string().min(5, "Código postal inválido"),
   receiverColonia: z.string().min(1, "Colonia requerida"),
+  receiverMunicipality: z.string().optional(),
+  receiverCity: z.string().optional(),
+  receiverState: z.string().optional(),
+  receiverRFC: z.string().optional(),
   
+  // Package details
+  shipmentType: z.string().optional(),
   weight: z.number().positive("El peso debe ser mayor a 0"),
   length: z.number().positive().optional(),
   width: z.number().positive().optional(),
   height: z.number().positive().optional(),
+  packageAlias: z.string().optional(),
   description: z.string().optional(),
+  declaredValue: z.number().positive().optional(),
+  productClassification: z.string().optional(),
+  packagingType: z.string().optional(),
   
+  // Options
+  generateAsOcurre: z.boolean().optional(),
+  sendEmailNotification: z.boolean().optional(),
+  
+  // Payment
   carrier: z.string().min(1, "Selecciona una paquetería"),
   rateId: z.string().optional(),
   expectedAmount: z.number().positive("Monto esperado requerido"),
