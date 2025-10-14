@@ -843,7 +843,7 @@ export default function ShipmentForm() {
                       value={formData.weight}
                       onChange={handleInputChange}
                       required
-                      placeholder="Peso del paquete"
+                      placeholder="Peso"
                       data-testid="input-weight"
                     />
                     <span className="flex items-center px-3 border rounded-md bg-muted">KG</span>
