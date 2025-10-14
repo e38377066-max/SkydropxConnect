@@ -12,6 +12,7 @@ import ZipCodeInput from "@/components/ZipCodeInput";
 import { getCarrierLogo } from "@/lib/carrierLogos";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface QuoteRate {
   id: string;
@@ -55,6 +56,26 @@ export default function ShipmentForm() {
   });
 
   const userBalance = userData?.balance ? parseFloat(userData.balance) : 0;
+
+  // Obtener paquetes guardados
+  const { data: packagesData } = useQuery<{ data: any[] }>({
+    queryKey: ["/api/packages"],
+  });
+
+  const packages = packagesData?.data ?? [];
+
+  const handlePackageSelect = (packageId: string) => {
+    const selectedPackage = packages.find(pkg => pkg.id === packageId);
+    if (selectedPackage) {
+      setFormData({
+        ...formData,
+        weight: selectedPackage.weight,
+        length: selectedPackage.length,
+        width: selectedPackage.width,
+        height: selectedPackage.height,
+      });
+    }
+  };
 
   // Cargar datos pre-llenados desde cotización (si existen)
   useEffect(() => {
@@ -445,6 +466,23 @@ export default function ShipmentForm() {
               Datos del Paquete
             </h3>
             <div className="grid grid-cols-1 gap-4">
+              {packages.length > 0 && (
+                <div className="space-y-2">
+                  <Label htmlFor="saved-package">Usar Paquete Guardado (Opcional)</Label>
+                  <Select onValueChange={handlePackageSelect}>
+                    <SelectTrigger data-testid="select-saved-package-shipment">
+                      <SelectValue placeholder="Selecciona un paquete guardado" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {packages.map((pkg: any) => (
+                        <SelectItem key={pkg.id} value={pkg.id} data-testid={`package-option-${pkg.id}`}>
+                          {pkg.alias}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="weight">Peso (kg)</Label>
                 <Input
@@ -454,6 +492,7 @@ export default function ShipmentForm() {
                   step="0.1"
                   value={formData.weight}
                   onChange={handleInputChange}
+                  placeholder="Peso del paquete en kilogramos"
                   required
                   data-testid="input-shipment-weight"
                 />
@@ -465,6 +504,7 @@ export default function ShipmentForm() {
                   name="description"
                   value={formData.description}
                   onChange={handleInputChange}
+                  placeholder="Descripción del contenido del paquete"
                   required
                   rows={3}
                   data-testid="input-description"

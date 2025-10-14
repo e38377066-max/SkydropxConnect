@@ -187,6 +187,7 @@ export default function QuoteForm() {
               step="0.1"
               value={formData.weight}
               onChange={handleInputChange}
+              placeholder="Peso del paquete en kilogramos"
               required
               data-testid="input-weight"
             />
@@ -201,6 +202,7 @@ export default function QuoteForm() {
                 type="number"
                 value={formData.length}
                 onChange={handleInputChange}
+                placeholder="Largo"
                 data-testid="input-length"
               />
             </div>
@@ -213,6 +215,7 @@ export default function QuoteForm() {
                 type="number"
                 value={formData.width}
                 onChange={handleInputChange}
+                placeholder="Ancho"
                 data-testid="input-width"
               />
             </div>
@@ -225,6 +228,7 @@ export default function QuoteForm() {
                 type="number"
                 value={formData.height}
                 onChange={handleInputChange}
+                placeholder="Alto"
                 data-testid="input-height"
               />
             </div>
