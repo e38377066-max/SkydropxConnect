@@ -60,6 +60,7 @@ export default function QuoteForm() {
 
   const quoteMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
+      console.log("📤 Datos enviados a /api/quotes:", data);
       const response = await apiRequest("POST", "/api/quotes", data);
       return await response.json();
     },
