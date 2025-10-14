@@ -5,11 +5,12 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Calculator, Package, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import QuoteResults from "./QuoteResults";
 import ZipCodeInput from "./ZipCodeInput";
 import { useLocation } from "wouter";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Rate {
   id: string;
@@ -36,6 +37,25 @@ export default function QuoteForm() {
     width: "",
     height: "",
   });
+
+  const { data: packagesData } = useQuery<{ data: any[] }>({
+    queryKey: ["/api/packages"],
+  });
+
+  const packages = packagesData?.data ?? [];
+
+  const handlePackageSelect = (packageId: string) => {
+    const selectedPackage = packages.find(pkg => pkg.id === packageId);
+    if (selectedPackage) {
+      setFormData({
+        ...formData,
+        weight: selectedPackage.weight,
+        length: selectedPackage.length,
+        width: selectedPackage.width,
+        height: selectedPackage.height,
+      });
+    }
+  };
 
   const quoteMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
@@ -136,6 +156,24 @@ export default function QuoteForm() {
               testId="input-to-zipcode"
             />
           </div>
+
+          {packages.length > 0 && (
+            <div className="space-y-2">
+              <Label htmlFor="saved-package">Usar Paquete Guardado (Opcional)</Label>
+              <Select onValueChange={handlePackageSelect}>
+                <SelectTrigger data-testid="select-saved-package">
+                  <SelectValue placeholder="Selecciona un paquete guardado" />
+                </SelectTrigger>
+                <SelectContent>
+                  {packages.map((pkg: any) => (
+                    <SelectItem key={pkg.id} value={pkg.id} data-testid={`package-option-${pkg.id}`}>
+                      {pkg.alias}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="weight" className="flex items-center gap-2">
