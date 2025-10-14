@@ -606,6 +606,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         length: req.body.length ? parseFloat(req.body.length) : undefined,
         width: req.body.width ? parseFloat(req.body.width) : undefined,
         height: req.body.height ? parseFloat(req.body.height) : undefined,
+        packagingType: req.body.packagingType,
       }) as QuoteRequest;
 
       const skydropxRequest = {
@@ -659,6 +660,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         length: validatedData.length?.toString(),
         width: validatedData.width?.toString(),
         height: validatedData.height?.toString(),
+        packagingType: validatedData.packagingType,
         quotesData: ratesWithMargin as any,
       });
 

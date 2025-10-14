@@ -133,6 +133,7 @@ export const quotes = pgTable("quotes", {
   length: decimal("length", { precision: 10, scale: 2 }),
   width: decimal("width", { precision: 10, scale: 2 }),
   height: decimal("height", { precision: 10, scale: 2 }),
+  packagingType: text("packaging_type"),
   
   quotesData: jsonb("quotes_data").notNull(),
   
@@ -393,6 +394,7 @@ export const quoteRequestSchema = z.object({
   length: z.number().positive().optional(),
   width: z.number().positive().optional(),
   height: z.number().positive().optional(),
+  packagingType: z.string().optional(),
 });
 
 export const shipmentRequestSchema = z.object({
