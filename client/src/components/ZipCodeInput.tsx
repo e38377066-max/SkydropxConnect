@@ -168,7 +168,7 @@ export default function ZipCodeInput({
   const handleInputChange = (value: string) => {
     setDisplayValue(value);
     
-    // If user is typing and had a selection, clear it
+    // If user is typing and had a selection, clear colonia only
     if (selectedInfo) {
       setSelectedInfo(null);
       onColoniaChange("");
@@ -178,9 +178,11 @@ export default function ZipCodeInput({
     const trimmed = value.trim();
     if (/^\d{5}$/.test(trimmed)) {
       onZipCodeChange(trimmed);
-    } else {
+    } else if (trimmed.length === 0) {
+      // Only clear zipCode if user completely clears the field
       onZipCodeChange("");
     }
+    // If typing something that's not 5 digits yet, keep previous zipCode
   };
 
   return (
