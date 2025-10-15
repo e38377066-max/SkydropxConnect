@@ -456,3 +456,53 @@ export const shipmentRequestSchema = z.object({
 
 export type QuoteRequest = z.infer<typeof quoteRequestSchema>;
 export type ShipmentRequest = z.infer<typeof shipmentRequestSchema>;
+
+// Promotional Banners table
+export const promotionalBanners = pgTable("promotional_banners", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: varchar("title").notNull(),
+  imageUrl: text("image_url").notNull(),
+  linkUrl: text("link_url"),
+  isActive: text("is_active").notNull().default("true"),
+  displayOrder: decimal("display_order", { precision: 3, scale: 0 }).notNull().default("0"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertPromotionalBannerSchema = createInsertSchema(promotionalBanners).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertPromotionalBanner = z.infer<typeof insertPromotionalBannerSchema>;
+export type PromotionalBanner = typeof promotionalBanners.$inferSelect;
+
+// Promo Codes table
+export const promoCodes = pgTable("promo_codes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  code: varchar("code").unique().notNull(),
+  discountType: varchar("discount_type").notNull(), // 'percentage' or 'fixed'
+  discountValue: decimal("discount_value", { precision: 10, scale: 2 }).notNull(),
+  isActive: text("is_active").notNull().default("true"),
+  usageLimit: decimal("usage_limit", { precision: 10, scale: 0 }),
+  usedCount: decimal("used_count", { precision: 10, scale: 0 }).notNull().default("0"),
+  expiresAt: timestamp("expires_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertPromoCodeSchema = createInsertSchema(promoCodes).omit({
+  id: true,
+  usedCount: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  code: z.string().min(3, "Código debe tener al menos 3 caracteres").max(50),
+  discountType: z.enum(["percentage", "fixed"]),
+  discountValue: z.number().positive("El descuento debe ser mayor a 0"),
+  usageLimit: z.number().int().positive().optional(),
+});
+
+export type InsertPromoCode = z.infer<typeof insertPromoCodeSchema>;
+export type PromoCode = typeof promoCodes.$inferSelect;
