@@ -23,6 +23,8 @@ import AddressesPage from "@/pages/AddressesPage";
 import PackagesPage from "@/pages/PackagesPage";
 import BillingProfilesPage from "@/pages/BillingProfilesPage";
 import AdminRechargesPage from "@/pages/AdminRechargesPage";
+import AdminBannersPage from "@/pages/AdminBannersPage";
+import AdminPromoCodesPage from "@/pages/AdminPromoCodesPage";
 import { Redirect } from "wouter";
 
 // Home with Header (no sidebar)
@@ -73,6 +75,8 @@ function ProtectedRoutes() {
       <Route path="/configuracion/paquetes" component={PackagesPage} />
       <Route path="/admin/usuarios" component={AdminUsersPage} />
       <Route path="/admin/recargas" component={AdminRechargesPage} />
+      <Route path="/admin/banners" component={AdminBannersPage} />
+      <Route path="/admin/codigos" component={AdminPromoCodesPage} />
       <Route component={NotFound} />
     </Switch>
   );

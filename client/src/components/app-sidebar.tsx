@@ -1,4 +1,4 @@
-import { Home, Package, DollarSign, MapPin, FileText, Settings, Users, BarChart3, LayoutDashboard } from "lucide-react";
+import { Home, Package, DollarSign, MapPin, FileText, Settings, Users, BarChart3, LayoutDashboard, Image, Ticket } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -84,6 +84,16 @@ const adminItems = [
     title: "Recargas",
     url: "/admin/recargas",
     icon: DollarSign,
+  },
+  {
+    title: "Banners",
+    url: "/admin/banners",
+    icon: Image,
+  },
+  {
+    title: "Códigos Promo",
+    url: "/admin/codigos",
+    icon: Ticket,
   },
 ];
 
