@@ -1923,6 +1923,174 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ==================== PROMOTIONAL BANNERS ROUTES ====================
+  
+  // Get all banners (admin only)
+  app.get("/api/banners", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const banners = await storage.getAllPromotionalBanners();
+      res.json({ success: true, data: banners });
+    } catch (error: any) {
+      console.error("Error fetching banners:", error);
+      res.status(500).json({ success: false, error: "Error al obtener banners" });
+    }
+  });
+  
+  // Get active banners (public)
+  app.get("/api/banners/active", async (req, res) => {
+    try {
+      const banners = await storage.getActivePromotionalBanners();
+      res.json({ success: true, data: banners });
+    } catch (error: any) {
+      console.error("Error fetching active banners:", error);
+      res.status(500).json({ success: false, error: "Error al obtener banners activos" });
+    }
+  });
+  
+  // Create banner (admin only)
+  app.post("/api/banners", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { insertPromotionalBannerSchema } = await import("@shared/schema");
+      const validatedData = insertPromotionalBannerSchema.parse(req.body);
+      const banner = await storage.createPromotionalBanner(validatedData);
+      res.json({ success: true, data: banner });
+    } catch (error: any) {
+      console.error("Error creating banner:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ success: false, error: "Datos inválidos", details: error.errors });
+      }
+      res.status(500).json({ success: false, error: "Error al crear banner" });
+    }
+  });
+  
+  // Update banner (admin only)
+  app.patch("/api/banners/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updated = await storage.updatePromotionalBanner(id, req.body);
+      if (!updated) {
+        return res.status(404).json({ success: false, error: "Banner no encontrado" });
+      }
+      res.json({ success: true, data: updated });
+    } catch (error: any) {
+      console.error("Error updating banner:", error);
+      res.status(500).json({ success: false, error: "Error al actualizar banner" });
+    }
+  });
+  
+  // Delete banner (admin only)
+  app.delete("/api/banners/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deletePromotionalBanner(id);
+      res.json({ success: true, message: "Banner eliminado correctamente" });
+    } catch (error: any) {
+      console.error("Error deleting banner:", error);
+      res.status(500).json({ success: false, error: "Error al eliminar banner" });
+    }
+  });
+
+  // ==================== PROMO CODES ROUTES ====================
+  
+  // Get all promo codes (admin only)
+  app.get("/api/promo-codes", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const codes = await storage.getAllPromoCodes();
+      res.json({ success: true, data: codes });
+    } catch (error: any) {
+      console.error("Error fetching promo codes:", error);
+      res.status(500).json({ success: false, error: "Error al obtener códigos promocionales" });
+    }
+  });
+  
+  // Validate promo code (public)
+  app.post("/api/promo-codes/validate", async (req, res) => {
+    try {
+      const { code } = req.body;
+      if (!code) {
+        return res.status(400).json({ success: false, error: "Código requerido" });
+      }
+      
+      const promoCode = await storage.getPromoCodeByCode(code.toUpperCase());
+      
+      if (!promoCode) {
+        return res.json({ success: false, error: "Código no válido" });
+      }
+      
+      if (promoCode.isActive !== 'true') {
+        return res.json({ success: false, error: "Código inactivo" });
+      }
+      
+      if (promoCode.expiresAt && new Date(promoCode.expiresAt) < new Date()) {
+        return res.json({ success: false, error: "Código expirado" });
+      }
+      
+      if (promoCode.usageLimit && parseInt(promoCode.usedCount || '0') >= parseInt(promoCode.usageLimit)) {
+        return res.json({ success: false, error: "Código agotado" });
+      }
+      
+      res.json({ 
+        success: true, 
+        data: {
+          id: promoCode.id,
+          code: promoCode.code,
+          discountType: promoCode.discountType,
+          discountValue: parseFloat(promoCode.discountValue),
+        }
+      });
+    } catch (error: any) {
+      console.error("Error validating promo code:", error);
+      res.status(500).json({ success: false, error: "Error al validar código" });
+    }
+  });
+  
+  // Create promo code (admin only)
+  app.post("/api/promo-codes", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { insertPromoCodeSchema } = await import("@shared/schema");
+      const validatedData = insertPromoCodeSchema.parse({
+        ...req.body,
+        code: req.body.code.toUpperCase(),
+      });
+      const promoCode = await storage.createPromoCode(validatedData);
+      res.json({ success: true, data: promoCode });
+    } catch (error: any) {
+      console.error("Error creating promo code:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ success: false, error: "Datos inválidos", details: error.errors });
+      }
+      res.status(500).json({ success: false, error: "Error al crear código promocional" });
+    }
+  });
+  
+  // Update promo code (admin only)
+  app.patch("/api/promo-codes/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updateData = req.body.code ? { ...req.body, code: req.body.code.toUpperCase() } : req.body;
+      const updated = await storage.updatePromoCode(id, updateData);
+      if (!updated) {
+        return res.status(404).json({ success: false, error: "Código no encontrado" });
+      }
+      res.json({ success: true, data: updated });
+    } catch (error: any) {
+      console.error("Error updating promo code:", error);
+      res.status(500).json({ success: false, error: "Error al actualizar código promocional" });
+    }
+  });
+  
+  // Delete promo code (admin only)
+  app.delete("/api/promo-codes/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deletePromoCode(id);
+      res.json({ success: true, message: "Código promocional eliminado correctamente" });
+    } catch (error: any) {
+      console.error("Error deleting promo code:", error);
+      res.status(500).json({ success: false, error: "Error al eliminar código promocional" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

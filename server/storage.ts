@@ -20,6 +20,10 @@ import {
   type InsertSavedPackage,
   type BillingProfile,
   type InsertBillingProfile,
+  type PromotionalBanner,
+  type InsertPromotionalBanner,
+  type PromoCode,
+  type InsertPromoCode,
   shipments,
   quotes,
   trackingEvents,
@@ -30,6 +34,8 @@ import {
   savedAddresses,
   savedPackages,
   billingProfiles,
+  promotionalBanners,
+  promoCodes,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc } from "drizzle-orm";
@@ -94,6 +100,23 @@ export interface IStorage {
   getBillingProfile(id: string): Promise<BillingProfile | undefined>;
   updateBillingProfile(id: string, data: Partial<InsertBillingProfile>): Promise<BillingProfile | undefined>;
   deleteBillingProfile(id: string): Promise<void>;
+  
+  // Promotional Banners
+  createPromotionalBanner(banner: InsertPromotionalBanner): Promise<PromotionalBanner>;
+  getAllPromotionalBanners(): Promise<PromotionalBanner[]>;
+  getActivePromotionalBanners(): Promise<PromotionalBanner[]>;
+  getPromotionalBanner(id: string): Promise<PromotionalBanner | undefined>;
+  updatePromotionalBanner(id: string, data: Partial<InsertPromotionalBanner>): Promise<PromotionalBanner | undefined>;
+  deletePromotionalBanner(id: string): Promise<void>;
+  
+  // Promo Codes
+  createPromoCode(code: InsertPromoCode): Promise<PromoCode>;
+  getAllPromoCodes(): Promise<PromoCode[]>;
+  getPromoCode(id: string): Promise<PromoCode | undefined>;
+  getPromoCodeByCode(code: string): Promise<PromoCode | undefined>;
+  updatePromoCode(id: string, data: Partial<InsertPromoCode>): Promise<PromoCode | undefined>;
+  incrementPromoCodeUsage(id: string): Promise<PromoCode | undefined>;
+  deletePromoCode(id: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -473,6 +496,126 @@ export class DatabaseStorage implements IStorage {
     await db
       .delete(billingProfiles)
       .where(eq(billingProfiles.id, id));
+  }
+  
+  // Promotional Banners
+  async createPromotionalBanner(banner: InsertPromotionalBanner): Promise<PromotionalBanner> {
+    const [created] = await db
+      .insert(promotionalBanners)
+      .values(banner)
+      .returning();
+    return created;
+  }
+
+  async getAllPromotionalBanners(): Promise<PromotionalBanner[]> {
+    return await db
+      .select()
+      .from(promotionalBanners)
+      .orderBy(promotionalBanners.displayOrder, desc(promotionalBanners.createdAt));
+  }
+
+  async getActivePromotionalBanners(): Promise<PromotionalBanner[]> {
+    return await db
+      .select()
+      .from(promotionalBanners)
+      .where(eq(promotionalBanners.isActive, 'true'))
+      .orderBy(promotionalBanners.displayOrder, desc(promotionalBanners.createdAt));
+  }
+
+  async getPromotionalBanner(id: string): Promise<PromotionalBanner | undefined> {
+    const [banner] = await db
+      .select()
+      .from(promotionalBanners)
+      .where(eq(promotionalBanners.id, id));
+    return banner || undefined;
+  }
+
+  async updatePromotionalBanner(id: string, data: Partial<InsertPromotionalBanner>): Promise<PromotionalBanner | undefined> {
+    const [updated] = await db
+      .update(promotionalBanners)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(promotionalBanners.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deletePromotionalBanner(id: string): Promise<void> {
+    await db
+      .delete(promotionalBanners)
+      .where(eq(promotionalBanners.id, id));
+  }
+  
+  // Promo Codes
+  async createPromoCode(code: InsertPromoCode): Promise<PromoCode> {
+    const [created] = await db
+      .insert(promoCodes)
+      .values({
+        ...code,
+        discountValue: code.discountValue.toString(),
+        usageLimit: code.usageLimit ? code.usageLimit.toString() : undefined,
+      } as any)
+      .returning();
+    return created;
+  }
+
+  async getAllPromoCodes(): Promise<PromoCode[]> {
+    return await db
+      .select()
+      .from(promoCodes)
+      .orderBy(desc(promoCodes.createdAt));
+  }
+
+  async getPromoCode(id: string): Promise<PromoCode | undefined> {
+    const [code] = await db
+      .select()
+      .from(promoCodes)
+      .where(eq(promoCodes.id, id));
+    return code || undefined;
+  }
+
+  async getPromoCodeByCode(code: string): Promise<PromoCode | undefined> {
+    const [promoCode] = await db
+      .select()
+      .from(promoCodes)
+      .where(eq(promoCodes.code, code));
+    return promoCode || undefined;
+  }
+
+  async updatePromoCode(id: string, data: Partial<InsertPromoCode>): Promise<PromoCode | undefined> {
+    const updateData: any = { ...data, updatedAt: new Date() };
+    if (data.discountValue !== undefined) {
+      updateData.discountValue = data.discountValue.toString();
+    }
+    if (data.usageLimit !== undefined) {
+      updateData.usageLimit = data.usageLimit.toString();
+    }
+    
+    const [updated] = await db
+      .update(promoCodes)
+      .set(updateData)
+      .where(eq(promoCodes.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async incrementPromoCodeUsage(id: string): Promise<PromoCode | undefined> {
+    const promoCode = await this.getPromoCode(id);
+    if (!promoCode) return undefined;
+    
+    const newUsedCount = (parseInt(promoCode.usedCount || '0') + 1).toString();
+    
+    const [updated] = await db
+      .update(promoCodes)
+      .set({ usedCount: newUsedCount, updatedAt: new Date() })
+      .where(eq(promoCodes.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deletePromoCode(id: string): Promise<void> {
+    await db
+      .delete(promoCodes)
+      .where(eq(promoCodes.id, id));
   }
 }
 
