@@ -387,9 +387,9 @@ export type BillingProfile = typeof billingProfiles.$inferSelect;
 
 export const quoteRequestSchema = z.object({
   fromZipCode: z.string().min(5, "Código postal inválido"),
-  fromColonia: z.string().min(1, "Colonia requerida"),
+  fromColonia: z.string().optional(),
   toZipCode: z.string().min(5, "Código postal inválido"),
-  toColonia: z.string().min(1, "Colonia requerida"),
+  toColonia: z.string().optional(),
   weight: z.number().positive("El peso debe ser mayor a 0"),
   length: z.number().positive().optional(),
   width: z.number().positive().optional(),
