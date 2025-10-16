@@ -98,7 +98,28 @@ export default function Header() {
                 Salir
               </Button>
             </div>
-          ) : null}
+          ) : (
+            <div className="hidden md:flex items-center gap-3">
+              <Link href="/auth">
+                <Button 
+                  variant="ghost"
+                  size="sm"
+                  data-testid="button-header-login"
+                >
+                  Iniciar Sesión
+                </Button>
+              </Link>
+              <Link href="/auth">
+                <Button 
+                  variant="default"
+                  size="sm"
+                  data-testid="button-header-register"
+                >
+                  Registrarse
+                </Button>
+              </Link>
+            </div>
+          )}
 
           <Button
             variant="ghost"
@@ -188,7 +209,30 @@ export default function Header() {
                   Cerrar Sesión
                 </Button>
               </div>
-            ) : null}
+            ) : (
+              <div className="flex flex-col gap-2 mt-4 pt-4 border-t border-border">
+                <Link href="/auth">
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start"
+                    onClick={() => setMobileMenuOpen(false)}
+                    data-testid="button-mobile-header-login"
+                  >
+                    Iniciar Sesión
+                  </Button>
+                </Link>
+                <Link href="/auth">
+                  <Button
+                    variant="default"
+                    className="w-full justify-start"
+                    onClick={() => setMobileMenuOpen(false)}
+                    data-testid="button-mobile-header-register"
+                  >
+                    Registrarse
+                  </Button>
+                </Link>
+              </div>
+            )}
           </nav>
         </div>
       )}
