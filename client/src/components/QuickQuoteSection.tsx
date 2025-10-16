@@ -103,11 +103,11 @@ export default function QuickQuoteSection() {
             Cotiza gratis tu envío
           </h2>
           
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
-              {/* Origen - 1.5 columnas */}
-              <div className="space-y-2 lg:col-span-1">
-                <label className="text-white text-xs font-medium block">Origen</label>
+          <form onSubmit={handleSubmit}>
+            <div className="flex flex-wrap items-end gap-3">
+              {/* Origen */}
+              <div className="flex-1 min-w-[140px]">
+                <label className="text-white text-sm font-medium block mb-2">Origen</label>
                 <ZipCodeInput
                   zipCodeValue={formData.fromZipCode}
                   coloniaValue={formData.fromColonia}
@@ -118,9 +118,9 @@ export default function QuickQuoteSection() {
                 />
               </div>
 
-              {/* Destino - 1.5 columnas */}
-              <div className="space-y-2 lg:col-span-1">
-                <label className="text-white text-xs font-medium block">Destino</label>
+              {/* Destino */}
+              <div className="flex-1 min-w-[140px]">
+                <label className="text-white text-sm font-medium block mb-2">Destino</label>
                 <ZipCodeInput
                   zipCodeValue={formData.toZipCode}
                   coloniaValue={formData.toColonia}
@@ -132,13 +132,13 @@ export default function QuickQuoteSection() {
               </div>
 
               {/* Tipo de envío */}
-              <div className="space-y-2 lg:col-span-1">
-                <label className="text-white text-xs font-medium block">Tipo</label>
+              <div className="w-[120px]">
+                <label className="text-white text-sm font-medium block mb-2">Tipo de envío</label>
                 <Select
                   value={formData.packagingType}
                   onValueChange={(value) => setFormData({ ...formData, packagingType: value })}
                 >
-                  <SelectTrigger className="bg-white border-0 h-10" data-testid="quick-select-packaging">
+                  <SelectTrigger className="bg-white border-0 h-11" data-testid="quick-select-packaging">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -150,72 +150,64 @@ export default function QuickQuoteSection() {
               </div>
 
               {/* Peso */}
-              <div className="space-y-2 lg:col-span-1">
-                <label className="text-white text-xs font-medium block">Peso (kg)</label>
+              <div className="w-[90px]">
+                <label className="text-white text-sm font-medium block mb-2">Peso (kg)</label>
                 <Input
                   type="number"
                   step="0.1"
                   placeholder="Kg"
                   value={formData.weight}
                   onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
-                  className="bg-white border-0 h-10"
+                  className="bg-white border-0 h-11"
                   required
                   data-testid="quick-input-weight"
                 />
               </div>
 
-              {/* Largo */}
-              <div className="space-y-2 lg:col-span-1">
-                <label className="text-white text-xs font-medium block">Largo (cm)</label>
-                <Input
-                  type="number"
-                  placeholder="L"
-                  value={formData.length}
-                  onChange={(e) => setFormData({ ...formData, length: e.target.value })}
-                  className="bg-white border-0 h-10"
-                  data-testid="quick-input-length"
-                />
+              {/* Tamaño de caja (cm) - agrupado */}
+              <div className="flex-1 min-w-[200px]">
+                <label className="text-white text-sm font-medium block mb-2">Tamaño de caja en (cm)</label>
+                <div className="flex gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Largo"
+                    value={formData.length}
+                    onChange={(e) => setFormData({ ...formData, length: e.target.value })}
+                    className="bg-white border-0 h-11"
+                    data-testid="quick-input-length"
+                  />
+                  <Input
+                    type="number"
+                    placeholder="Alto"
+                    value={formData.height}
+                    onChange={(e) => setFormData({ ...formData, height: e.target.value })}
+                    className="bg-white border-0 h-11"
+                    data-testid="quick-input-height"
+                  />
+                  <Input
+                    type="number"
+                    placeholder="Ancho"
+                    value={formData.width}
+                    onChange={(e) => setFormData({ ...formData, width: e.target.value })}
+                    className="bg-white border-0 h-11"
+                    data-testid="quick-input-width"
+                  />
+                </div>
               </div>
 
-              {/* Alto */}
-              <div className="space-y-2 lg:col-span-1">
-                <label className="text-white text-xs font-medium block">Alto (cm)</label>
-                <Input
-                  type="number"
-                  placeholder="A"
-                  value={formData.height}
-                  onChange={(e) => setFormData({ ...formData, height: e.target.value })}
-                  className="bg-white border-0 h-10"
-                  data-testid="quick-input-height"
-                />
-              </div>
-
-              {/* Ancho */}
-              <div className="space-y-2 lg:col-span-1">
-                <label className="text-white text-xs font-medium block">Ancho (cm)</label>
-                <Input
-                  type="number"
-                  placeholder="An"
-                  value={formData.width}
-                  onChange={(e) => setFormData({ ...formData, width: e.target.value })}
-                  className="bg-white border-0 h-10"
-                  data-testid="quick-input-width"
-                />
-              </div>
-
-              {/* Botón - ocupa el último espacio */}
-              <div className="space-y-2 lg:col-span-1 flex items-end">
+              {/* Botón */}
+              <div>
                 <Button
                   type="submit"
-                  className="bg-white text-primary hover:bg-white/90 w-full h-10 font-semibold"
+                  size="lg"
+                  className="bg-secondary hover:bg-secondary/90 text-white h-11 px-8 font-semibold whitespace-nowrap"
                   disabled={quoteMutation.isPending}
                   data-testid="quick-button-quote"
                 >
-                  {quoteMutation.isPending ? "..." : "Cotizar"}
+                  {quoteMutation.isPending ? "Cotizando..." : "Cotizar envío"}
                 </Button>
               </div>
             </div>
-
           </form>
         </div>
 
