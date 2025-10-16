@@ -96,10 +96,10 @@ export default function QuickQuoteSection() {
   };
 
   return (
-    <section className="py-12 bg-gradient-to-b from-background to-primary/5">
-      <div className="max-w-7xl mx-auto px-6 space-y-8">
-        <div className="bg-primary rounded-3xl shadow-2xl p-8 md:p-12">
-          <h2 className="text-3xl font-bold text-white text-center mb-8">
+    <section className="py-8 bg-gradient-to-b from-background to-primary/5">
+      <div className="max-w-7xl mx-auto px-6 space-y-6">
+        <div className="bg-primary rounded-3xl shadow-2xl p-6 md:p-8">
+          <h2 className="text-2xl font-bold text-white text-center mb-5">
             Cotiza gratis tu envío
           </h2>
           
@@ -107,7 +107,7 @@ export default function QuickQuoteSection() {
             <div className="flex flex-wrap items-end gap-3">
               {/* Origen */}
               <div className="flex-1 min-w-[140px]">
-                <label className="text-white text-sm font-medium block mb-2">Origen</label>
+                <label className="text-white text-sm font-medium block mb-1">Origen</label>
                 <ZipCodeInput
                   zipCodeValue={formData.fromZipCode}
                   coloniaValue={formData.fromColonia}
@@ -120,7 +120,7 @@ export default function QuickQuoteSection() {
 
               {/* Destino */}
               <div className="flex-1 min-w-[140px]">
-                <label className="text-white text-sm font-medium block mb-2">Destino</label>
+                <label className="text-white text-sm font-medium block mb-1">Destino</label>
                 <ZipCodeInput
                   zipCodeValue={formData.toZipCode}
                   coloniaValue={formData.toColonia}
@@ -133,12 +133,12 @@ export default function QuickQuoteSection() {
 
               {/* Tipo de envío */}
               <div className="w-[120px]">
-                <label className="text-white text-sm font-medium block mb-2">Tipo de envío</label>
+                <label className="text-white text-sm font-medium block mb-1">Tipo de envío</label>
                 <Select
                   value={formData.packagingType}
                   onValueChange={(value) => setFormData({ ...formData, packagingType: value })}
                 >
-                  <SelectTrigger className="bg-white border-0 h-11" data-testid="quick-select-packaging">
+                  <SelectTrigger className="bg-white border-0 h-10" data-testid="quick-select-packaging">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -151,14 +151,14 @@ export default function QuickQuoteSection() {
 
               {/* Peso */}
               <div className="w-[90px]">
-                <label className="text-white text-sm font-medium block mb-2">Peso (kg)</label>
+                <label className="text-white text-sm font-medium block mb-1">Peso (kg)</label>
                 <Input
                   type="number"
                   step="0.1"
                   placeholder="Kg"
                   value={formData.weight}
                   onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
-                  className="bg-white border-0 h-11"
+                  className="bg-white border-0 h-10"
                   required
                   data-testid="quick-input-weight"
                 />
@@ -166,14 +166,14 @@ export default function QuickQuoteSection() {
 
               {/* Tamaño de caja (cm) - agrupado */}
               <div className="flex-1 min-w-[200px]">
-                <label className="text-white text-sm font-medium block mb-2">Tamaño de caja en (cm)</label>
+                <label className="text-white text-sm font-medium block mb-1">Tamaño de caja en (cm)</label>
                 <div className="flex gap-2">
                   <Input
                     type="number"
                     placeholder="Largo"
                     value={formData.length}
                     onChange={(e) => setFormData({ ...formData, length: e.target.value })}
-                    className="bg-white border-0 h-11"
+                    className="bg-white border-0 h-10"
                     data-testid="quick-input-length"
                   />
                   <Input
@@ -181,7 +181,7 @@ export default function QuickQuoteSection() {
                     placeholder="Alto"
                     value={formData.height}
                     onChange={(e) => setFormData({ ...formData, height: e.target.value })}
-                    className="bg-white border-0 h-11"
+                    className="bg-white border-0 h-10"
                     data-testid="quick-input-height"
                   />
                   <Input
@@ -189,7 +189,7 @@ export default function QuickQuoteSection() {
                     placeholder="Ancho"
                     value={formData.width}
                     onChange={(e) => setFormData({ ...formData, width: e.target.value })}
-                    className="bg-white border-0 h-11"
+                    className="bg-white border-0 h-10"
                     data-testid="quick-input-width"
                   />
                 </div>
@@ -199,8 +199,7 @@ export default function QuickQuoteSection() {
               <div>
                 <Button
                   type="submit"
-                  size="lg"
-                  className="bg-secondary hover:bg-secondary/90 text-white h-11 px-8 font-semibold whitespace-nowrap"
+                  className="bg-secondary hover:bg-secondary/90 text-white h-10 px-8 font-semibold whitespace-nowrap"
                   disabled={quoteMutation.isPending}
                   data-testid="quick-button-quote"
                 >
