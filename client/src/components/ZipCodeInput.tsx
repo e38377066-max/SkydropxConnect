@@ -174,9 +174,18 @@ export default function ZipCodeInput({
     const match = trimmed.match(/^(\d{5})\s*-\s*(.+)$/);
     if (match) {
       const [, zipCode, colonia] = match;
+      console.log("🔍 Detectado formato CP - Colonia:", { zipCode, colonia });
       onZipCodeChange(zipCode);
       onColoniaChange(colonia.trim());
-      // Don't clear selectedInfo yet - let the search happen
+      
+      // Mark as selected to prevent search from clearing it
+      setSelectedInfo({
+        codigo_postal: zipCode,
+        colonia: colonia.trim(),
+        municipio: '',
+        estado: ''
+      });
+      setShowSuggestions(false);
       return;
     }
     
@@ -193,8 +202,9 @@ export default function ZipCodeInput({
       // Only clear zipCode if user completely clears the field
       onZipCodeChange("");
       onColoniaChange("");
+    } else {
+      // If typing something else, don't clear zipCode yet
     }
-    // If typing something that's not 5 digits yet, keep previous zipCode
   };
 
   return (
