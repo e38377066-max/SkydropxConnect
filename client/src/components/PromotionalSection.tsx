@@ -46,7 +46,7 @@ export default function PromotionalSection() {
               </p>
               <Button
                 size="lg"
-                className="bg-orange-500 hover:bg-orange-600 text-white px-8 h-12 text-lg font-semibold rounded-full shadow-lg"
+                className="bg-primary hover:bg-primary/90 text-white px-8 h-12 text-lg font-semibold rounded-full shadow-lg"
                 data-testid="button-register-promo"
               >
                 Regístrate gratis
@@ -63,7 +63,7 @@ export default function PromotionalSection() {
               </div>
               {/* Decoración */}
               <div className="absolute -bottom-4 -right-4 w-32 h-32 bg-primary/10 rounded-full blur-3xl" />
-              <div className="absolute -top-4 -left-4 w-24 h-24 bg-orange-500/10 rounded-full blur-2xl" />
+              <div className="absolute -top-4 -left-4 w-24 h-24 bg-secondary/10 rounded-full blur-2xl" />
             </div>
           </div>
         </div>
@@ -93,7 +93,7 @@ export default function PromotionalSection() {
               <a href={mainBanner.linkUrl} target="_blank" rel="noopener noreferrer">
                 <Button
                   size="lg"
-                  className="bg-orange-500 hover:bg-orange-600 text-white px-8 h-12 text-lg font-semibold rounded-full shadow-lg"
+                  className="bg-primary hover:bg-primary/90 text-white px-8 h-12 text-lg font-semibold rounded-full shadow-lg"
                   data-testid="button-promo-cta"
                 >
                   Regístrate gratis

@@ -165,7 +165,7 @@ export default function QuickQuoteSection() {
               <Button
                 type="submit"
                 size="lg"
-                className="bg-orange-500 hover:bg-orange-600 text-white px-12 h-12 text-lg font-semibold rounded-full shadow-lg"
+                className="bg-primary hover:bg-primary/90 text-white px-12 h-12 text-lg font-semibold rounded-full shadow-lg"
                 disabled={quoteMutation.isPending}
                 data-testid="quick-button-quote"
               >
