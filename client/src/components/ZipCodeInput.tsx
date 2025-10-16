@@ -168,6 +168,18 @@ export default function ZipCodeInput({
   const handleInputChange = (value: string) => {
     setDisplayValue(value);
     
+    const trimmed = value.trim();
+    
+    // Check if user wrote format "XXXXX - Colonia Name"
+    const match = trimmed.match(/^(\d{5})\s*-\s*(.+)$/);
+    if (match) {
+      const [, zipCode, colonia] = match;
+      onZipCodeChange(zipCode);
+      onColoniaChange(colonia.trim());
+      // Don't clear selectedInfo yet - let the search happen
+      return;
+    }
+    
     // If user is typing and had a selection, clear colonia only
     if (selectedInfo) {
       setSelectedInfo(null);
@@ -175,12 +187,12 @@ export default function ZipCodeInput({
     }
     
     // If the value looks like a zip code (5 digits), update it immediately
-    const trimmed = value.trim();
     if (/^\d{5}$/.test(trimmed)) {
       onZipCodeChange(trimmed);
     } else if (trimmed.length === 0) {
       // Only clear zipCode if user completely clears the field
       onZipCodeChange("");
+      onColoniaChange("");
     }
     // If typing something that's not 5 digits yet, keep previous zipCode
   };
