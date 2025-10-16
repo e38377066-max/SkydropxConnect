@@ -63,6 +63,7 @@ export default function QuickQuoteSection() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("📝 Datos del formulario antes de enviar:", formData);
     quoteMutation.mutate(formData);
   };
 
