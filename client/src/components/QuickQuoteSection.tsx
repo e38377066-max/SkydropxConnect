@@ -199,7 +199,7 @@ export default function QuickQuoteSection() {
               <div>
                 <Button
                   type="submit"
-                  className="bg-secondary hover:bg-secondary/90 text-white h-10 px-8 font-semibold whitespace-nowrap"
+                  className="bg-white text-primary hover:bg-white/90 h-10 px-8 font-bold whitespace-nowrap shadow-md"
                   disabled={quoteMutation.isPending}
                   data-testid="quick-button-quote"
                 >
