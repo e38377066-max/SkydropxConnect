@@ -156,6 +156,7 @@ export default function ZipCodeInput({
   }, [displayValue, selectedInfo]);
 
   const handleSelect = (suggestion: ZipCodeSuggestion) => {
+    console.log("✅ Selección de sugerencia:", { cp: suggestion.codigo_postal, colonia: suggestion.colonia });
     setSelectedInfo(suggestion);
     lastValidSelection.current = suggestion; // Save for later sync
     setDisplayValue(`${suggestion.codigo_postal} - ${suggestion.colonia}`);
