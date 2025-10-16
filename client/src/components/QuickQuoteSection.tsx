@@ -63,7 +63,7 @@ export default function QuickQuoteSection() {
           </h2>
           
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-4">
               {/* Origen */}
               <div className="space-y-2">
                 <label className="text-white text-sm font-medium block">Origen</label>
@@ -96,8 +96,8 @@ export default function QuickQuoteSection() {
                 />
               </div>
 
-              {/* Tipo de envío */}
-              <div className="space-y-2">
+              {/* Tipo de envío - más pequeño */}
+              <div className="space-y-2 lg:col-span-1">
                 <label className="text-white text-sm font-medium block">Tipo de envío</label>
                 <Select
                   value={formData.packagingType}
@@ -114,8 +114,8 @@ export default function QuickQuoteSection() {
                 </Select>
               </div>
 
-              {/* Peso */}
-              <div className="space-y-2">
+              {/* Peso - más pequeño */}
+              <div className="space-y-2 lg:col-span-1">
                 <label className="text-white text-sm font-medium block">Peso (kg)</label>
                 <Input
                   type="number"
@@ -129,8 +129,8 @@ export default function QuickQuoteSection() {
                 />
               </div>
 
-              {/* Dimensiones */}
-              <div className="space-y-2">
+              {/* Dimensiones - ocupa 2 columnas para más espacio */}
+              <div className="space-y-2 lg:col-span-2">
                 <label className="text-white text-sm font-medium block">Tamaño de caja (cm)</label>
                 <div className="grid grid-cols-3 gap-2">
                   <Input
@@ -138,7 +138,7 @@ export default function QuickQuoteSection() {
                     placeholder="Largo"
                     value={formData.length}
                     onChange={(e) => setFormData({ ...formData, length: e.target.value })}
-                    className="bg-white border-0 h-12 text-sm"
+                    className="bg-white border-0 h-12"
                     data-testid="quick-input-length"
                   />
                   <Input
@@ -146,7 +146,7 @@ export default function QuickQuoteSection() {
                     placeholder="Alto"
                     value={formData.height}
                     onChange={(e) => setFormData({ ...formData, height: e.target.value })}
-                    className="bg-white border-0 h-12 text-sm"
+                    className="bg-white border-0 h-12"
                     data-testid="quick-input-height"
                   />
                   <Input
@@ -154,7 +154,7 @@ export default function QuickQuoteSection() {
                     placeholder="Ancho"
                     value={formData.width}
                     onChange={(e) => setFormData({ ...formData, width: e.target.value })}
-                    className="bg-white border-0 h-12 text-sm"
+                    className="bg-white border-0 h-12"
                     data-testid="quick-input-width"
                   />
                 </div>
