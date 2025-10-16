@@ -39,6 +39,12 @@ export default function AdminBannersPage() {
     displayOrder: "0",
   });
 
+  // Estados para el editor visual
+  const [mainText, setMainText] = useState("Obtén hasta");
+  const [highlightText, setHighlightText] = useState("70% de descuento");
+  const [endText, setEndText] = useState("en el envío de tus paquetes");
+  const [highlightColor, setHighlightColor] = useState("#f97316"); // orange-500
+
   useEffect(() => {
     if (currentUser && currentUser.role !== 'admin') {
       setLocation('/');
@@ -107,10 +113,19 @@ export default function AdminBannersPage() {
       isActive: "true",
       displayOrder: "0",
     });
+    setMainText("Obtén hasta");
+    setHighlightText("70% de descuento");
+    setEndText("en el envío de tus paquetes");
+    setHighlightColor("#f97316");
   };
 
   const handleCreate = () => {
-    createMutation.mutate(formData);
+    // Generar el HTML del título desde los campos visuales
+    const generatedTitle = `${mainText} <span class="text-[${highlightColor}]">${highlightText}</span> ${endText}`;
+    createMutation.mutate({
+      ...formData,
+      title: generatedTitle,
+    });
   };
 
   const handleEdit = (banner: PromotionalBanner) => {
@@ -122,11 +137,45 @@ export default function AdminBannersPage() {
       isActive: banner.isActive,
       displayOrder: banner.displayOrder,
     });
+    
+    // Intentar extraer los textos del HTML guardado
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(banner.title, 'text/html');
+    const span = doc.querySelector('span');
+    
+    if (span) {
+      const fullText = doc.body.textContent || "";
+      const spanText = span.textContent || "";
+      const beforeSpan = fullText.split(spanText)[0].trim();
+      const afterSpan = fullText.split(spanText)[1]?.trim() || "";
+      
+      setMainText(beforeSpan);
+      setHighlightText(spanText);
+      setEndText(afterSpan);
+      
+      // Extraer color
+      const style = span.getAttribute('style') || span.getAttribute('class') || "";
+      const colorMatch = style.match(/#[0-9A-Fa-f]{6}/);
+      if (colorMatch) {
+        setHighlightColor(colorMatch[0]);
+      }
+    } else {
+      setMainText(banner.title);
+      setHighlightText("");
+      setEndText("");
+    }
   };
 
   const handleUpdate = () => {
     if (editingBanner) {
-      updateMutation.mutate({ id: editingBanner.id, data: formData });
+      const generatedTitle = `${mainText} <span class="text-[${highlightColor}]">${highlightText}</span> ${endText}`;
+      updateMutation.mutate({ 
+        id: editingBanner.id, 
+        data: {
+          ...formData,
+          title: generatedTitle,
+        }
+      });
     }
   };
 
@@ -162,46 +211,117 @@ export default function AdminBannersPage() {
             <DialogHeader>
               <DialogTitle>Crear Banner Promocional</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="title">Título</Label>
-                <Input
-                  id="title"
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  placeholder="Título del banner"
-                  data-testid="input-banner-title"
-                />
+            <div className="space-y-6 max-h-[70vh] overflow-y-auto">
+              {/* Vista previa */}
+              <div className="bg-muted rounded-lg p-4">
+                <Label className="mb-2 block">Vista Previa:</Label>
+                <div className="bg-background rounded p-3">
+                  <h3 className="text-2xl font-bold">
+                    {mainText}{" "}
+                    <span style={{ color: highlightColor }}>{highlightText}</span>{" "}
+                    {endText}
+                  </h3>
+                </div>
               </div>
-              <div>
+
+              {/* Editor de texto visual */}
+              <div className="space-y-4 border-t pt-4">
+                <Label className="text-base font-semibold">Texto del Banner</Label>
+                
+                <div>
+                  <Label htmlFor="mainText" className="text-sm">Texto inicial</Label>
+                  <Input
+                    id="mainText"
+                    value={mainText}
+                    onChange={(e) => setMainText(e.target.value)}
+                    placeholder="Ej: Obtén hasta"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="highlightText" className="text-sm">Texto destacado (color)</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="highlightText"
+                      value={highlightText}
+                      onChange={(e) => setHighlightText(e.target.value)}
+                      placeholder="Ej: 70% de descuento"
+                      className="flex-1"
+                    />
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={highlightColor}
+                        onChange={(e) => setHighlightColor(e.target.value)}
+                        className="h-10 w-14 rounded cursor-pointer"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="endText" className="text-sm">Texto final</Label>
+                  <Input
+                    id="endText"
+                    value={endText}
+                    onChange={(e) => setEndText(e.target.value)}
+                    placeholder="Ej: en el envío de tus paquetes"
+                  />
+                </div>
+              </div>
+
+              {/* Imagen */}
+              <div className="border-t pt-4">
                 <Label htmlFor="imageUrl">URL de la Imagen</Label>
                 <Input
                   id="imageUrl"
                   value={formData.imageUrl}
                   onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                  placeholder="https://..."
+                  placeholder="https://ejemplo.com/imagen.jpg"
                   data-testid="input-banner-image"
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  💡 Puedes usar imágenes de Unsplash, o sube tu imagen a un servicio como imgur.com
+                </p>
+                {formData.imageUrl && (
+                  <div className="mt-3">
+                    <img 
+                      src={formData.imageUrl} 
+                      alt="Vista previa" 
+                      className="w-full h-32 object-cover rounded-lg"
+                      onError={(e) => {
+                        e.currentTarget.src = 'https://via.placeholder.com/400x200?text=Error+al+cargar+imagen';
+                      }}
+                    />
+                  </div>
+                )}
               </div>
-              <div>
-                <Label htmlFor="linkUrl">URL de Destino (Opcional)</Label>
-                <Input
-                  id="linkUrl"
-                  value={formData.linkUrl}
-                  onChange={(e) => setFormData({ ...formData, linkUrl: e.target.value })}
-                  placeholder="https://..."
-                  data-testid="input-banner-link"
-                />
-              </div>
-              <div>
-                <Label htmlFor="displayOrder">Orden de Visualización</Label>
-                <Input
-                  id="displayOrder"
-                  type="number"
-                  value={formData.displayOrder}
-                  onChange={(e) => setFormData({ ...formData, displayOrder: e.target.value })}
-                  data-testid="input-banner-order"
-                />
+
+              {/* Enlace y orden */}
+              <div className="space-y-4 border-t pt-4">
+                <div>
+                  <Label htmlFor="linkUrl">Enlace del botón (Opcional)</Label>
+                  <Input
+                    id="linkUrl"
+                    value={formData.linkUrl}
+                    onChange={(e) => setFormData({ ...formData, linkUrl: e.target.value })}
+                    placeholder="https://ejemplo.com/registro"
+                    data-testid="input-banner-link"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="displayOrder">Orden de Visualización</Label>
+                  <Input
+                    id="displayOrder"
+                    type="number"
+                    value={formData.displayOrder}
+                    onChange={(e) => setFormData({ ...formData, displayOrder: e.target.value })}
+                    data-testid="input-banner-order"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Menor número = mayor prioridad
+                  </p>
+                </div>
               </div>
               <Button
                 onClick={handleCreate}
