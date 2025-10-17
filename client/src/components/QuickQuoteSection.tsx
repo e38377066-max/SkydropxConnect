@@ -63,7 +63,6 @@ export default function QuickQuoteSection() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("📝 Datos del formulario antes de enviar:", formData);
     quoteMutation.mutate(formData);
   };
 
@@ -98,7 +97,7 @@ export default function QuickQuoteSection() {
 
   return (
     <section className="py-8 bg-gradient-to-b from-background to-primary/5">
-      <div className="max-w-7xl mx-auto px-6 space-y-6">
+      <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
         <div className="bg-primary rounded-3xl shadow-2xl p-6 md:p-8">
           <h2 className="text-2xl font-bold text-white text-center mb-5">
             Cotiza gratis tu envío
@@ -112,14 +111,8 @@ export default function QuickQuoteSection() {
                 <ZipCodeInput
                   zipCodeValue={formData.fromZipCode}
                   coloniaValue={formData.fromColonia}
-                  onZipCodeChange={(value) => {
-                    console.log("🔵 Origen CP cambiado a:", value);
-                    setFormData(prev => ({ ...prev, fromZipCode: value }));
-                  }}
-                  onColoniaChange={(value) => {
-                    console.log("🔵 Origen Colonia cambiada a:", value);
-                    setFormData(prev => ({ ...prev, fromColonia: value }));
-                  }}
+                  onZipCodeChange={(value) => setFormData(prev => ({ ...prev, fromZipCode: value }))}
+                  onColoniaChange={(value) => setFormData(prev => ({ ...prev, fromColonia: value }))}
                   required
                   testId="quick-input-from-zipcode"
                 />
@@ -131,14 +124,8 @@ export default function QuickQuoteSection() {
                 <ZipCodeInput
                   zipCodeValue={formData.toZipCode}
                   coloniaValue={formData.toColonia}
-                  onZipCodeChange={(value) => {
-                    console.log("🟢 Destino CP cambiado a:", value);
-                    setFormData(prev => ({ ...prev, toZipCode: value }));
-                  }}
-                  onColoniaChange={(value) => {
-                    console.log("🟢 Destino Colonia cambiada a:", value);
-                    setFormData(prev => ({ ...prev, toColonia: value }));
-                  }}
+                  onZipCodeChange={(value) => setFormData(prev => ({ ...prev, toZipCode: value }))}
+                  onColoniaChange={(value) => setFormData(prev => ({ ...prev, toColonia: value }))}
                   required
                   testId="quick-input-to-zipcode"
                 />
@@ -177,15 +164,15 @@ export default function QuickQuoteSection() {
                 />
               </div>
 
-              {/* Tamaño de caja (cm) - agrupado */}
+              {/* Dimensiones (cm) - agrupado */}
               <div className="flex-1 min-w-[200px]">
-                <label className="text-white text-sm font-medium block mb-1">Tamaño de caja en (cm)</label>
+                <label className="text-white text-sm font-medium block mb-1">Tamaño en (cm)</label>
                 <div className="flex gap-2">
                   <Input
                     type="number"
                     placeholder="Largo"
                     value={formData.length}
-                    onChange={(e) => setFormData({ ...formData, length: e.target.value })}
+                    onChange={(e) => setFormData(prev => ({ ...prev, length: e.target.value }))}
                     className="bg-white border-0 h-10"
                     data-testid="quick-input-length"
                   />
@@ -193,7 +180,7 @@ export default function QuickQuoteSection() {
                     type="number"
                     placeholder="Alto"
                     value={formData.height}
-                    onChange={(e) => setFormData({ ...formData, height: e.target.value })}
+                    onChange={(e) => setFormData(prev => ({ ...prev, height: e.target.value }))}
                     className="bg-white border-0 h-10"
                     data-testid="quick-input-height"
                   />
@@ -201,7 +188,7 @@ export default function QuickQuoteSection() {
                     type="number"
                     placeholder="Ancho"
                     value={formData.width}
-                    onChange={(e) => setFormData({ ...formData, width: e.target.value })}
+                    onChange={(e) => setFormData(prev => ({ ...prev, width: e.target.value }))}
                     className="bg-white border-0 h-10"
                     data-testid="quick-input-width"
                   />

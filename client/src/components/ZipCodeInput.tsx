@@ -156,7 +156,6 @@ export default function ZipCodeInput({
   }, [displayValue, selectedInfo]);
 
   const handleSelect = (suggestion: ZipCodeSuggestion) => {
-    console.log("✅ Selección de sugerencia:", { cp: suggestion.codigo_postal, colonia: suggestion.colonia });
     setSelectedInfo(suggestion);
     lastValidSelection.current = suggestion; // Save for later sync
     setDisplayValue(`${suggestion.codigo_postal} - ${suggestion.colonia}`);
@@ -175,7 +174,6 @@ export default function ZipCodeInput({
     const match = trimmed.match(/^(\d{5})\s*-\s*(.+)$/);
     if (match) {
       const [, zipCode, colonia] = match;
-      console.log("🔍 Detectado formato CP - Colonia:", { zipCode, colonia });
       onZipCodeChange(zipCode);
       onColoniaChange(colonia.trim());
       
